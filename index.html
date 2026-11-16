@@ -39,6 +39,14 @@
     .schedule-controls{display:flex;gap:8px;align-items:end}
     .schedule-controls > div{flex:1;min-width:0}
     .schedule-controls .secondary{height:43px;white-space:nowrap}
+    .race-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:end}
+    .race-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:12px}
+    .race-table{width:100%;border-collapse:collapse;font-size:12px;min-width:620px}
+    .race-table th,.race-table td{border-bottom:1px solid #29415e;padding:9px 7px;text-align:left;white-space:nowrap}
+    .race-table th{color:#a9bbd2;font-weight:500}
+    .race-table td:first-child{font-weight:700;color:#8bd5ff}
+    .race-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+    .race-meta span{border:1px solid #29415e;border-radius:8px;padding:7px 9px;color:#c5d6e9;font-size:12px}
     .footer{font-size:11px;color:#8fa8bf;text-align:center;margin-top:24px;line-height:1.8}
     @media(max-width:370px){.venue-grid{grid-template-columns:repeat(3,1fr)}.metric b{font-size:16px}}
   </style>
@@ -66,6 +74,18 @@
       <p class="muted" style="font-size:12px" id="venueLabel">選択中：桐生</p>
       <button class="primary" id="goAdd">この場の予想を登録</button>
     </div>
+    <div class="panel" id="raceDetailPanel">
+      <h2>🚤 レース詳細・選手比較</h2>
+      <p class="muted" style="font-size:12px">上で選んだ競艇場と日付を使います。非公式の参考データです。展示情報は未取得の場合があります。</p>
+      <div class="race-controls">
+        <div><label for="raceDetailVenue">競艇場</label><select id="raceDetailVenue"></select></div>
+        <div><label for="raceDetailNumber">レース番号</label><select id="raceDetailNumber"></select></div>
+      </div>
+      <button class="primary" type="button" id="loadRaceDetail">選手・展示データを表示</button>
+      <p class="muted" style="font-size:12px" id="raceDetailStatus" aria-live="polite">競艇場とレース番号を選んで表示してください。</p>
+      <div id="raceDetailContent"></div>
+      <p class="muted" style="font-size:11px">級別の数字は取得元のコードをそのまま表示します。非公式情報のため公式BOAT RACEで照合してください。買い目の自動生成はまだありません。</p>
+    </div>
     <div class="panel">
       <div class="row"><h2>この端末の最近の予想</h2><span class="pill" id="count">0件</span></div>
       <div id="recent" class="empty">まだ予想がありません</div>
@@ -76,7 +96,7 @@
       <div id="cloudPredictions"></div>
       <p class="muted" style="font-size:12px">この欄にはD1の保存結果を表示します。成績はD1の結果確定分を使用します。端末内の旧記録とは別管理です。</p>
     </div>
-    <div class="panel"><div class="notice">この画面は記録・分析用です。開催データは非公式・参考情報です。リアルタイムの出走表、展示、オッズ、AI予想は未接続です。表示する金額は実際の投票履歴ではありません。</div></div>
+    <div class="panel"><div class="notice">この画面は記録・分析用です。開催データは非公式・参考情報です。レース詳細・展示は非公式の参考情報で、オッズ・AI予想は未接続です。表示する金額は実際の投票履歴ではありません。</div></div>
   </section>
   <section id="add" class="hidden"><div class="panel">
     <h2>予想を登録する</h2>
@@ -119,7 +139,7 @@
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v1.7<br>開催データは非公式API / 公式BOAT RACE・1MARKとは未連携 / 自動予想なし</div>
+  <div class="footer">個人用ダッシュボード v1.9<br>開催データは非公式API / 公式BOAT RACE・1MARKとは未連携 / 自動予想なし</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -446,6 +466,93 @@ async function loadSchedule(){
     renderVenues();
   }
 }
+
+// レース詳細表示（非公式データ・読み取りのみ）。
+const raceVenueSelect=$('raceDetailVenue');
+const raceNumberSelect=$('raceDetailNumber');
+VENUES.forEach((v,i)=>raceVenueSelect.add(new Option((i+1)+' '+v, String(i+1))));
+for(let n=1;n<=12;n++)raceNumberSelect.add(new Option(n+'R',String(n)));
+function syncDetailVenue(){
+  const index=VENUES.indexOf(selected);
+  raceVenueSelect.value=String(index+1);
+}
+syncDetailVenue();
+vg.addEventListener('click',event=>{
+  if(event.target.closest('button'))syncDetailVenue();
+});
+function detailValue(value, suffix=''){
+  if(value===null||value===undefined||value==='')return '—';
+  return String(value)+suffix;
+}
+function raceCell(value){return el('td',detailValue(value));}
+async function loadRaceDetail(){
+  const btn=$('loadRaceDetail');
+  const status=$('raceDetailStatus');
+  const content=$('raceDetailContent');
+  const date=scheduleDate.value;
+  const venue=Number(raceVenueSelect.value);
+  const race=Number(raceNumberSelect.value);
+  content.replaceChildren();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isInteger(venue)||!Number.isInteger(race)){
+    status.textContent='日付・競艇場・レースを確認してください。';return;
+  }
+  status.textContent='レース詳細を取得中…';
+  btn.disabled=true;
+  try{
+    const endpoint='https://boat-race-api.7phr5nzkbt.workers.dev/race?'+new URLSearchParams({date,venue:String(venue),race:String(race)});
+    const response=await fetch(endpoint,{cache:'no-store'});
+    if(!response.ok){
+      if(response.status===404)throw new Error('このレースのデータは見つかりません（中止とは限りません）');
+      throw new Error('HTTP '+response.status);
+    }
+    const payload=await response.json();
+    if(!Array.isArray(payload.racers))throw new Error('レースデータ形式が異なります');
+    status.textContent=detailValue(payload.venue_name)+' '+detailValue(payload.race)+'R ・ '+date+' の取得結果';
+    const title=el('h2',detailValue(payload.title));
+    title.style.marginTop='14px';
+    content.appendChild(title);
+    const meta=el('div',undefined,'race-meta');
+    const fields=[
+      ['締切予定',payload.closing_at],['距離',payload.distance==null?null:payload.distance+'m'],
+      ['風速',payload.preview?.wind_speed==null?null:payload.preview.wind_speed+'m/s'],
+      ['波高',payload.preview?.wave_height==null?null:payload.preview.wave_height+'cm'],
+      ['気温',payload.preview?.air_temperature==null?null:payload.preview.air_temperature+'℃'],
+      ['水温',payload.preview?.water_temperature==null?null:payload.preview.water_temperature+'℃']
+    ];
+    for(const [label,value] of fields)meta.append(el('span',label+'：'+detailValue(value)));
+    content.appendChild(meta);
+    const hint=el('p','表は横にスクロールできます。数値がない項目は「—」で表示します。','muted');
+    hint.style.fontSize='11px';
+    content.appendChild(hint);
+    const wrap=el('div',undefined,'race-table-wrap');
+    const table=el('table',undefined,'race-table');
+    const head=document.createElement('thead');
+    const hr=document.createElement('tr');
+    ['艇','選手名','級別コード','全国勝率','全国2連対率','平均ST','モーター','モーター2連対率','展示タイム','展示進入','展示ST'].forEach(k=>hr.append(el('th',k)));
+    head.append(hr);table.append(head);
+    const body=document.createElement('tbody');
+    for(const r of payload.racers){
+      const tr=document.createElement('tr');
+      const values=[
+        r.entry_number,r.name,r.rank_number,
+        r.national_win_rate,r.national_top_2_percent==null?null:r.national_top_2_percent+'%',
+        r.average_start_timing,r.motor_number,
+        r.motor_top_2_percent==null?null:r.motor_top_2_percent+'%',
+        r.exhibition_time,r.exhibition_course,r.exhibition_start_timing
+      ];
+      values.forEach(v=>tr.append(raceCell(v)));
+      body.append(tr);
+    }
+    table.append(body);wrap.append(table);content.append(wrap);
+    const note=el('p','取得元：Boatrace Open API（非公式）。選手名など一部の文字が文字化けする場合があります。公式の出走表・直前情報を最終確認してください。','muted');
+    note.style.fontSize='11px';note.style.marginTop='12px';
+    content.append(note);
+  }catch(error){
+    status.textContent='取得できませんでした：'+error.message;
+  }finally{btn.disabled=false;}
+}
+$('loadRaceDetail').addEventListener('click',loadRaceDetail);
+
 $('refreshSchedule').onclick=loadSchedule;
 scheduleDate.onchange=loadSchedule;
 loadSchedule();
