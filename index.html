@@ -84,7 +84,15 @@
       <button class="primary" type="button" id="loadRaceDetail">選手・展示データを表示</button>
       <p class="muted" style="font-size:12px" id="raceDetailStatus" aria-live="polite">競艇場とレース番号を選んで表示してください。</p>
       <div id="raceDetailContent"></div>
-      <p class="muted" style="font-size:11px">級別の数字は取得元のコードをそのまま表示します。非公式情報のため公式BOAT RACEで照合してください。買い目の自動生成はまだありません。</p>
+      <p class="muted" style="font-size:11px">級別の数字は取得元のコードをそのまま表示します。非公式情報のため公式BOAT RACEで照合してください。買い目の試作表示は下のパネルで確認できます。</p>
+    </div>
+    <div class="panel" id="predictionDemoPanel">
+      <h2>🧠 データ分析・買い目試作（v2.0）</h2>
+      <p class="muted" style="font-size:12px">上の取得日・競艇場・レース番号を共用します。全国勝率40点、モーター2連対率25点、平均ST20点、展示タイム15点のルール型評価です。実績検証はまだありません。</p>
+      <button class="primary" type="button" id="loadPredictionDemo">評価順位と買い目2点を表示</button>
+      <p class="muted" id="predictionDemoStatus" style="font-size:12px;margin-top:12px" aria-live="polite">上のレースを選んで実行してください。</p>
+      <div id="predictionDemoContent"></div>
+      <p class="muted" style="font-size:11px;margin-top:12px">これは試作計算で、AI学習モデルではありません。過去レースは結果判明後の展示などが混ざる可能性があり、的中実績として扱えません。オッズ未考慮。自動購入・D1への自動保存はしません。</p>
     </div>
     <div class="panel">
       <div class="row"><h2>この端末の最近の予想</h2><span class="pill" id="count">0件</span></div>
@@ -96,7 +104,7 @@
       <div id="cloudPredictions"></div>
       <p class="muted" style="font-size:12px">この欄にはD1の保存結果を表示します。成績はD1の結果確定分を使用します。端末内の旧記録とは別管理です。</p>
     </div>
-    <div class="panel"><div class="notice">この画面は記録・分析用です。開催データは非公式・参考情報です。レース詳細・展示は非公式の参考情報で、オッズ・AI予想は未接続です。表示する金額は実際の投票履歴ではありません。</div></div>
+    <div class="panel"><div class="notice">この画面は記録・分析用です。開催データは非公式・参考情報です。レース詳細・展示は非公式の参考情報で、オッズ・学習済みAI予想は未接続です。表示する金額は実際の投票履歴ではありません。</div></div>
   </section>
   <section id="add" class="hidden"><div class="panel">
     <h2>予想を登録する</h2>
@@ -139,7 +147,7 @@
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v1.9<br>開催データは非公式API / 公式BOAT RACE・1MARKとは未連携 / 自動予想なし</div>
+  <div class="footer">個人用ダッシュボード v2.0<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -552,6 +560,81 @@ async function loadRaceDetail(){
   }finally{btn.disabled=false;}
 }
 $('loadRaceDetail').addEventListener('click',loadRaceDetail);
+
+// v2.0 ルール型予想の表示。読み取り専用・保存なし。
+async function loadPredictionDemo(){
+  const button=$('loadPredictionDemo');
+  const status=$('predictionDemoStatus');
+  const content=$('predictionDemoContent');
+  const date=scheduleDate.value;
+  const venue=Number(raceVenueSelect.value);
+  const race=Number(raceNumberSelect.value);
+  content.replaceChildren();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!(venue>=1&&venue<=24)||!(race>=1&&race<=12)){
+    status.textContent='日付・競艇場・レース番号を確認してください。';
+    return;
+  }
+  status.textContent='試作評価を取得中…';
+  button.disabled=true;
+  try{
+    const endpoint=API+'/predict?'+new URLSearchParams({date,venue:String(venue),race:String(race)});
+    const response=await fetch(endpoint,{cache:'no-store'});
+    if(!response.ok){
+      if(response.status===404)throw Error('このレースのデータが見つかりません（中止とは限りません）');
+      throw Error('HTTP '+response.status);
+    }
+    const payload=await response.json();
+    if(!Array.isArray(payload.ranking)||payload.ranking.length!==6||
+      !Array.isArray(payload.tickets)||payload.tickets.length!==2){
+      throw Error('予想APIのデータ形式が一致しません');
+    }
+    status.textContent=VENUES[venue-1]+' '+race+'R ・ '+date+' の試作評価';
+    if(payload.retrospective_risk||payload.is_result_available){
+      const warning=el('div','⚠️ このレースは結果判明後・事後データを含む可能性があります。事前予想の的中実績には含めないでください。','notice');
+      warning.style.marginTop='10px';
+      content.append(warning);
+    }else{
+      const warning=el('div','⚠️ データが締切前に揃っていた保証はありません。購入前に必ず公式情報で確認してください。','notice');
+      warning.style.marginTop='10px';
+      content.append(warning);
+    }
+    const heading=el('h2','評価順位（点数は相対的な目安）');
+    heading.style.marginTop='16px';
+    content.append(heading);
+    for(const [index,r] of payload.ranking.entries()){
+      const row=el('div',undefined,'row record');
+      const label=el('span',(index+1)+'位　'+r.boat+'号艇　'+(r.name||'選手名未取得'));
+      label.style.fontSize='13px';
+      const score=el('strong',Number.isFinite(Number(r.score))?Number(r.score).toFixed(1)+'点':'—');
+      row.append(label,score);
+      content.append(row);
+    }
+    const betTitle=el('h2','試作買い目（'+(payload.recommended_bet_type||'3連単')+'）');
+    betTitle.style.marginTop='17px';
+    content.append(betTitle);
+    const ticketWrap=el('div',undefined,'two');
+    for(const t of payload.tickets){
+      const item=el('div',undefined,'metric');
+      const combination=el('b',t.combination||'—');
+      const amount=el('span',yen(Number(t.stake_yen)||0));
+      item.append(combination,amount);
+      ticketWrap.append(item);
+    }
+    content.append(ticketWrap);
+    const sum=payload.tickets.reduce((total,t)=>total+(Number(t.stake_yen)||0),0);
+    const detail=el('p','試作の合計：'+yen(sum)+' ／ 1着候補：'+payload.ranking[0].boat+'号艇','muted');
+    detail.style.fontSize='12px';
+    content.append(detail);
+    const caveat=el('p','点数は的中確率を表していません。買い目は期待値やオッズを最適化していません。','muted');
+    caveat.style.fontSize='11px';
+    content.append(caveat);
+  }catch(error){
+    status.textContent='予想を取得できませんでした：'+error.message;
+  }finally{
+    button.disabled=false;
+  }
+}
+$('loadPredictionDemo').addEventListener('click',loadPredictionDemo);
 
 $('refreshSchedule').onclick=loadSchedule;
 scheduleDate.onchange=loadSchedule;
