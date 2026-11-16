@@ -87,12 +87,24 @@
       <p class="muted" style="font-size:11px">級別の数字は取得元のコードをそのまま表示します。非公式情報のため公式BOAT RACEで照合してください。買い目の試作表示は下のパネルで確認できます。</p>
     </div>
     <div class="panel" id="predictionDemoPanel">
-      <h2>🧠 データ分析・買い目試作（v2.0）</h2>
+      <h2>🧠 データ分析・買い目試作（v2.2）</h2>
       <p class="muted" style="font-size:12px">上の取得日・競艇場・レース番号を共用します。全国勝率40点、モーター2連対率25点、平均ST20点、展示タイム15点のルール型評価です。実績検証はまだありません。</p>
       <button class="primary" type="button" id="loadPredictionDemo">評価順位と買い目2点を表示</button>
       <p class="muted" id="predictionDemoStatus" style="font-size:12px;margin-top:12px" aria-live="polite">上のレースを選んで実行してください。</p>
       <div id="predictionDemoContent"></div>
       <p class="muted" style="font-size:11px;margin-top:12px">これは試作計算で、AI学習モデルではありません。過去レースは結果判明後の展示などが混ざる可能性があり、的中実績として扱えません。オッズ未考慮。自動購入・D1への自動保存はしません。</p>
+    </div>
+    <div class="panel" id="snapshotPanel">
+      <h2>🔒 締切前の予想をD1に確定保存（v2.2）</h2>
+      <div class="notice">上で選択した日付・競艇場・レースを使用します。サーバーが予想を再計算し、非公式データの締切2分前以降・結果があるレースは保存を拒否します。データ取得時刻の真正性までは保証されません。</div>
+      <label for="snapshotKey">D1登録用の認証キー（保存しません）</label>
+      <input type="password" id="snapshotKey" placeholder="API_WRITE_KEY の値" autocomplete="off" spellcheck="false">
+      <button class="primary" type="button" id="saveSnapshot">選択レースの事前予想を確定保存</button>
+      <p class="muted" id="snapshotSaveStatus" style="font-size:12px;margin-top:10px" aria-live="polite">締切前の対象レースだけ保存できます。表示中の試作買い目ではなく、保存時にサーバーが計算した内容が記録されます。</p>
+      <div class="row" style="margin-top:20px"><h2>☁️ 保存済み事前予想</h2><button type="button" class="secondary" id="refreshSnapshots">更新</button></div>
+      <p class="muted" id="snapshotListStatus" style="font-size:12px" aria-live="polite">履歴を読み込んでいます…</p>
+      <div id="snapshotList"></div>
+      <p class="muted" style="font-size:11px;margin-top:12px">保存された履歴は現在、API URLを知っている人も閲覧できます。機密情報は入力しないでください。保存は舟券の購入ではありません。買い目の的中・回収率への自動反映はまだありません。</p>
     </div>
     <div class="panel">
       <div class="row"><h2>この端末の最近の予想</h2><span class="pill" id="count">0件</span></div>
@@ -147,7 +159,7 @@
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v2.0<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v2.2<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -635,6 +647,103 @@ async function loadPredictionDemo(){
   }
 }
 $('loadPredictionDemo').addEventListener('click',loadPredictionDemo);
+
+// v2.2: Server-generated and time-gated snapshots. No key is stored locally.
+const snapshotKeyInput=$('snapshotKey');
+const snapshotSaveBtn=$('saveSnapshot');
+const snapshotSaveStatus=$('snapshotSaveStatus');
+const snapshotList=$('snapshotList');
+const snapshotListStatus=$('snapshotListStatus');
+const snapshotRefreshBtn=$('refreshSnapshots');
+function snapshotParams(){
+  return new URLSearchParams({
+    date:scheduleDate.value,
+    venue:String(Number(raceVenueSelect.value)),
+    race:String(Number(raceNumberSelect.value))
+  });
+}
+function snapshotSummaryError(status, obj){
+  const code=String(obj?.error||obj?.message||'');
+  if(status===401)return '認証キーが一致しません。値を確認してください。';
+  if(status===403)return '保存権限がありません。';
+  if(status===404)return '対象レースのデータが取得できません。未開催・中止とは限りません。';
+  if(status===409){
+    if(code.includes('already exists'))return '同じレース・モデルの予想はすでに保存されています。上書きはできません。';
+    if(code.includes('Result is already'))return '取得元に結果が存在するため保存できません。';
+    return '締切に近い・締切後、または重複しているため保存できません。';
+  }
+  if(status===422)return '取得元の締切日時を検証できないため保存を見送りました。';
+  if(status===503)return 'サーバー側の認証設定が未完了です。';
+  return '保存できませんでした（HTTP '+status+'）。'+(code?' '+code:'');
+}
+async function loadSnapshots(){
+  snapshotRefreshBtn.disabled=true;
+  snapshotListStatus.textContent='保存済み予想を取得中…';
+  snapshotList.replaceChildren();
+  try{
+    const response=await fetch(API+'/snapshots',{cache:'no-store'});
+    if(!response.ok)throw Error('HTTP '+response.status);
+    const payload=await response.json();
+    if(!Array.isArray(payload.snapshots))throw Error('履歴のデータ形式が不正です');
+    snapshotListStatus.textContent=payload.snapshots.length+'件取得（最新100件まで）';
+    if(payload.snapshots.length===0){
+      snapshotList.append(el('div','まだ確定保存した予想はありません','empty'));
+      return;
+    }
+    for(const snap of payload.snapshots){
+      const block=el('div',undefined,'record');
+      const venueNumber=Number(snap.venue_number);
+      const venueName=VENUES[venueNumber-1]||('場番号'+venueNumber);
+      block.append(el('strong',(snap.race_date||'日付不明')+' '+venueName+' '+snap.race_number+'R'));
+      block.append(el('div','モデル：'+(snap.model_version||'不明')+' / DB記録時刻（UTC）：'+(snap.recorded_at||'不明'),'muted'));
+      try{
+        const saved=JSON.parse(snap.prediction_json);
+        const t=Array.isArray(saved.tickets)?saved.tickets:[];
+        const line=t.map(x=>String(x.combination||'不明')+' '+yen(Number(x.stake_yen)||0)).join(' / ');
+        block.append(el('div','記録した買い目：'+(line||'未取得')));
+        const recorded= saved.snapshot_recorded_at_utc;
+        if(recorded)block.append(el('div','保存時刻（UTC）：'+recorded,'muted'));
+      }catch{
+        block.append(el('div','保存内容を解析できませんでした','muted'));
+      }
+      block.append(el('div','非公式情報による未検証の試作予想。的中実績ではありません。','muted'));
+      snapshotList.append(block);
+    }
+  }catch(error){snapshotListStatus.textContent='履歴を取得できませんでした：'+error.message;}
+  finally{snapshotRefreshBtn.disabled=false;}
+}
+snapshotSaveBtn.addEventListener('click',async()=>{
+  const date=scheduleDate.value;
+  const venue=Number(raceVenueSelect.value);
+  const race=Number(raceNumberSelect.value);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isInteger(venue)||venue<1||venue>24||!Number.isInteger(race)||race<1||race>12){
+    snapshotSaveStatus.textContent='日付・競艇場・レース番号を確認してください。';return;
+  }
+  const key=snapshotKeyInput.value.trim();
+  if(!key){snapshotSaveStatus.textContent='認証キーを入力してください。';return;}
+  // Remove the key from the input before network activity; never store it.
+  snapshotKeyInput.value='';
+  if(!confirm(date+' '+VENUES[venue-1]+' '+race+'R の予想を確定保存しますか？（保存後の上書き不可）'))return;
+  snapshotSaveBtn.disabled=true;
+  snapshotSaveStatus.textContent='締切・結果の有無をサーバーで確認し、予想を保存中…';
+  try{
+    const endpoint=API+'/snapshots?'+snapshotParams();
+    const response=await fetch(endpoint,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+key},
+      cache:'no-store'
+    });
+    let payload={};
+    try{payload=await response.json();}catch{}
+    if(!response.ok){snapshotSaveStatus.textContent=snapshotSummaryError(response.status,payload);return;}
+    if(payload.status!=='created'){snapshotSaveStatus.textContent='保存応答が想定と異なります。履歴を確認してください。';return;}
+    snapshotSaveStatus.textContent='D1に確定保存しました（ID: '+payload.id+'）。履歴を更新します。';
+    await loadSnapshots();
+  }catch(error){snapshotSaveStatus.textContent='通信に失敗しました：'+error.message;}
+  finally{snapshotSaveBtn.disabled=false;}
+});
+snapshotRefreshBtn.addEventListener('click',loadSnapshots);
+loadSnapshots();
 
 $('refreshSchedule').onclick=loadSchedule;
 scheduleDate.onchange=loadSchedule;
