@@ -530,7 +530,7 @@ button,select,input{touch-action:manipulation}button:focus-visible,select:focus-
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v4.3.1<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v4.3.4<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -2168,3 +2168,147 @@ loadSchedule();
 </script>
 </body>
 </html>
+
+<style>
+/* v4.3.4 mobile compact sizing: keep all original views functional */
+@media(max-width:650px){
+ body{font-size:13px!important}header{padding:12px 14px!important}header h1{font-size:25px!important}
+ .panel,.v430-panel,.v431-panel,.v39-management{padding:11px!important;margin:9px 0!important;border-radius:14px!important}
+ .panel h2,.v430-panel h2,.v431-panel h2{font-size:16px!important;margin:0 0 7px!important}
+ .tabs{gap:3px!important;padding:5px!important;overflow-x:auto!important;scrollbar-width:none;position:sticky;top:0;z-index:25}
+ .tabs button{padding:9px 10px!important;min-height:36px!important;font-size:12px!important;white-space:nowrap!important;flex:0 0 auto!important}
+ input,select,button{font-size:13px}input,select{min-height:36px!important;padding:7px!important}
+ .v430-row{padding:7px 0!important}.v430-time{font-size:15px!important}.v430-place{font-size:13px!important}.v430-open{padding:8px!important;font-size:11px!important}
+ .v431-controls{gap:6px!important;margin:8px 0!important}.v431-summary{padding:8px!important;margin:8px 0!important}
+ .outcome-metrics>div{padding:9px!important}.outcome-toolbar{gap:5px!important}
+ .v433-matrix{grid-template-columns:minmax(34px,1.4fr) repeat(12,minmax(0,1fr))!important;gap:2px!important}
+}
+.v434-odds-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;width:100%;overflow:hidden}
+.v434-odds-col{min-width:0;display:grid;grid-template-rows:28px repeat(20,38px);gap:2px}
+.v434-odds-head{display:grid;place-items:center;border-radius:5px;font-weight:800;color:white;font-size:13px}
+.v434-odds-cell{min-width:0;border:0;border-radius:4px;background:#392d4d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1px;gap:1px}
+.v434-odds-cell:nth-child(even){background:#30253f}.v434-odds-cell.selected{outline:2px solid #eacb7e;outline-offset:-2px}
+.v434-pair{display:flex;gap:2px}.v434-pair i{font-style:normal;display:grid;place-items:center;width:15px;height:15px;border-radius:3px;font-size:10px;font-weight:800}
+.v434-price{font-size:clamp(8px,2.3vw,11px);color:#f0d18b;white-space:nowrap;letter-spacing:-.3px}
+.v434-purchase{background:#2a203e;border:1px solid #70588a;border-radius:13px;padding:12px;margin:10px 0}
+.v434-purchase h2{font-size:17px;color:#eacb7e;margin:0 0 8px}.v434-purchase label{font-size:12px;color:#d9cbe9}
+.v434-choices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:7px}
+.v434-choices .heading{font-size:11px;text-align:center;color:#e8cf9a;padding:5px 0}
+.v434-choices button{border:1px solid #64517d;background:#302642;border-radius:5px;min-height:34px;padding:3px;color:#eee}
+.v434-choices button.on{border:2px solid #eacb7e;background:#56416c;color:#ffe6a3;font-weight:800}
+.v434-choices .boat{display:grid;place-items:center;border-radius:5px;font-weight:800;min-height:34px}
+.v434-flex{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:10px}.v434-flex>*{min-width:0}
+.v434-purchase button.action{background:#eacc84;color:#251936;font-weight:800;border:0;border-radius:8px;padding:9px 12px}
+.v434-purchase .minor{background:#443254;color:white;border:1px solid #80649b;border-radius:8px;padding:8px}
+.v434-purchase .muted{font-size:11px;color:#c9b9db}.v434-purchase .error{color:#ffc1b6}
+.v434-purchase input[type=number]{width:100px}.v434-purchase input[type=password]{width:100%;max-width:260px}
+.v434-tickets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:8px}
+.v434-ticket{font-size:12px;border:1px solid #65527c;border-radius:6px;padding:6px 4px;display:flex;justify-content:space-between;gap:2px;align-items:center}
+.v434-ticket button{background:none;color:#f0c3c3;border:0;padding:2px}.v434-totals{font-weight:800;color:#efd18a;margin:9px 0}
+.v434-history{font-size:12px;margin:6px 0;padding:7px;background:#342747;border-radius:7px}
+</style>
+<script>
+// v4.3.4: six-column odds and real-purchase records. No imaginary odds.
+(()=>{
+'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const names=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
+const colors=['','#fff','#222','#df4b4b','#3079d6','#e6c44c','#319c6b'];
+const ink=n=>n===1||n===5?'#19151c':'#fff';
+const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const money=n=>Number(n).toLocaleString('ja-JP')+'円';
+const boat=(n)=>{const i=document.createElement('i');i.textContent=n;i.style.background=colors[n];i.style.color=ink(n);return i;};
+const $=id=>document.getElementById(id);
+// Override ONLY standalone odds table rendering using the same API response already fetched.
+const oddsRoot=$('v431Table');
+if(oddsRoot){
+ const observer=new MutationObserver(()=>{if(oddsRoot.dataset.v434Busy==='1')return;
+  const old=oddsRoot.querySelector('table.v431-odds-table');if(!old)return;
+  const first=Number($('v431First')?.value||1);
+  // Each original table has 20 rows for one first-place boat. Read the odds from it and
+  // re-request all 120 from the Worker to build six complete columns.
+  oddsRoot.dataset.v434Busy='1';oddsRoot.replaceChildren();
+  const note=document.createElement('p');note.className='v431-status';note.textContent='全6艇のオッズ表を読み込み中…';oddsRoot.append(note);
+  const qs=new URLSearchParams({date:$('v431Date').value,venue:$('v431Venue').value,race:$('v431Race').value});
+  const token=qs.toString();oddsRoot.dataset.v434Token=token;
+  fetch(API+'/odds?'+qs,{cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json();}).then(j=>{
+   if(oddsRoot.dataset.v434Token!==token)return;
+   const grid=document.createElement('div');grid.className='v434-odds-grid';
+   for(let h=1;h<=6;h++){
+    const col=document.createElement('div');col.className='v434-odds-col';
+    const head=document.createElement('div');head.className='v434-odds-head';head.textContent=h+'号艇';head.style.background=colors[h];head.style.color=ink(h);col.append(head);
+    for(let s=1;s<=6;s++)if(s!==h)for(let t=1;t<=6;t++)if(t!==h&&t!==s){
+      const key=h+'-'+s+'-'+t,v=Number(j.odds?.[key]);const cell=document.createElement('button');cell.type='button';cell.className='v434-odds-cell';
+      const pair=document.createElement('span');pair.className='v434-pair';pair.append(boat(s),boat(t));
+      const price=document.createElement('span');price.className='v434-price';price.textContent=Number.isFinite(v)&&v>0?String(Math.round(v*100).toLocaleString('ja-JP')):'--';
+      cell.title=key+'｜100円的中時 '+(Number.isFinite(v)&&v>0?money(Math.round(v*100)):'未取得');
+      cell.addEventListener('click',()=>{grid.querySelectorAll('.selected').forEach(x=>x.classList.remove('selected'));cell.classList.add('selected');note.textContent=cell.title;});
+      cell.append(pair,price);col.append(cell);
+    }grid.append(col);
+   }
+   oddsRoot.replaceChildren(note,grid);note.textContent='6艇×20通り。各金額は100円購入時の払戻見込み（非公式）。タップで拡大確認。';
+  }).catch(e=>{if(oddsRoot.dataset.v434Token!==token)return;note.textContent='オッズ取得不可：'+e.message+'。架空の数値は表示しません。';
+   const grid=document.createElement('div');grid.className='v434-odds-grid';for(let h=1;h<=6;h++){
+    const col=document.createElement('div');col.className='v434-odds-col';const head=document.createElement('div');head.className='v434-odds-head';head.textContent=h+'号艇';head.style.background=colors[h];head.style.color=ink(h);col.append(head);
+    for(let s=1;s<=6;s++)if(s!==h)for(let t=1;t<=6;t++)if(t!==h&&t!==s){const cell=document.createElement('div');cell.className='v434-odds-cell';const pair=document.createElement('span');pair.className='v434-pair';pair.append(boat(s),boat(t));const price=document.createElement('span');price.className='v434-price';price.textContent='--';cell.append(pair,price);col.append(cell);}grid.append(col);
+   }oddsRoot.append(grid);
+  }).finally(()=>{oddsRoot.dataset.v434Busy='0';});
+ });observer.observe(oddsRoot,{childList:true});
+}
+// Hide non-host venues in results matrix based on the SAME dated schedule API.
+const matrix=$('v433ResultMatrix');if(matrix){
+ let seq=0;
+ const obs=new MutationObserver(()=>{const board=matrix.querySelector('.v433-matrix');if(!board||board.dataset.v434==='1')return;
+  board.dataset.v434='1';const date=$('outcomeDate')?.value||today(),id=++seq;
+  fetch(API+'/schedule?date='+encodeURIComponent(date),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(Error('schedule'))).then(j=>{
+   if(id!==seq||!board.isConnected)return;
+   const active=new Set((j.venues||[]).filter(v=>(v.race_closing_times||[]).length>0).map(v=>Number(v.number)));
+   if(!active.size)return;const nodes=[...board.children];
+   for(let i=23;i>=0;i--)if(!active.has(i+1)){const offset=13+i*13;nodes.slice(offset,offset+13).forEach(n=>n.remove());}
+   const cap=matrix.querySelector('.v433-coverage');if(cap)cap.textContent+=' ／ 開催 '+active.size+'場のみ表示（非公式日程）';
+  }).catch(()=>{const cap=matrix.querySelector('.v433-coverage');if(cap)cap.textContent+=' ／ 開催場を判定できないため全場表示';});
+ });obs.observe(matrix,{childList:true,subtree:false});
+}
+// Purchase recording: local-first; optional authenticated D1 save. No credentials embedded.
+const nav=document.querySelector('.tabs');if(!nav)return;
+const section=document.createElement('section');section.id='v434Purchase';section.className='hidden';
+section.innerHTML=`<div class="v434-purchase"><h2>購入記録｜3連単</h2><p class="muted">実際に購入した舟券だけを記録。AIの仮想成績とは別管理。投票・決済機能はありません。</p>
+<div class="v431-controls"><label>日付<input id="v434Date" type="date"></label><label>競艇場<select id="v434Venue"></select></label><label>レース<select id="v434Race"></select></label><label>1点あたりの金額<input id="v434Amount" type="number" min="100" max="100000" step="100" value="100"></label></div>
+<div class="v434-choices" id="v434Choices"></div><div class="v434-flex"><button type="button" class="action" id="v434Add">選択した買い目を追加</button><button type="button" class="minor" id="v434Import">AI予想12点を取り込む</button><button type="button" class="minor" id="v434Clear">入力クリア</button></div>
+<p id="v434Msg" class="muted">各着順で複数艇を選べます（フォーメーション）。同じ艇が重なる組み合わせは除外します。</p><div class="v434-tickets" id="v434Tickets"></div><div class="v434-totals" id="v434Total">0点｜0円</div>
+<label>Cloudflare D1保存用のAPI_WRITE_KEY（この画面内だけで保持・保存しません）<input id="v434Key" type="password" autocomplete="off" placeholder="Cloudflareのシークレット値を入力"></label>
+<div class="v434-flex"><button type="button" class="action" id="v434Save">D1に購入記録を保存</button><button type="button" class="minor" id="v434Refresh">D1履歴を取得</button><button type="button" class="minor" id="v434Export">入力内容をJSON出力</button></div>
+<p class="muted">秘密鍵を端末に保存しない設計です。入力したキーは自分のWorkerへの認証にだけ使用します。公開・共有端末では入力しないでください。</p><h2>実購入履歴（D1）</h2><div id="v434History" class="muted">キー入力後に履歴を取得できます。</div></div>`;
+$('stats')?.before(section);
+const b=document.createElement('button');b.type='button';b.dataset.tab='v434Purchase';b.textContent='購入記録';nav.append(b);
+const originalTab=tab;tab=function(name){originalTab(name);section.classList.toggle('hidden',name!=='v434Purchase');};
+b.addEventListener('click',()=>tab('v434Purchase'));
+const venue=$('v434Venue'),race=$('v434Race'),date=$('v434Date'),amount=$('v434Amount'),msg=$('v434Msg');date.value=today();
+names.forEach((n,i)=>venue.add(new Option(String(i+1).padStart(2,'0')+' '+n,String(i+1))));for(let i=1;i<=12;i++)race.add(new Option(i+'R',String(i)));
+let selections=[[1],[4],[6]],tickets=[];
+function renderChoices(){const root=$('v434Choices');root.replaceChildren();['艇番','1着','2着','3着'].forEach(t=>{const x=document.createElement('div');x.className='heading';x.textContent=t;root.append(x);});
+ for(let n=1;n<=6;n++){
+  const label=document.createElement('div');label.className='boat';label.textContent=n;label.style.background=colors[n];label.style.color=ink(n);root.append(label);
+  for(let k=0;k<3;k++){const btn=document.createElement('button');btn.type='button';btn.className=selections[k].includes(n)?'on':'';btn.textContent=selections[k].includes(n)?'✓ '+n:n;
+   btn.onclick=()=>{selections[k]=selections[k].includes(n)?selections[k].filter(v=>v!==n):[...selections[k],n];renderChoices();};root.append(btn);}
+ }
+}
+function renderTickets(){const root=$('v434Tickets');root.replaceChildren();tickets.forEach((t,i)=>{const card=document.createElement('div');card.className='v434-ticket';const text=document.createElement('span');text.textContent=t.combination+' '+money(t.amount);const del=document.createElement('button');del.type='button';del.textContent='×';del.title='削除';del.onclick=()=>{tickets.splice(i,1);renderTickets();};card.append(text,del);root.append(card);});$('v434Total').textContent=tickets.length+'点｜'+money(tickets.reduce((n,t)=>n+t.amount,0));}
+$('v434Add').onclick=()=>{const a=Number(amount.value);if(!Number.isSafeInteger(a)||a<100||a>100000||a%100!==0){msg.textContent='金額は100円単位で入力してください。';return;}
+ let added=0;for(const x of selections[0])for(const y of selections[1])for(const z of selections[2]){if(new Set([x,y,z]).size!==3)continue;const combination=x+'-'+y+'-'+z;if(tickets.some(t=>t.combination===combination))continue;tickets.push({combination,amount:a});added++;}
+ if(tickets.length>120){tickets=tickets.slice(0,120);msg.textContent='120点を超えたため先頭120点に制限しました。';}else msg.textContent=added+'点追加しました。';renderTickets();};
+$('v434Clear').onclick=()=>{tickets=[];renderTickets();msg.textContent='入力内容をクリアしました。';};
+$('v434Import').onclick=async()=>{msg.textContent='AI予想を取得中…';try{const q=new URLSearchParams({date:date.value,venue:venue.value,race:race.value});const r=await fetch(API+'/predict?'+q,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();let n=0;
+ for(const t of j.tickets||[]){if(!/^([1-6]-){2}[1-6]$/.test(t.combination)||new Set(t.combination.split('-')).size!==3||tickets.some(x=>x.combination===t.combination))continue;tickets.push({combination:t.combination,amount:100});n++;}
+ renderTickets();msg.textContent=n+'点取り込みました。実際に購入した場合だけ保存してください。';}catch(e){msg.textContent='AI予想の取得失敗：'+e.message;}};
+const auth=()=>({'Authorization':'Bearer '+$('v434Key').value,'Content-Type':'application/json'});
+$('v434Save').onclick=async()=>{if(!tickets.length){msg.textContent='買い目を追加してください。';return;}if(!$('v434Key').value){msg.textContent='D1保存にはAPI_WRITE_KEYが必要です。';return;}
+ const btn=$('v434Save');btn.disabled=true;msg.textContent='D1に保存中…';try{const r=await fetch(API+'/purchases',{method:'POST',headers:auth(),body:JSON.stringify({date:date.value,venue:Number(venue.value),race:Number(race.value),tickets})});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);msg.textContent='D1保存完了 ID '+j.id+' ／ '+money(j.total_yen);tickets=[];renderTickets();$('v434Refresh').click();}catch(e){msg.textContent='保存失敗：'+e.message;}finally{btn.disabled=false;}};
+$('v434Refresh').onclick=async()=>{const target=$('v434History');if(!$('v434Key').value){target.textContent='キーを入力してください。';return;}target.textContent='読み込み中…';try{const r=await fetch(API+'/purchases?date='+encodeURIComponent(date.value),{headers:auth(),cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);target.replaceChildren();let spent=0;
+ for(const x of j.purchases||[]){spent+=Number(x.total_yen)||0;const card=document.createElement('div');card.className='v434-history';card.textContent=names[x.venue-1]+' '+x.race+'R｜'+(x.tickets?.length||0)+'点｜'+money(x.total_yen)+'｜'+x.created_at+' UTC';target.append(card);}
+ const summary=document.createElement('p');summary.textContent='実購入登録：'+(j.purchases?.length||0)+'件 ／ 購入合計 '+money(spent)+'（払戻・収支は結果未照合）';target.prepend(summary);
+ }catch(e){target.textContent='履歴取得失敗：'+e.message;}};
+$('v434Export').onclick=()=>{const data=JSON.stringify({date:date.value,venue:Number(venue.value),race:Number(race.value),tickets},null,2);const blob=new Blob([data],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='boat-purchase-'+date.value+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
+renderChoices();renderTickets();
+})();
+</script>
