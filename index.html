@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#09162a">
-  <title>BOAT RACE Dashboard v3.1</title>
+  <title>BOAT RACE Dashboard v3.3</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -83,10 +83,24 @@
     .score-extra{margin:8px 0}
     .score-extra>summary{cursor:pointer;color:#a4d8ff;font-size:12px;padding:8px 0}
     @media(max-width:370px){.score-compare{font-size:10px}.score-compare th{font-size:9px}}
+  <style>
+
+/* v3.3 MARK-inspired original mobile UI; no third-party branding/assets */
+:root{color-scheme:dark;--mint:#42e6c0;--deep:#061f2b;--panel:#153845;--line:#35616b;--soft:#a8c4cb;color:#f0fbfb;background:var(--deep)}
+body{background:radial-gradient(ellipse at 50% 0%,#145262 0%,#082c38 38%,#061f2b 75%);min-height:100vh}
+header{background:linear-gradient(140deg,#071b2a,#123e4c 70%,#0b2834);border-bottom:1px solid #285662;padding:27px 18px 22px;box-shadow:0 10px 35px #03141c60}
+header .eyebrow{color:#71cfc9;letter-spacing:3px}header h1{font-size:25px;letter-spacing:1.5px;margin:8px 0 3px}header small{color:#9fc5c9}
+main{max-width:760px;padding:13px 13px 90px}.panel,.metric{background:linear-gradient(140deg,#1a4350,#11323f);border:1px solid #38616c;border-radius:23px;box-shadow:0 9px 25px #04192433}.panel{padding:18px;margin-top:15px}.metric{padding:14px 6px}.metric b{color:#f6ffff}.metric span{color:#a6c6cc}
+.tabs{position:sticky;top:0;z-index:20;display:flex;gap:5px;overflow-x:auto;background:#0a2b37ed;backdrop-filter:blur(14px);border:1px solid #315d66;border-radius:99px;padding:6px;margin:14px 0 6px;scrollbar-width:none}.tabs button{flex:1;min-width:68px;border-radius:99px;background:transparent;border:0;color:#abc7ce;padding:12px 6px;white-space:nowrap}.tabs button.active{background:#286a6b;color:white;border:0;box-shadow:inset 0 0 0 1px #4dafa4}
+.primary{background:var(--mint);color:#07353a;border-radius:14px;font-weight:800;box-shadow:0 4px 15px #18b99b20}.secondary{background:#214b57;border:1px solid #47737d;border-radius:99px;color:#e9fafa}input,select,textarea{background:#092c39;border:1px solid #45717a;border-radius:12px;color:white}.pill{background:#1b6b66;color:#8dffe2;border:1px solid #438c80}.notice{background:#123c49;border-left-color:var(--mint)}.record{border-color:#38606a}.venue-grid button{background:#214450;border:1px solid #416975;color:#e1f6f7;border-radius:12px}.venue-grid button.has-data{background:#1a514d;border-color:#40a98f}.venue-grid button.selected{background:#2a8079;outline:2px solid var(--mint);color:white}.schedule-summary span{background:#1c4853;color:#d7f5f1}.race-meta span{border-color:#3a6970;color:#d3ecee}.race-table th,.race-table td,.score-compare th,.score-compare td{border-color:#3a5b65}.race-table td:first-child{color:#70eed0}.compact-reasons>summary,.score-extra>summary{color:#7ef4d4}.score-fill{background:linear-gradient(90deg,#2f9caa,#42e6c0)}.score-best{background:#1c5b58}.boat-score{background:#0f3441;border-color:#3c6871}.boat-score>summary:before{color:#62dfc8}.extra-functions>summary{background:#1a4650;border-color:#4a7880}.footer{color:#83acb3}
+.race-hero{background:linear-gradient(140deg,#1b4855,#113440);border:1px solid #4c7680;border-radius:25px;padding:18px;margin:16px 0;box-shadow:0 10px 25px #03151e55}.hero-overline{color:#a8c9cb;font-size:12px;letter-spacing:1px}.hero-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.hero-title{font-size:30px;font-weight:850;letter-spacing:1px;margin:6px 0}.hero-sub{color:#b4d0d2;font-size:12px}.hero-status{border:4px solid var(--mint);border-radius:100%;width:77px;height:77px;display:grid;place-items:center;text-align:center;color:#9cfce6;font-size:12px;line-height:1.35;flex-shrink:0}.race-dots{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px;margin:17px 0}.race-dots button{width:100%;aspect-ratio:1;border:1px solid #4b737d;border-radius:50%;background:#234752;color:#c0d7da;font-weight:700;font-size:12px}.race-dots button.active{background:var(--mint);border-color:var(--mint);color:#07343a}.hero-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.hero-actions button{margin:0;padding:12px 5px;font-size:12px}.hero-caption{font-size:11px;color:#9abdc3;margin-top:13px;line-height:1.6}.hero-reco{background:linear-gradient(130deg,#155b58,#123d48);border:2px solid #43e6c0;border-radius:18px;padding:15px;margin-top:13px}.hero-reco strong{display:block;color:#6cf8d4;font-size:17px;margin-bottom:7px}.hero-reco .tickets{font-weight:800;letter-spacing:.5px;line-height:1.6}.hero-reco .meta{font-size:11px;color:#b9d5d5;margin-top:7px}.hero-choose{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}.hero-choose label{margin:0 0 5px}.hero-choose select{font-size:14px;padding:10px}.race-quick{display:flex;gap:7px;overflow-x:auto;padding:3px 0 8px;scrollbar-width:none}.race-quick button{flex:0 0 auto;background:#214651;border:1px solid #4a7580;border-radius:99px;padding:9px 12px;color:#d8f2f1;font-size:12px}.race-quick button.active{background:#2e897c;color:#fff;border-color:var(--mint)}
+#autoPredictionPanel{margin-top:14px}#autoPredictionPanel h2{color:#86f7d7}#predictionDemoPanel h2{color:#c2fff0}#raceDetailPanel h2{color:#c2fff0}
+@media(max-width:480px){main{padding:10px 10px 70px}.panel{padding:14px}.race-hero{padding:15px}.hero-title{font-size:25px}.hero-status{width:65px;height:65px;font-size:11px}.race-dots{gap:5px}.race-dots button{font-size:11px}.tabs button{min-width:65px;font-size:12px}}
+
   </style>
 </head>
 <body>
-<header><div class="eyebrow">BOAT RACE / PERSONAL ANALYTICS</div><h1>🚤 BOAT RACE Dashboard</h1><small>予想・結果・回収率をひとつに</small></header>
+<header><div class="eyebrow">BOAT RACE / PERSONAL ANALYTICS</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
 <main>
   <div class="grid">
     <div class="metric"><span>的中率</span><b id="hit">--%</b><span id="hitSub">0 / 0 レース</span></div>
@@ -223,7 +237,7 @@
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v2.8<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v3.3<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -1058,6 +1072,58 @@ loadAutoPredictions();
   group.append(summary);
   panels[0].parentNode.insertBefore(group,panels[0]);
   panels.forEach(panel=>group.append(panel));
+})();
+
+
+// v3.3: visual race cockpit, using the existing Worker and D1 read-only APIs.
+(function setupRaceCockpit(){
+  const home=document.getElementById('home');if(!home)return;
+  const hero=document.createElement('div');hero.className='race-hero';hero.id='raceCockpit';
+  hero.innerHTML=`<div class="hero-overline">RACE SELECT / 24 VENUES</div>
+    <div class="hero-top"><div><div class="hero-title" id="heroRaceTitle">レース選択</div><div class="hero-sub" id="heroRaceSub">日付・会場・レースを選択</div></div><div class="hero-status" id="heroRaceStatus">非公式<br>参考</div></div>
+    <div class="hero-choose"><div><label for="heroVenue">競艇場</label><select id="heroVenue"></select></div><div><label for="heroRace">レース番号</label><select id="heroRace"></select></div></div>
+    <div class="race-dots" id="heroRaceDots"></div>
+    <div class="hero-actions"><button type="button" class="secondary" id="heroLoadDetail">出走表・直前情報</button><button type="button" class="primary" id="heroPredict">予想を表示</button></div>
+    <div class="hero-reco"><strong>✧ ルール型予想</strong><div class="tickets" id="heroTickets">「予想を表示」で買い目を取得</div><div class="meta" id="heroPredictionMeta">未取得の情報は推測で補いません</div></div>
+    <div class="hero-caption">Boatrace Open APIによる非公式参考情報。的中確率や期待値を保証しません。締切・開催・投票可否は公式情報で確認してください。</div>`;
+  home.insertBefore(hero,home.firstChild);
+  const hv=document.getElementById('heroVenue'),hr=document.getElementById('heroRace'),dots=document.getElementById('heroRaceDots');
+  VENUES.forEach((name,i)=>hv.add(new Option(String(i+1).padStart(2,'0')+' '+name,String(i+1))));
+  for(let i=1;i<=12;i++)hr.add(new Option(i+'R',String(i)));
+  function updateHero(){
+    const v=Number(hv.value),r=Number(hr.value);
+    document.getElementById('heroRaceTitle').textContent=(VENUES[v-1]||'競艇場')+' '+r+'R';
+    document.getElementById('heroRaceSub').textContent=(scheduleDate.value||'日付未指定')+' / 非公式レースデータ';
+    [...dots.children].forEach((b,i)=>b.classList.toggle('active',i+1===r));
+  }
+  for(let i=1;i<=12;i++){const b=document.createElement('button');b.type='button';b.textContent=i+'R';b.setAttribute('aria-label',i+'レースを選択');b.onclick=()=>{hr.value=String(i);syncToDetail();};dots.append(b);}
+  function syncToDetail(){raceVenueSelect.value=hv.value;raceNumberSelect.value=hr.value;selected=VENUES[Number(hv.value)-1];renderVenues();updateHero();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';document.getElementById('heroPredictionMeta').textContent='未取得の情報は推測で補いません';}
+  function syncFromDetail(){hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();}
+  hv.onchange=syncToDetail;hr.onchange=syncToDetail;
+  raceVenueSelect.addEventListener('change',syncFromDetail);raceNumberSelect.addEventListener('change',syncFromDetail);
+  document.getElementById('heroLoadDetail').onclick=async()=>{syncToDetail();const group=document.querySelector('.extra-functions');if(group)group.open=true;await loadRaceDetail();document.getElementById('raceDetailPanel').scrollIntoView({behavior:'smooth',block:'start'});};
+  document.getElementById('heroPredict').onclick=async()=>{
+    syncToDetail();const btn=document.getElementById('heroPredict');btn.disabled=true;
+    document.getElementById('heroTickets').textContent='予想を取得中…';
+    try{
+      const params=new URLSearchParams({date:scheduleDate.value,venue:hv.value,race:hr.value});
+      const res=await fetch(API+'/predict?'+params,{cache:'no-store'});
+      if(!res.ok)throw Error('HTTP '+res.status);
+      const obj=await res.json();if(!Array.isArray(obj.tickets)||!obj.tickets.length)throw Error('買い目が取得できません');
+      document.getElementById('heroTickets').textContent=obj.tickets.map(t=>t.combination).join(' ・ ');
+      const total=obj.tickets.reduce((n,t)=>n+(Number(t.stake_yen)||0),0);
+      const missing=(obj.ranking||[]).filter(r=>r.exhibition_time==null).length;
+      document.getElementById('heroPredictionMeta').textContent='合計 '+yen(total)+' / 展示未取得 '+missing+'艇 / 点数は的中確率ではありません'+(obj.retrospective_risk||obj.is_result_available?' / 事後情報混入の可能性あり':'');
+      const group=document.querySelector('.extra-functions');if(group)group.open=true;
+      await loadPredictionDemo();
+    }catch(err){document.getElementById('heroTickets').textContent='取得できませんでした：'+err.message;document.getElementById('heroPredictionMeta').textContent='対象日・レースのデータを確認してください';}
+    finally{btn.disabled=false;}
+  };
+  const oldSync=syncDetailVenue;
+  // Existing venue buttons already update the detail selector; mirror that selection.
+  document.getElementById('venues').addEventListener('click',()=>{queueMicrotask(syncFromDetail)});
+  scheduleDate.addEventListener('change',updateHero);
+  hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();
 })();
 
 $('refreshSchedule').onclick=loadSchedule;
