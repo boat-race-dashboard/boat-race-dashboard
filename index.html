@@ -202,6 +202,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .linked-boat-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;font-weight:800;border:1px solid #ffffff33}
 .linked-boat-1{background:#fff;color:#172034}.linked-boat-2{background:#23272e;color:#fff}.linked-boat-3{background:#e84c50;color:#fff}.linked-boat-4{background:#397bde;color:#fff}.linked-boat-5{background:#f5d657;color:#241b15}.linked-boat-6{background:#3ca56d;color:#fff}
 #linkedEntryBody .race-table{min-width:1100px}#linkedEntryBody .race-table td{font-variant-numeric:tabular-nums}
+
+/* v3.8: single race cockpit with independent panes; retain original legacy panels for data compatibility */
+.cockpit-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:18px 0 8px;background:#1b1539;padding:5px;border-radius:16px;border:1px solid #7557a0}
+.cockpit-tabs button{padding:12px 3px;border:0;border-radius:11px;background:transparent;color:#d2c4eb;font-size:12px;font-weight:800;white-space:nowrap}
+.cockpit-tabs button.active{background:linear-gradient(120deg,#ffe69c,#e5b85d);color:#2a1744}
+.cockpit-pane[hidden]{display:none!important}.cockpit-pane .linked-entry{margin-top:0}
+.hero-race-label{align-self:center;font-size:12px;color:#d4c6eb;padding:10px}
+.hero-race-label select[hidden]{display:none!important}
+.cockpit-cards{display:grid;gap:10px;margin:12px 0}.cockpit-card{padding:13px;border:1px solid #6c538f;border-radius:17px;background:#251c47}
+.cockpit-card-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}.cockpit-name{display:flex;flex-direction:column;gap:3px}.cockpit-name strong{font-size:16px}.cockpit-name small{font-size:11px;color:#c8b9de}
+.cockpit-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.cockpit-metric{background:#352858;border-radius:11px;padding:9px 6px;min-width:0}.cockpit-metric small{display:block;font-size:10px;color:#c9b8df}.cockpit-metric strong{display:block;font-size:13px;margin-top:5px;overflow-wrap:anywhere}
+.cockpit-table-details{margin:12px 0}.cockpit-table-details summary{cursor:pointer;color:#f2d17f;font-size:12px;padding:10px}.cockpit-preview-rows{margin-top:15px}.cockpit-preview-row,.cockpit-rank-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #624c83;padding:10px 0;font-size:12px}.cockpit-preview-row>strong:nth-child(2){flex:1}.cockpit-rank-row span:nth-child(2){flex:1}.cockpit-rank-row strong{color:#ffe19b}
+#heroPredict{width:100%;margin-top:12px}.hero-reco{margin-top:0!important}
+@media(max-width:400px){.cockpit-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.cockpit-tabs button{font-size:11px}}
 </style>
 </head>
 <body>
@@ -1194,11 +1208,14 @@ loadAutoPredictions();
   const hero=document.createElement('div');hero.className='race-hero';hero.id='raceCockpit';
   hero.innerHTML=`<div class="hero-overline">RACE SELECT / 24 VENUES</div>
     <div class="hero-top"><div><div class="hero-title" id="heroRaceTitle">レース選択</div><div class="hero-sub" id="heroRaceSub">日付・会場・レースを選択</div></div><div class="hero-status" id="heroRaceStatus">非公式<br>参考</div></div>
-    <div class="hero-choose"><div><label for="heroVenue">競艇場</label><select id="heroVenue"></select></div><div><label for="heroRace">レース番号</label><select id="heroRace"></select></div></div>
+    <div class="hero-choose"><div><label for="heroVenue">競艇場</label><select id="heroVenue"></select></div><div class="hero-race-label">レースは下の1R〜12Rから選択<select id="heroRace" aria-label="選択中のレース" hidden></select></div></div>
     <div class="race-dots" id="heroRaceDots"></div>
-    <div class="hero-actions"><button type="button" class="secondary" id="heroLoadDetail">出走表・直前情報</button><button type="button" class="primary" id="heroPredict">予想を表示</button></div>
-    <div class="linked-entry"><h3 id="linkedEntryTitle">📋 出走表</h3><div class="linked-status" id="linkedEntryStatus" aria-live="polite">選択中のレースを取得しています…</div><div id="linkedEntryBody"></div><div class="linked-note">非公式APIの参考データです。展示・締切などは公式情報を確認してください。</div></div>
-    <div class="hero-reco"><strong>✧ ルール型予想</strong><div class="tickets" id="heroTickets">「予想を表示」で買い目を取得</div><div class="meta" id="heroPredictionMeta">未取得の情報は推測で補いません</div></div>
+    <div class="cockpit-tabs" role="tablist" aria-label="レース情報の切替"><button type="button" data-cockpit-tab="entries" class="active" aria-selected="true">出走表</button><button type="button" data-cockpit-tab="preview" aria-selected="false">直前情報</button><button type="button" data-cockpit-tab="prediction" aria-selected="false">AI予想</button><button type="button" data-cockpit-tab="result" aria-selected="false">結果</button></div>
+    <div class="cockpit-pane" id="cockpitEntries"><div class="linked-entry"><h3 id="linkedEntryTitle">📋 出走表</h3><div class="linked-status" id="linkedEntryStatus" aria-live="polite">選択中のレースを取得しています…</div><div id="linkedEntryBody"></div><div class="linked-note">非公式APIの参考データです。締切・展示などは公式情報を確認してください。</div></div></div>
+    <div class="cockpit-pane" id="cockpitPreview" hidden><div class="linked-entry"><h3>直前情報</h3><div id="cockpitPreviewBody" class="linked-status">データを取得中…</div></div></div>
+    <div class="cockpit-pane" id="cockpitPrediction" hidden><div class="hero-reco"><strong>✧ AI予想（試作ルール型）</strong><div class="tickets" id="heroTickets">選択すると予想を取得します</div><div class="meta" id="heroPredictionMeta">評価点は的中確率ではありません</div><div id="cockpitRanking"></div><button type="button" class="primary" id="heroPredict">予想を更新</button></div></div>
+    <div class="cockpit-pane" id="cockpitResult" hidden><div class="linked-entry"><h3>レース結果</h3><div id="cockpitResultBody" class="linked-status">結果を取得中…</div></div></div>
+    <button type="button" id="heroLoadDetail" hidden>旧詳細画面</button>
     <div class="hero-caption">Boatrace Open APIによる非公式参考情報。的中確率や期待値を保証しません。締切・開催・投票可否は公式情報で確認してください。</div>`;
   home.insertBefore(hero,home.firstChild);
   const hv=document.getElementById('heroVenue'),hr=document.getElementById('heroRace'),dots=document.getElementById('heroRaceDots');
@@ -1211,9 +1228,59 @@ loadAutoPredictions();
     [...dots.children].forEach((b,i)=>b.classList.toggle('active',i+1===r));
   }
   for(let i=1;i<=12;i++){const b=document.createElement('button');b.type='button';b.textContent=i+'R';b.setAttribute('aria-label',i+'レースを選択');b.onclick=()=>{hr.value=String(i);syncToDetail();};dots.append(b);}
-  function syncToDetail(){raceVenueSelect.value=hv.value;raceNumberSelect.value=hr.value;selected=VENUES[Number(hv.value)-1];renderVenues();updateHero();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';document.getElementById('heroPredictionMeta').textContent='未取得の情報は推測で補いません';loadLinkedEntry();}
+  function syncToDetail(){raceVenueSelect.value=hv.value;raceNumberSelect.value=hr.value;selected=VENUES[Number(hv.value)-1];renderVenues();updateHero();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';document.getElementById('heroPredictionMeta').textContent='評価点は的中確率ではありません';loadLinkedEntry();if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();}
   function syncFromDetail(){hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();loadLinkedEntry();}
-  let entryRequestId=0;
+  let entryRequestId=0, predictionRequestId=0;
+  const paneMap={entries:'cockpitEntries',preview:'cockpitPreview',prediction:'cockpitPrediction',result:'cockpitResult'};
+  function setCockpitTab(tab){
+    for(const [key,id] of Object.entries(paneMap))document.getElementById(id).hidden=key!==tab;
+    document.querySelectorAll('[data-cockpit-tab]').forEach(b=>{const active=b.dataset.cockpitTab===tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
+    if(tab==='prediction')loadCockpitPrediction();
+  }
+  document.querySelectorAll('[data-cockpit-tab]').forEach(b=>b.onclick=()=>setCockpitTab(b.dataset.cockpitTab));
+  const show=(v,s='')=>v==null||v===''?'—':String(v)+s;
+  function buildCards(racers){
+    const list=el('div',undefined,'cockpit-cards');
+    racers.forEach(r=>{
+      const card=el('article',undefined,'cockpit-card');
+      const top=el('div',undefined,'cockpit-card-top');
+      top.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number));
+      const name=el('div',undefined,'cockpit-name');name.append(el('strong',show(r.name)),el('small','登録 '+show(r.registration_number)+' ／ '+({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')));top.append(name);card.append(top);
+      const metrics=el('div',undefined,'cockpit-metrics');
+      [['全国勝率',r.national_win_rate],['全国2連対率',show(r.national_top_2_percent,'%')],['当地勝率',r.local_win_rate],['平均ST',r.average_start_timing],['モーター',show(r.motor_number)+' / '+show(r.motor_top_2_percent,'%')],['ボート',show(r.boat_number)+' / '+show(r.boat_top_2_percent,'%')]].forEach(([k,v])=>{const m=el('div',undefined,'cockpit-metric');m.append(el('small',k),el('strong',show(v)));metrics.append(m);});
+      card.append(metrics);list.append(card);
+    });return list;
+  }
+  function renderPreview(payload){
+    const box=document.getElementById('cockpitPreviewBody');box.replaceChildren();
+    const p=payload.preview||{};const weather=el('div',undefined,'cockpit-metrics');
+    [['風速',show(p.wind_speed,'m/s')],['波高',show(p.wave_height,'cm')],['気温',show(p.air_temperature,'℃')],['水温',show(p.water_temperature,'℃')]].forEach(([k,v])=>{const m=el('div',undefined,'cockpit-metric');m.append(el('small',k),el('strong',v));weather.append(m);});box.append(weather);
+    const rows=el('div',undefined,'cockpit-preview-rows');payload.racers.forEach(r=>{const row=el('div',undefined,'cockpit-preview-row');row.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number),el('strong',show(r.name)),el('span','展示 '+show(r.exhibition_time)),el('span','進入 '+show(r.exhibition_course)),el('span','展示ST '+show(r.exhibition_start_timing)));rows.append(row);});box.append(rows);
+    box.append(el('p','展示データの公表時刻は確認できません。取得した時点で結果が判明している場合、事前予想には使用しないでください。','muted'));
+  }
+  function renderResult(payload){
+    const box=document.getElementById('cockpitResultBody');box.replaceChildren();
+    if(!payload.result_available){box.textContent='結果待ち・または結果データ未取得';return;}
+    const finished=payload.racers.filter(r=>Number.isInteger(Number(r.finish_place))&&r.finish_place!=null).sort((a,b)=>Number(a.finish_place)-Number(b.finish_place));
+    finished.forEach(r=>{const row=el('div',undefined,'cockpit-preview-row');row.append(el('strong',show(r.finish_place)+'着'),el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number),el('span',show(r.name)));box.append(row);});
+    box.append(el('p','非公式の着順データです。払戻・的中照合は保存済み予想の「結果一覧」で確認してください。','muted'));
+  }
+  async function loadCockpitPrediction(){
+    const id=++predictionRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
+    const tickets=document.getElementById('heroTickets'),meta=document.getElementById('heroPredictionMeta'),ranking=document.getElementById('cockpitRanking');
+    tickets.textContent='予想を取得中…';ranking.replaceChildren();meta.textContent='評価点は的中確率ではありません';
+    try{
+      const response=await fetch(API+'/predict?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
+      if(!response.ok)throw Error('HTTP '+response.status);
+      const data=await response.json();if(id!==predictionRequestId)return;
+      if(!Array.isArray(data.tickets)||!Array.isArray(data.ranking))throw Error('予想データの形式が異なります');
+      tickets.textContent=data.tickets.map(t=>t.combination+'（'+yen(t.stake_yen)+'）').join(' ・ ');
+      meta.textContent='計 '+yen(data.total_stake_yen||data.tickets.reduce((a,t)=>a+(t.stake_yen||0),0))+' ／ '+data.model+' ／ 展示 '+(data.exhibition_times_received??0)+'/6艇'+(data.retrospective_risk||data.is_result_available?' ／ ⚠ 結果判明後の参考評価':'');
+      data.ranking.forEach((r,i)=>{const row=el('div',undefined,'cockpit-rank-row');row.append(el('span',String(r.boat),'linked-boat-chip linked-boat-'+r.boat),el('span',(i+1)+'位 '+show(r.name)),el('strong',show(r.score)+' / 100点'));ranking.append(row);});
+      ranking.append(el('p','全国勝率40・モーター25・平均ST20・展示15点。欠損項目は中立点を付与。順位は確率ではありません。','muted'));
+    }catch(e){if(id===predictionRequestId)tickets.textContent='予想を取得できません：'+e.message;}
+  }
+
   async function loadLinkedEntry(){
     const id=++entryRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
     const status=document.getElementById('linkedEntryStatus'),body=document.getElementById('linkedEntryBody');
@@ -1230,7 +1297,7 @@ loadAutoPredictions();
       const weather=el('div',undefined,'race-meta');
       const w=payload.preview||{};
       [['風速',w.wind_speed,'m/s'],['波高',w.wave_height,'cm'],['気温',w.air_temperature,'℃'],['水温',w.water_temperature,'℃']].forEach(([label,val,unit])=>weather.append(el('span',label+'：'+(val==null?'未取得':val+unit))));
-      body.append(weather);
+      renderPreview(payload);renderResult(payload);
       const hint=el('p','横スクロールで全項目を確認できます。展示タイムは短いほど速い参考値です。','muted');hint.style.fontSize='11px';body.append(hint);
       const wrap=el('div',undefined,'race-table-wrap'),table=el('table',undefined,'race-table');
       const thead=document.createElement('thead'),tr=document.createElement('tr');
@@ -1250,30 +1317,14 @@ loadAutoPredictions();
         cell(fmt(r.exhibition_time));cell(fmt(r.exhibition_course));cell(fmt(r.exhibition_start_timing));
         tbody.append(line);
       }
-      table.append(tbody);wrap.append(table);body.append(wrap);
+      table.append(tbody);wrap.append(table);body.append(buildCards(payload.racers));const details=el('details',undefined,'cockpit-table-details');details.append(el('summary','全項目の横スクロール表を開く'),wrap);body.append(details);
       const note=el('p',payload.result_available?'このレースは終了後の情報です。事前予想の検証には保存済みスナップショットを使ってください。':'取得元は非公式です。展示情報の公表時刻は検証できません。','muted');note.style.fontSize='11px';body.append(note);
     }catch(e){if(id===entryRequestId)status.textContent='取得できませんでした：'+e.message;}
   }
   hv.onchange=syncToDetail;hr.onchange=syncToDetail;
   raceVenueSelect.addEventListener('change',syncFromDetail);raceNumberSelect.addEventListener('change',syncFromDetail);
   document.getElementById('heroLoadDetail').onclick=async()=>{syncToDetail();const group=document.querySelector('.extra-functions');if(group)group.open=true;await loadRaceDetail();document.getElementById('raceDetailPanel').scrollIntoView({behavior:'smooth',block:'start'});};
-  document.getElementById('heroPredict').onclick=async()=>{
-    syncToDetail();const btn=document.getElementById('heroPredict');btn.disabled=true;
-    document.getElementById('heroTickets').textContent='予想を取得中…';
-    try{
-      const params=new URLSearchParams({date:scheduleDate.value,venue:hv.value,race:hr.value});
-      const res=await fetch(API+'/predict?'+params,{cache:'no-store'});
-      if(!res.ok)throw Error('HTTP '+res.status);
-      const obj=await res.json();if(!Array.isArray(obj.tickets)||!obj.tickets.length)throw Error('買い目が取得できません');
-      document.getElementById('heroTickets').textContent=obj.tickets.map(t=>t.combination).join(' ・ ');
-      const total=obj.tickets.reduce((n,t)=>n+(Number(t.stake_yen)||0),0);
-      const missing=(obj.ranking||[]).filter(r=>r.exhibition_time==null).length;
-      document.getElementById('heroPredictionMeta').textContent='合計 '+yen(total)+' / 展示未取得 '+missing+'艇 / 点数は的中確率ではありません'+(obj.retrospective_risk||obj.is_result_available?' / 事後情報混入の可能性あり':'');
-      const group=document.querySelector('.extra-functions');if(group)group.open=true;
-      await loadPredictionDemo();
-    }catch(err){document.getElementById('heroTickets').textContent='取得できませんでした：'+err.message;document.getElementById('heroPredictionMeta').textContent='対象日・レースのデータを確認してください';}
-    finally{btn.disabled=false;}
-  };
+  document.getElementById('heroPredict').onclick=loadCockpitPrediction;
   const oldSync=syncDetailVenue;
   // Existing venue buttons already update the detail selector; mirror that selection.
   document.getElementById('venues').addEventListener('click',()=>{queueMicrotask(syncFromDetail)});
