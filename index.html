@@ -251,6 +251,14 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #home #venueLabel{font-size:12px!important}
 @media(max-width:390px){#home .venue-grid button{font-size:15px!important;min-height:100px!important}#raceView .cockpit-tabs button{font-size:11px!important}}
 
+
+/* v4.0: compact mobile cockpit */
+.v40-view-switch{display:flex;gap:7px;margin:12px 0}.v40-view-switch button{flex:1;border:1px solid #8063a3;background:#2b204c;color:#eadbf8;border-radius:11px;padding:11px;font-weight:750}.v40-view-switch button.active{background:linear-gradient(120deg,#ffe69c,#e5b85d);color:#29183c;border-color:#e5b85d}
+.v40-compact-list{display:grid;gap:7px;margin-top:10px}.v40-compact-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;background:#30234f;border:1px solid #6b5388;border-radius:12px;padding:10px}.v40-compact-row .v40-name{font-weight:750;font-size:13px}.v40-compact-row small{display:block;font-size:10px;color:#cdbfe0;margin-top:3px}.v40-compact-row .v40-stats{text-align:right;font-size:11px;white-space:nowrap}.v40-compact-row .v40-stats b{display:block;color:#f4d17c;font-size:12px}
+.v40-ticket-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.v40-ticket{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#281d48;border:1px solid #7a609a;border-radius:12px;padding:12px 9px;font-variant-numeric:tabular-nums}.v40-ticket b{font-size:15px;white-space:nowrap}.v40-ticket span{font-size:11px;color:#e9d49b;white-space:nowrap}
+.v40-rank{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #665080}.v40-rank-name{font-size:12px;min-width:0}.v40-rank-name strong{display:block}.v40-rank-track{height:7px;background:#4a3865;border-radius:9px;overflow:hidden;margin-top:6px}.v40-rank-fill{height:100%;background:linear-gradient(90deg,#9b77d3,#f4d17c);border-radius:9px}.v40-rank-score{font-size:12px;font-weight:800;color:#f7d987;white-space:nowrap}
+#raceView .cockpit-tabs{position:sticky;top:0;z-index:25;box-shadow:0 6px 18px #110a26a8}#raceView .cockpit-pane{scroll-margin-top:82px}#raceView .race-dots{scroll-margin-top:78px}
+@media(max-width:380px){.v40-ticket{padding:10px 6px}.v40-ticket b{font-size:13px}.v40-compact-row .v40-stats{font-size:10px}}
 </style>
 </head>
 <body>
@@ -1248,7 +1256,7 @@ loadAutoPredictions();
     <div class="cockpit-tabs" role="tablist" aria-label="レース情報の切替"><button type="button" data-cockpit-tab="entries" class="active" aria-selected="true">出走表</button><button type="button" data-cockpit-tab="preview" aria-selected="false">直前情報</button><button type="button" data-cockpit-tab="prediction" aria-selected="false">AI予想</button><button type="button" data-cockpit-tab="result" aria-selected="false">結果</button></div>
     <div class="cockpit-pane" id="cockpitEntries"><div class="linked-entry"><h3 id="linkedEntryTitle">📋 出走表</h3><div class="linked-status" id="linkedEntryStatus" aria-live="polite">選択中のレースを取得しています…</div><div id="linkedEntryBody"></div><div class="linked-note">非公式APIの参考データです。締切・展示などは公式情報を確認してください。</div></div></div>
     <div class="cockpit-pane" id="cockpitPreview" hidden><div class="linked-entry"><h3>直前情報</h3><div id="cockpitPreviewBody" class="linked-status">データを取得中…</div></div></div>
-    <div class="cockpit-pane" id="cockpitPrediction" hidden><div class="hero-reco"><strong>✧ AI予想（試作ルール型）</strong><div class="tickets" id="heroTickets">選択すると予想を取得します</div><div class="meta" id="heroPredictionMeta">評価点は的中確率ではありません</div><div id="cockpitRanking"></div><button type="button" class="primary" id="heroPredict">予想を更新</button></div></div>
+    <div class="cockpit-pane" id="cockpitPrediction" hidden><div class="hero-reco"><strong>✧ AI予想（試作ルール型）</strong><div class="tickets v40-tickets" id="heroTickets">選択すると予想を取得します</div><div class="meta" id="heroPredictionMeta">評価点は的中確率ではありません</div><div id="cockpitRanking"></div><button type="button" class="primary" id="heroPredict">予想を更新</button></div></div>
     <div class="cockpit-pane" id="cockpitResult" hidden><div class="linked-entry"><h3>レース結果</h3><div id="cockpitResultBody" class="linked-status">結果を取得中…</div></div></div>
     <button type="button" id="heroLoadDetail" hidden>旧詳細画面</button>
     <div class="hero-caption">Boatrace Open APIによる非公式参考情報。的中確率や期待値を保証しません。締切・開催・投票可否は公式情報で確認してください。</div>`;
@@ -1262,7 +1270,7 @@ loadAutoPredictions();
     document.getElementById('heroRaceSub').textContent=(scheduleDate.value||'日付未指定')+' / 非公式レースデータ';
     [...dots.children].forEach((b,i)=>b.classList.toggle('active',i+1===r));
   }
-  for(let i=1;i<=12;i++){const b=document.createElement('button');b.type='button';b.textContent=i+'R';b.setAttribute('aria-label',i+'レースを選択');b.onclick=()=>{hr.value=String(i);syncToDetail();};dots.append(b);}
+  for(let i=1;i<=12;i++){const b=document.createElement('button');b.type='button';b.textContent=i+'R';b.setAttribute('aria-label',i+'レースを選択');b.onclick=()=>{hr.value=String(i);syncToDetail();requestAnimationFrame(()=>document.querySelector('.cockpit-tabs')?.scrollIntoView({behavior:'smooth',block:'start'}));};dots.append(b);}
   function syncToDetail(){raceVenueSelect.value=hv.value;raceNumberSelect.value=hr.value;selected=VENUES[Number(hv.value)-1];renderVenues();updateHero();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';document.getElementById('heroPredictionMeta').textContent='評価点は的中確率ではありません';loadLinkedEntry();if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();}
   function syncFromDetail(){hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();loadLinkedEntry();}
   let entryRequestId=0, predictionRequestId=0;
@@ -1271,9 +1279,33 @@ loadAutoPredictions();
     for(const [key,id] of Object.entries(paneMap))document.getElementById(id).hidden=key!==tab;
     document.querySelectorAll('[data-cockpit-tab]').forEach(b=>{const active=b.dataset.cockpitTab===tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
     if(tab==='prediction')loadCockpitPrediction();
+    requestAnimationFrame(()=>{const tabs=document.querySelector('.cockpit-tabs');if(tabs&&document.getElementById('raceView')&&!document.getElementById('raceView').classList.contains('hidden'))tabs.scrollIntoView({behavior:'smooth',block:'start'});});
   }
   document.querySelectorAll('[data-cockpit-tab]').forEach(b=>b.onclick=()=>setCockpitTab(b.dataset.cockpitTab));
   const show=(v,s='')=>v==null||v===''?'—':String(v)+s;
+  function buildCompactRows(racers){
+    const list=el('div',undefined,'v40-compact-list');
+    racers.forEach(r=>{
+      const row=el('div',undefined,'v40-compact-row');
+      row.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number));
+      const name=el('div',undefined,'v40-name');name.append(el('span',show(r.name)),el('small','登録 '+show(r.registration_number)+' ／ '+({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別不明')));
+      const stats=el('div',undefined,'v40-stats');stats.append(el('b','全国 '+show(r.national_win_rate)),el('span','M '+show(r.motor_top_2_percent,'%')+' ／ ST '+show(r.average_start_timing)));
+      row.append(name,stats);list.append(row);
+    });return list;
+  }
+  function renderEntryViews(body,racers,wrap){
+    const switcher=el('div',undefined,'v40-view-switch');
+    const compact=document.createElement('button'),cards=document.createElement('button');
+    compact.type=cards.type='button';compact.textContent='一覧表（コンパクト）';cards.textContent='選手ごと（詳細）';
+    switcher.append(compact,cards);
+    const compactList=buildCompactRows(racers),cardList=buildCards(racers);
+    let savedView='compact';try{savedView=localStorage.getItem('v40-entry-view')==='cards'?'cards':'compact';}catch{}
+    function choose(view){compact.classList.toggle('active',view==='compact');cards.classList.toggle('active',view==='cards');compactList.hidden=view!=='compact';cardList.hidden=view!=='cards';try{localStorage.setItem('v40-entry-view',view);}catch{}}
+    compact.onclick=()=>choose('compact');cards.onclick=()=>choose('cards');
+    body.append(switcher,compactList,cardList);
+    const details=el('details',undefined,'cockpit-table-details');details.append(el('summary','全12項目の横スクロール表を開く'),wrap);body.append(details);
+    choose(savedView);
+  }
   function buildCards(racers){
     const list=el('div',undefined,'cockpit-cards');
     racers.forEach(r=>{
@@ -1309,9 +1341,16 @@ loadAutoPredictions();
       if(!response.ok)throw Error('HTTP '+response.status);
       const data=await response.json();if(id!==predictionRequestId)return;
       if(!Array.isArray(data.tickets)||!Array.isArray(data.ranking))throw Error('予想データの形式が異なります');
-      tickets.textContent=data.tickets.map(t=>t.combination+'（'+yen(t.stake_yen)+'）').join(' ・ ');
+      tickets.replaceChildren();const ticketGrid=el('div',undefined,'v40-ticket-grid');
+      data.tickets.forEach(t=>{const card=el('div',undefined,'v40-ticket');card.append(el('b',t.combination),el('span',yen(t.stake_yen)));ticketGrid.append(card);});tickets.append(ticketGrid);
       meta.textContent='計 '+yen(data.total_stake_yen||data.tickets.reduce((a,t)=>a+(t.stake_yen||0),0))+' ／ '+data.model+' ／ 展示 '+(data.exhibition_times_received??0)+'/6艇'+(data.retrospective_risk||data.is_result_available?' ／ ⚠ 結果判明後の参考評価':'');
-      data.ranking.forEach((r,i)=>{const row=el('div',undefined,'cockpit-rank-row');row.append(el('span',String(r.boat),'linked-boat-chip linked-boat-'+r.boat),el('span',(i+1)+'位 '+show(r.name)),el('strong',show(r.score)+' / 100点'));ranking.append(row);});
+      data.ranking.forEach((r,i)=>{
+        const row=el('div',undefined,'v40-rank');row.append(el('span',String(r.boat),'linked-boat-chip linked-boat-'+r.boat));
+        const label=el('div',undefined,'v40-rank-name');label.append(el('strong',(i+1)+'位 '+show(r.name)));
+        const track=el('div',undefined,'v40-rank-track'),fill=el('div',undefined,'v40-rank-fill');
+        fill.style.width=Math.max(0,Math.min(100,Number(r.score)||0))+'%';track.append(fill);label.append(track);
+        row.append(label,el('span',Number.isFinite(Number(r.score))?Number(r.score).toFixed(1)+'点':'—','v40-rank-score'));ranking.append(row);
+      });
       ranking.append(el('p','全国勝率40・モーター25・平均ST20・展示15点。欠損項目は中立点を付与。順位は確率ではありません。','muted'));
     }catch(e){if(id===predictionRequestId)tickets.textContent='予想を取得できません：'+e.message;}
   }
@@ -1333,7 +1372,7 @@ loadAutoPredictions();
       const w=payload.preview||{};
       [['風速',w.wind_speed,'m/s'],['波高',w.wave_height,'cm'],['気温',w.air_temperature,'℃'],['水温',w.water_temperature,'℃']].forEach(([label,val,unit])=>weather.append(el('span',label+'：'+(val==null?'未取得':val+unit))));
       renderPreview(payload);renderResult(payload);
-      const hint=el('p','横スクロールで全項目を確認できます。展示タイムは短いほど速い参考値です。','muted');hint.style.fontSize='11px';body.append(hint);
+      const hint=el('p','一覧表と選手別カードを切り替えられます。詳細12項目は下の表から確認できます。','muted');hint.style.fontSize='11px';body.append(hint);
       const wrap=el('div',undefined,'race-table-wrap'),table=el('table',undefined,'race-table');
       const thead=document.createElement('thead'),tr=document.createElement('tr');
       ['艇','選手名 / 登録番号','級別','全国勝率','全国2連対率','当地勝率','平均ST','モーター / 2連対率','ボート / 2連対率','展示タイム','展示進入','展示ST'].forEach(x=>tr.append(el('th',x)));
@@ -1352,7 +1391,7 @@ loadAutoPredictions();
         cell(fmt(r.exhibition_time));cell(fmt(r.exhibition_course));cell(fmt(r.exhibition_start_timing));
         tbody.append(line);
       }
-      table.append(tbody);wrap.append(table);body.append(buildCards(payload.racers));const details=el('details',undefined,'cockpit-table-details');details.append(el('summary','全項目の横スクロール表を開く'),wrap);body.append(details);
+      table.append(tbody);wrap.append(table);renderEntryViews(body,payload.racers,wrap);
       const note=el('p',payload.result_available?'このレースは終了後の情報です。事前予想の検証には保存済みスナップショットを使ってください。':'取得元は非公式です。展示情報の公表時刻は検証できません。','muted');note.style.fontSize='11px';body.append(note);
     }catch(e){if(id===entryRequestId)status.textContent='取得できませんでした：'+e.message;}
   }
@@ -1421,7 +1460,7 @@ loadAutoPredictions();
       const bets=Array.isArray(r.tickets)?r.tickets.map(t=>t.combination).join(' ・ '):'不明';
       card.append(el('div','事前買い目 '+bets+' ／ '+(settled?'仮想収支 '+yen(Number(r.profit_yen)||0):'結果待ち'),'oc-sub'));
       card.onclick=()=>{
-        tab('home');document.getElementById('scheduleDate').value=date.value;
+        tab('raceView');document.getElementById('scheduleDate').value=date.value;
         document.getElementById('heroVenue').value=String(venue);
         document.getElementById('heroRace').value=String(race);
         document.getElementById('heroVenue').dispatchEvent(new Event('change'));
@@ -1517,6 +1556,7 @@ loadSchedule();
     }
     nav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
     render();
+    if(name==='raceView')window.scrollTo({top:0,behavior:'instant'});
     if(name==='outcomes'){
       const refresh=document.getElementById('outcomeRefresh');if(refresh)refresh.click();
     }
