@@ -197,6 +197,11 @@ label,.race-table th,.score-compare th{color:#d3c2eb!important}.notice{backgroun
 .oc-status{background:#584577!important;color:#f3e9ff!important}.oc-status.hit{background:#356c5b!important;color:#d5ffe7!important}.oc-status.miss{background:#6c3b5e!important;color:#ffe2e7!important}.oc-sub,.outcome-disclaimer{color:#c9b9df!important}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #ffdf8e!important;outline-offset:2px}
 @media(max-width:480px){header{padding:24px 17px 20px!important}.metric{min-height:106px}.metric span{font-size:10px!important}.tabs button{font-size:12px!important}}
+
+/* v3.7: expanded live-linked entry table */
+.linked-boat-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;font-weight:800;border:1px solid #ffffff33}
+.linked-boat-1{background:#fff;color:#172034}.linked-boat-2{background:#23272e;color:#fff}.linked-boat-3{background:#e84c50;color:#fff}.linked-boat-4{background:#397bde;color:#fff}.linked-boat-5{background:#f5d657;color:#241b15}.linked-boat-6{background:#3ca56d;color:#fff}
+#linkedEntryBody .race-table{min-width:1100px}#linkedEntryBody .race-table td{font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -1220,18 +1225,33 @@ loadAutoPredictions();
       if(!response.ok)throw Error(response.status===404?'レースデータがありません':'HTTP '+response.status);
       const payload=await response.json();if(!Array.isArray(payload.racers))throw Error('出走表の形式が異なります');
       if(id!==entryRequestId)return;
-      status.textContent='締切予定：'+(payload.closing_at||'未取得')+' ／ '+payload.racers.length+'艇 ／ '+date;
+      const updatedAt=new Date().toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'});
+      status.textContent='締切予定：'+(payload.closing_at||'未取得')+' ／ '+payload.racers.length+'艇 ／ 画面取得 '+updatedAt+'（元データの更新時刻ではありません）';
+      const weather=el('div',undefined,'race-meta');
+      const w=payload.preview||{};
+      [['風速',w.wind_speed,'m/s'],['波高',w.wave_height,'cm'],['気温',w.air_temperature,'℃'],['水温',w.water_temperature,'℃']].forEach(([label,val,unit])=>weather.append(el('span',label+'：'+(val==null?'未取得':val+unit))));
+      body.append(weather);
+      const hint=el('p','横スクロールで全項目を確認できます。展示タイムは短いほど速い参考値です。','muted');hint.style.fontSize='11px';body.append(hint);
       const wrap=el('div',undefined,'race-table-wrap'),table=el('table',undefined,'race-table');
       const thead=document.createElement('thead'),tr=document.createElement('tr');
-      ['艇','選手名','級別','全国勝率','モーター2連対率','平均ST','展示タイム'].forEach(x=>tr.append(el('th',x)));
+      ['艇','選手名 / 登録番号','級別','全国勝率','全国2連対率','当地勝率','平均ST','モーター / 2連対率','ボート / 2連対率','展示タイム','展示進入','展示ST'].forEach(x=>tr.append(el('th',x)));
       thead.append(tr);table.append(thead);
       const tbody=document.createElement('tbody');
+      const fmt=(v,suffix='')=>v==null||v===''?'—':String(v)+suffix;
       for(const r of payload.racers){
         const line=document.createElement('tr');
-        [r.entry_number,r.name,r.rank_number,r.national_win_rate,r.motor_top_2_percent==null?null:r.motor_top_2_percent+'%',r.average_start_timing,r.exhibition_time].forEach(x=>line.append(el('td',x==null||x===''?'—':String(x))));
+        const cell=(v)=>line.append(el('td',v));
+        const boat=document.createElement('td');const chip=el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number);boat.append(chip);line.append(boat);
+        cell(fmt(r.name)+' / '+fmt(r.registration_number));
+        cell(fmt(r.rank_number));cell(fmt(r.national_win_rate));cell(fmt(r.national_top_2_percent,'%'));
+        cell(fmt(r.local_win_rate));cell(fmt(r.average_start_timing));
+        cell(fmt(r.motor_number)+' / '+fmt(r.motor_top_2_percent,'%'));
+        cell(fmt(r.boat_number)+' / '+fmt(r.boat_top_2_percent,'%'));
+        cell(fmt(r.exhibition_time));cell(fmt(r.exhibition_course));cell(fmt(r.exhibition_start_timing));
         tbody.append(line);
       }
       table.append(tbody);wrap.append(table);body.append(wrap);
+      const note=el('p',payload.result_available?'このレースは終了後の情報です。事前予想の検証には保存済みスナップショットを使ってください。':'取得元は非公式です。展示情報の公表時刻は検証できません。','muted');note.style.fontSize='11px';body.append(note);
     }catch(e){if(id===entryRequestId)status.textContent='取得できませんでした：'+e.message;}
   }
   hv.onchange=syncToDetail;hr.onchange=syncToDetail;
