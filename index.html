@@ -281,6 +281,30 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
 /* v4.2.9 odds */
 .odds-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:14px 0;flex-wrap:wrap}.odds-head select,.odds-head button{border:1px solid #9677b5;border-radius:10px;background:#241a3f;color:#fff;padding:10px}.odds-head button{background:#e9c477;color:#291b40;font-weight:800}.odds-notice{font-size:12px;color:#dfcdee;line-height:1.6}.odds-grid{width:100%;border-collapse:collapse;font-size:13px}.odds-grid th{background:#36234e;color:#f5d88a;padding:10px 5px}.odds-grid td{border-bottom:1px solid #66517d;padding:10px 5px;text-align:center}.odds-grid td:last-child{text-align:right}.odds-gold{color:#f5d88a;font-weight:800}.odds-payout-panel{border:1px solid #a98a51;border-radius:12px;background:#281f42;margin:12px 0;padding:12px;font-size:13px}.odds-payout-panel>strong{color:#f5d88a}.odds-payout-row{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:6px;border-bottom:1px solid #55436d;padding:9px 0}.odds-payout-row strong{text-align:right;color:#f5d88a}.cockpit-tabs button{font-size:11px!important;padding:11px 1px!important}
+
+/* v4.3.3 compact two-head trifecta cards */
+.v432-group{border:1px solid #8c6a9f;border-radius:15px;padding:10px;margin:10px 0;background:#251b42}
+.v432-group-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px;color:#f5d783;font-size:14px}
+.v432-group-head span{font-size:11px;color:#d7c9e5;white-space:nowrap}
+.v432-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.v432-ticket{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#34274f;border:1px solid #725b8b;border-radius:9px;padding:9px 2px;min-width:0}
+.v432-ticket b{font-size:15px;letter-spacing:.3px;white-space:nowrap;color:#fff}
+.v432-ticket span{font-size:10px;color:#e9cf86}
+@media(max-width:350px){.v432-ticket b{font-size:13px}.v432-group-head{font-size:12px}}
+
+/* v4.3.3 compact colored formation + one-screen result matrix */
+.v433-bets{display:grid;gap:10px}.v433-bet-group{padding:8px 9px;border-radius:12px;background:#302342;border:1px solid #66507e}
+.v433-bet-heading,.v433-bet-left{display:flex;align-items:center;gap:7px}.v433-bet-heading{justify-content:space-between;margin-bottom:7px;font-size:12px}.v433-bet-heading>span{color:#f0d187;font-size:11px;white-space:nowrap}
+.v433-bet-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.v433-bet-cell{min-width:0;background:#211832;border-radius:8px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.v433-bet-chips{display:flex;justify-content:center;gap:3px}.v433-boat{width:23px;height:23px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:800;font-size:12px;flex:none;border:1px solid #ffffff30}
+.v433-bet-payout{font-size:11px;font-weight:800;color:#f1d27e;white-space:nowrap;font-variant-numeric:tabular-nums}.v433-odds-note{font-size:10px;color:#cbb8dd;line-height:1.6;margin:7px 0}
+.v433-matrix{display:grid;grid-template-columns:minmax(37px,1.4fr) repeat(12,minmax(0,1fr));gap:2px;align-items:center;width:100%;margin-top:9px}
+.v433-matrix-label{font-size:clamp(8px,2.3vw,11px);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:clip;color:#f6efff}
+.v433-matrix-col{font-size:9px;text-align:center;color:#d6c4e7}
+.v433-matrix-cell{min-width:0;aspect-ratio:1;border:0;border-radius:4px;padding:0;font-size:clamp(8px,2.2vw,11px);font-weight:750;color:#eee8f5;background:#463c59;display:grid;place-items:center}
+.v433-matrix-cell.hit{background:#e8c56f;color:#251b31}.v433-matrix-cell.miss{background:#60445b;color:#eee1ed}.v433-matrix-cell.pending{background:#6445a3;color:#fff}.v433-matrix-cell.none{background:#30273e;color:#80758d}.v433-matrix-cell:disabled{opacity:1}
+.v433-matrix-legend,.v433-coverage{font-size:10px;color:#d2c0e4;line-height:1.6}.v433-result-details{margin-top:15px}.v433-result-details summary{padding:12px;border:1px solid #685385;border-radius:10px;color:#f0d187;cursor:pointer}
+@media(min-width:600px){.v433-matrix{gap:5px}.v433-matrix-cell{border-radius:6px;font-size:12px}.v433-matrix-label{font-size:12px}}
 </style>
 <style>
 .v425-controls{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
@@ -434,8 +458,8 @@ button,select,input{touch-action:manipulation}button:focus-visible,select:focus-
     <div class="outcome-toolbar"><label for="outcomeDate">日付</label><input type="date" id="outcomeDate"><button type="button" id="outcomeRefresh" class="secondary">更新</button></div>
     <div class="outcome-filters" id="outcomeFilters"><button data-filter="all" class="active">すべて</button><button data-filter="hit">的中</button><button data-filter="miss">ハズレ</button><button data-filter="pending">結果待ち</button></div>
     <div class="outcome-metrics"><div><span>照合済み</span><strong id="outcomeSettled">—</strong></div><div><span>的中</span><strong id="outcomeHits">—</strong></div><div><span>回収率</span><strong id="outcomeRoi">—</strong></div></div>
-    <p id="outcomeStatus" class="muted" aria-live="polite">結果を読み込み中…</p><div id="outcomeList"></div>
-    <p class="outcome-disclaimer">非公式データで照合した直近最大100件の事前予想のみ。全国の全レース結果ではありません。実購入履歴ではありません。</p>
+    <p id="outcomeStatus" class="muted" aria-live="polite">結果を読み込み中…</p><div id="v433ResultMatrix"></div><details class="v433-result-details"><summary>記録の詳細を表示</summary><div id="outcomeList"></div></details>
+    <p class="outcome-disclaimer">マスは事前に保存された予想だけを判定します。記録なしは未検証（不的中ではありません）。非公式データ・直近最大100件の範囲のみ。実購入履歴ではありません。</p>
   </section>
   <section id="add" class="hidden"><div class="panel">
     <h2>予想を登録する</h2>
@@ -506,7 +530,7 @@ button,select,input{touch-action:manipulation}button:focus-visible,select:focus-
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v3.4<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v4.3.1<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -966,7 +990,7 @@ async function loadPredictionDemo(){
     }
     const payload=await response.json();
     if(!Array.isArray(payload.ranking)||payload.ranking.length!==6||
-      !Array.isArray(payload.tickets)||![2,6].includes(payload.tickets.length)){
+      !Array.isArray(payload.tickets)||![2,6,12].includes(payload.tickets.length)){
       throw Error('予想APIのデータ形式が一致しません');
     }
     status.textContent=VENUES[venue-1]+' '+race+'R ・ '+date+' の試作評価';
@@ -994,9 +1018,9 @@ async function loadPredictionDemo(){
     const betTitle=el('h2','試作買い目（'+(payload.recommended_bet_type||'3連単')+'）');
     betTitle.style.marginTop='17px';
     content.append(betTitle);
-    const ticketWrap=el('div',undefined,'two');
+    const ticketWrap=el('div',undefined,'v432-grid');
     for(const t of payload.tickets){
-      const item=el('div',undefined,'metric');
+      const item=el('div',undefined,'v432-ticket');
       const combination=el('b',t.combination||'—');
       const amount=el('span',yen(Number(t.stake_yen)||0));
       item.append(combination,amount);
@@ -1004,7 +1028,7 @@ async function loadPredictionDemo(){
     }
     content.append(ticketWrap);
     const sum=payload.tickets.reduce((total,t)=>total+(Number(t.stake_yen)||0),0);
-    const detail=el('p','試作の合計：'+yen(sum)+' ／ 1着候補：'+payload.ranking[0].boat+'号艇','muted');
+    const detail=el('p','試作の合計：'+yen(sum)+' ／ 1着候補：'+payload.ranking.slice(0,2).map(r=>r.boat+'号艇').join('・'),'muted');
     detail.style.fontSize='12px';
     content.append(detail);
     const caveat=el('p','点数は的中確率を表していません。買い目は期待値やオッズを最適化していません。','muted');
@@ -1460,19 +1484,41 @@ loadAutoPredictions();
   }
   oddsFirst.addEventListener('change',renderOdds);
   document.getElementById('oddsRefresh').addEventListener('click',loadOdds);
+  const v433BoatColors=['','#f5f5f5','#22242b','#e3484f','#357cdd','#efd064','#259d69'];
+  function v433BoatChip(n){const chip=el('span',String(n),'v433-boat');chip.style.background=v433BoatColors[Number(n)]||'#5d4c78';chip.style.color=Number(n)===1||Number(n)===5?'#1b1725':'#fff';return chip;}
+  function v433RenderBets(groups,container){
+    container.replaceChildren();container.classList.add('v433-bets');
+    for(const [index,group] of groups.entries()){
+      const section=el('div',undefined,'v433-bet-group');
+      const header=el('div',undefined,'v433-bet-heading');
+      const left=el('div',undefined,'v433-bet-left');left.append(v433BoatChip(group.head),el('strong','第'+(index+1)+'候補・1着固定'));
+      const total=(group.tickets||[]).reduce((a,t)=>a+(Number(t.stake_yen)||0),0);
+      header.append(left,el('span',(group.tickets||[]).length+'点 / '+yen(total)));section.append(header);
+      const grid=el('div',undefined,'v433-bet-grid');
+      for(const t of group.tickets||[]){
+        const cell=el('div',undefined,'v433-bet-cell');const chips=el('div',undefined,'v433-bet-chips');
+        String(t.combination).split('-').forEach(n=>chips.append(v433BoatChip(n)));
+        const payout=el('span','--円','v433-bet-payout');payout.dataset.combination=t.combination;payout.dataset.stake=String(t.stake_yen||100);
+        cell.append(chips,payout);grid.append(cell);
+      }
+      section.append(grid);container.append(section);
+    }
+  }
   async function renderTicketPayouts(tickets,date,venue,race,container){
-    const panel=el('div',undefined,'odds-payout-panel');panel.textContent='オッズと払戻見込みを照合中…';container.append(panel);
+    const note=el('p','オッズ確認中…（各買い目の100円単位の払戻見込み）','v433-odds-note');container.append(note);
     try{
       const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
-      if(!res.ok)throw Error('オッズ未取得');const data=await res.json();
-      if(scheduleDate.value!==date||hv.value!==venue||hr.value!==race)return;
-      panel.replaceChildren();panel.append(el('strong','6点の的中時払戻見込み（非公式・暫定）'));
-      for(const t of tickets){const v=data.odds?.[t.combination],line=el('div',undefined,'odds-payout-row');
-        line.append(el('span',t.combination),el('span',v==null?'オッズ未取得':Number(v).toFixed(1)+'倍'),el('strong',v==null?'--':money(Math.floor(Number(v)*Number(t.stake_yen)))));
-        panel.append(line);
+      if(!res.ok)throw Error('HTTP '+res.status);const data=await res.json();
+      if(scheduleDate.value!==date||hv.value!==venue||hr.value!==race||!container.isConnected)return;
+      let count=0;
+      for(const payout of container.querySelectorAll('.v433-bet-payout')){
+        const v=Number(data.odds?.[payout.dataset.combination]);
+        if(Number.isFinite(v)&&v>0){payout.textContent=yen(Math.floor(v*Number(payout.dataset.stake)));payout.title=v.toFixed(1)+'倍（非公式・変動あり）';count++;}
+        else payout.textContent='--円';
       }
-      panel.append(el('p','6点合計600円の場合、差引収支＝的中時払戻－600円。未確定オッズであり購入額の保証ではありません。','muted'));
-    }catch{panel.textContent='オッズ未取得：払戻見込みは表示できません。';}
+      const updated=data.source_updated_at||data.updated_at||'時刻不明';
+      note.textContent='払戻見込み '+count+'/'+tickets.length+'点 ／ オッズ更新 '+updated+' ／ 非公式・約30分更新。差引収支は払戻額から全点の購入額を引いて計算。';
+    }catch(e){note.textContent='オッズ未取得（'+e.message+'）。払戻金は表示できません。';}
   }
   async function loadCockpitPrediction(){
     const id=++predictionRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
@@ -1483,8 +1529,10 @@ loadAutoPredictions();
       if(!response.ok)throw Error('HTTP '+response.status);
       const data=await response.json();if(id!==predictionRequestId)return;
       if(!Array.isArray(data.tickets)||!Array.isArray(data.ranking))throw Error('予想データの形式が異なります');
-      tickets.replaceChildren();const ticketGrid=el('div',undefined,'v40-ticket-grid');
-      data.tickets.forEach(t=>{const card=el('div',undefined,'v40-ticket');card.append(el('b',t.combination),el('span',yen(t.stake_yen)));ticketGrid.append(card);});tickets.append(ticketGrid);
+      tickets.replaceChildren();
+      const groups=Array.isArray(data.ticket_groups)&&data.ticket_groups.length===2?data.ticket_groups:
+        [...new Set(data.tickets.map(t=>String(t.combination).split('-')[0]))].map((head,i)=>({head:Number(head),rank:i+1,tickets:data.tickets.filter(t=>String(t.combination).startsWith(head+'-'))}));
+      v433RenderBets(groups,tickets);
       meta.textContent='計 '+yen(data.total_stake_yen||data.tickets.reduce((a,t)=>a+(t.stake_yen||0),0))+' ／ '+data.model+' ／ 展示 '+(data.exhibition_times_received??0)+'/6艇'+(data.retrospective_risk||data.is_result_available?' ／ ⚠ 結果判明後の参考評価':'');
       const available=data.ranking.reduce((n,r)=>n+(Number(r.available_fields)||0),0);
       const gap=Number(data.ranking[0]?.score||0)-Number(data.ranking[1]?.score||0);
@@ -1629,6 +1677,28 @@ loadAutoPredictions();
     document.getElementById('outcomeHits').textContent=hits.length+'R';
     document.getElementById('outcomeRoi').textContent=spent?(100*returned/spent).toFixed(1)+'%':'—';
     const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)>0)||(filter==='miss'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)===0)||(filter==='pending'&&r.result_status!=='settled_unofficial'));
+    // v4.3.3: 24 venues x 12 races in one width-fitted matrix. Missing snapshots are NOT losses.
+    const matrix=document.getElementById('v433ResultMatrix');matrix.replaceChildren();
+    const legend=el('div',undefined,'v433-matrix-legend');legend.textContent='● 的中　● 不的中　● 結果待ち　· 記録なし';matrix.append(legend);
+    const board=el('div',undefined,'v433-matrix');
+    const corner=el('span','場','v433-matrix-label');board.append(corner);
+    for(let n=1;n<=12;n++)board.append(el('span',String(n),'v433-matrix-col'));
+    const byKey=new Map();
+    for(const r of dated){const v=Number(r.venue),n=Number(r.race);if(v>=1&&v<=24&&n>=1&&n<=12){const key=v+'-'+n;const prior=byKey.get(key);if(!prior||prior.result_status!=='settled_unofficial')byKey.set(key,r);}}
+    VENUES.forEach((name,i)=>{
+      board.append(el('span',name,'v433-matrix-label'));
+      for(let n=1;n<=12;n++){
+        const r=byKey.get((i+1)+'-'+n),settled=r?.result_status==='settled_unofficial',hit=settled&&Number(r.returned_yen)>0;
+        const state=!r?'none':settled?(hit?'hit':'miss'):'pending';
+        const b=el('button',String(n),'v433-matrix-cell '+state);b.type='button';
+        b.title=name+' '+n+'R：'+(!r?'事前予想の記録なし':settled?(hit?'的中':'不的中'):'結果待ち');
+        b.setAttribute('aria-label',b.title);b.disabled=!r;
+        if(r)b.onclick=()=>{tab('raceView');document.getElementById('scheduleDate').value=date.value;document.getElementById('heroVenue').value=String(i+1);document.getElementById('heroRace').value=String(n);document.getElementById('heroVenue').dispatchEvent(new Event('change'));document.getElementById('heroRace').dispatchEvent(new Event('change'));loadSchedule();document.getElementById('raceCockpit').scrollIntoView({behavior:'smooth',block:'start'});};
+        board.append(b);
+      }
+    });
+    matrix.append(board);
+    const coverage=el('p','記録あり '+byKey.size+'/288マス。記録なし・未開催・未取得は的中率の分母に含めません。','v433-coverage');matrix.append(coverage);
     const target=document.getElementById('outcomeList');target.replaceChildren();
     document.getElementById('outcomeStatus').textContent=selectedDate+'：'+shown.length+'件表示（取得した最新最大100件の範囲）';
     if(!shown.length){target.append(el('div','該当する事前予想・照合記録がありません','empty'));return;}
@@ -1853,7 +1923,7 @@ loadSchedule();
  const intro=panel.querySelector('p.muted');
  if(intro)intro.textContent='締切2分以上前・8時間以内の非公式データを表示。展示確認済みと展示待ちを分けて比較します。得点は1着確率ではありません。';
  const controls=document.createElement('div');controls.className='v425-controls';
- controls.innerHTML='<label>表示 <select id="v425Filter"><option value="all">すべての候補</option><option value="confirmed">展示確認済み</option><option value="waiting">展示待ち</option></select></label><label>並び順 <select id="v425Sort"><option value="time">締切時刻順</option><option value="gap">評価差が大きい順</option></select></label>';
+ controls.innerHTML='<label>表示 <select id="v425Filter"><option value="a">A：展示確認済み</option><option value="b" selected>B：展示待ち・有力</option><option value="s">S：高評価・展示確認済み</option><option value="c">C：参考候補</option><option value="all">すべての候補</option></select></label><label>並び順 <select id="v425Sort"><option value="time">締切時刻順</option><option value="gap">評価差が大きい順</option></select></label>';
  list.before(controls);
  const warning=document.createElement('p');warning.className='muted v425-warning';warning.textContent='1号艇以外の頭予想は、艇の総合評価点による暫定順位です。コース別の1着率を学習した確率モデルではありません。';list.after(warning);
  let busy=false,latest=null;
@@ -1862,15 +1932,18 @@ loadSchedule();
  function draw(){
   if(!latest)return;
   list.replaceChildren();
-  let items=(latest.items||[]).filter(x=>Number(x.coverage_percent)>=75&&Number(x.score_gap)>=8);
+  let items=[...(latest.items||[])];
   const filter=el('v425Filter').value;
-  if(filter==='confirmed')items=items.filter(x=>x.passes_criteria);
-  if(filter==='waiting')items=items.filter(x=>!x.passes_criteria);
+  const qualifies=x=>Number(x.coverage_percent)>=75&&Number(x.score_gap)>=8;
+  if(filter==='s')items=items.filter(x=>x.passes_criteria&&Number(x.score_gap)>=12&&Number(x.coverage_percent)>=80);
+  if(filter==='a')items=items.filter(x=>x.passes_criteria);
+  if(filter==='b')items=items.filter(x=>qualifies(x)&&!x.passes_criteria);
+  if(filter==='c')items=items.filter(x=>!qualifies(x));
   if(el('v425Sort').value==='gap')items.sort((a,b)=>b.score_gap-a.score_gap);
   else items.sort((a,b)=>String(a.closing_at).localeCompare(String(b.closing_at)));
   const all=(latest.items||[]).filter(x=>x.coverage_percent>=75&&x.score_gap>=8);
-  el('v424RecommendStatus').textContent='締切前 '+latest.upcoming_races+'R ／ 展示確認済み '+all.filter(x=>x.passes_criteria).length+'R ／ 展示待ち '+all.filter(x=>!x.passes_criteria).length+'R ／ 表示 '+items.length+'R（API最大30件）';
-  if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent=filter==='confirmed'?'展示確認済みの候補はまだありません。展示待ちに切り替えて確認できます。':filter==='waiting'?'展示待ち候補はありません。':'現在、充足率75%以上かつ評価差8点以上の候補はありません。';p.classList.add('v428-empty');list.append(p);return;}
+  el('v424RecommendStatus').textContent='締切前 '+latest.upcoming_races+'R ／ 展示確認済み '+all.filter(x=>x.passes_criteria).length+'R ／ 展示待ち '+all.filter(x=>!x.passes_criteria).length+'R ／ 表示 '+items.length+'R（APIから返った最大30件の範囲。全国全レースのランク付けではありません）';
+  if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent=filter==='s'?'S条件を満たす候補はありません。':filter==='a'?'展示確認済みの候補はありません。':filter==='b'?'展示待ちの有力候補はありません。':filter==='c'?'参考候補はありません。':'現在、表示できる候補はありません。';p.classList.add('v428-empty');list.append(p);return;}
   const wrap=document.createElement('div');wrap.className='v425-table-scroll';
   const table=document.createElement('table');table.className='v425-table';
   const thead=document.createElement('thead'),head=document.createElement('tr');
@@ -2008,6 +2081,89 @@ loadSchedule();
  }
  filter.addEventListener('change',()=>{if(loadedDate)render();});date.addEventListener('change',load);panel.querySelector('#v430Refresh').addEventListener('click',load);
  document.querySelector('[data-tab="watchlistView"]')?.addEventListener('click',()=>{if(!loadedDate||loadedDate!==date.value)load();});
+})();
+</script>
+
+<style>
+.v431-panel{margin:16px 0;padding:15px;background:linear-gradient(140deg,#33234c,#211934);border:1px solid #8d70aa;border-radius:20px;color:#f9f1ff}
+.v431-panel h2{color:#f3d28a;font-size:20px;margin:0 0 7px}.v431-help{font-size:12px;color:#d1c2df;line-height:1.65}
+.v431-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}.v431-controls label{font-size:12px;color:#dfd1eb}
+.v431-controls select,.v431-controls input{display:block;width:100%;margin-top:5px;background:#211733;border:1px solid #8b6ca7;color:#fff;border-radius:10px;padding:11px;min-width:0}
+.v431-toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:10px 0}.v431-toolbar button{background:#ebcb7f;border:0;border-radius:10px;padding:11px 14px;color:#271a34;font-weight:800}
+.v431-summary{background:#251c3c;border:1px solid #6b5586;border-radius:12px;padding:12px;margin:12px 0}
+.v431-summary strong{color:#f4d184}.v431-odds-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.v431-odds-table th{background:#392850;color:#f0d08a;padding:10px 3px}.v431-odds-table td{border-bottom:1px solid #5e4b78;padding:10px 3px;text-align:center}
+.v431-odds-table .v431-highlight{background:#4b3b58}.v431-odds-table .v431-amount{color:#f3d184;font-weight:800}
+.v431-tag{font-size:11px;color:#e3d2ee}.v431-boat{display:inline-flex;min-width:23px;justify-content:center;border-radius:5px;padding:2px 4px;font-weight:900}
+.v431-b1{background:#fff;color:#181818}.v431-b2{background:#222;color:white;border:1px solid #777}.v431-b3{background:#df4b4b;color:white}.v431-b4{background:#3079d6;color:white}.v431-b5{background:#e6c44c;color:#171717}.v431-b6{background:#319c6b;color:white}
+.v431-note{font-size:12px;color:#d6c9e5;line-height:1.6}.v431-status{font-size:12px;line-height:1.6;color:#d5c5e6;overflow-wrap:anywhere}
+</style>
+<script>
+// v4.3.1: Standalone odds tab. Reuses the SAME /odds endpoint as the race view; no fabricated odds.
+(()=>{
+ const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+ const nav=document.querySelector('.tabs');if(!nav)return;
+ const section=document.createElement('section');section.id='v431OddsMain';section.className='hidden';
+ section.innerHTML=`<div class="v431-panel"><h2>◆ 3連単オッズ・払戻見込み</h2><p class="v431-help">全国24場から選択。非公式データは約30分更新で、最新の確定オッズではありません。AI買い目は同じレースの予想APIを参照します。</p>
+ <div class="v431-controls"><label>対象日<input type="date" id="v431Date"></label><label>競艇場<select id="v431Venue"></select></label><label>レース<select id="v431Race"></select></label><label>1着固定<select id="v431First"></select></label></div>
+ <div class="v431-toolbar"><span id="v431Stamp" class="v431-status">未取得</span><button type="button" id="v431Refresh">更新</button></div>
+ <p class="v431-status" id="v431Status">レースを選んで更新してください。</p><div id="v431AIPayout" class="v431-summary">AI予想12点の払戻見込みはオッズ取得後に表示します。</div>
+ <div id="v431Table"></div><p class="v431-note">金額は各100円購入時の概算払戻。6点各100円購入なら、的中した組み合わせの払戻額から600円を引いた値が差引収支です。実際の払戻は確定オッズによります。</p></div>`;
+ document.querySelector('#stats')?.before(section);
+ const b=document.createElement('button');b.type='button';b.dataset.tab='v431OddsMain';b.textContent='オッズ';
+ nav.insertBefore(b,nav.querySelector('[data-tab="outcomes"]'));
+ const oldTab=tab;
+ tab=function(name){oldTab(name);section.classList.toggle('hidden',name!=='v431OddsMain');};
+ b.addEventListener('click',()=>{tab('v431OddsMain');if(!loaded)load();});
+ const $=id=>document.getElementById(id),date=$('v431Date'),venue=$('v431Venue'),race=$('v431Race'),first=$('v431First');
+ const names=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
+ for(let i=0;i<24;i++){const o=document.createElement('option');o.value=String(i+1);o.textContent=String(i+1).padStart(2,'0')+' '+names[i];venue.append(o);}
+ for(let i=1;i<=12;i++){const o=document.createElement('option');o.value=String(i);o.textContent=i+'R';race.append(o);}
+ for(let i=1;i<=6;i++){const o=document.createElement('option');o.value=String(i);o.textContent=i+'号艇';first.append(o);}
+ const fmt=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'});date.value=fmt.format(new Date());
+ let loaded=false,odds=null,pred=null,requestId=0;
+ const money=x=>Number.isFinite(x)?Math.floor(x).toLocaleString('ja-JP')+'円':'--';
+ const boat=n=>`<span class="v431-boat v431-b${n}">${n}</span>`;
+ const validOdds=v=>Number.isFinite(Number(v))&&Number(v)>0?Number(v):null;
+ function draw(){
+  const map=odds?.odds||{},f=Number(first.value),table=$('v431Table');table.replaceChildren();
+  const t=document.createElement('table');t.className='v431-odds-table';
+  t.innerHTML='<thead><tr><th>2着</th><th>3着</th><th>オッズ</th><th>100円的中時</th></tr></thead>';
+  const tbody=document.createElement('tbody');
+  const tickets=new Set((pred?.tickets||[]).map(x=>x.combination));
+  for(let second=1;second<=6;second++){if(second===f)continue;for(let third=1;third<=6;third++){if(third===f||third===second)continue;
+   const key=`${f}-${second}-${third}`,v=validOdds(map[key]),tr=document.createElement('tr');if(tickets.has(key))tr.className='v431-highlight';
+   const c2=document.createElement('td'),c3=document.createElement('td'),co=document.createElement('td'),cp=document.createElement('td');
+   c2.innerHTML=boat(second);c3.innerHTML=boat(third);co.textContent=v===null?'--':v.toFixed(1)+'倍';cp.textContent=v===null?'--':money(v*100);cp.className='v431-amount';
+   tr.append(c2,c3,co,cp);tbody.append(tr);
+  }}t.append(tbody);table.append(t);
+  const panel=$('v431AIPayout');panel.replaceChildren();const head=document.createElement('strong');head.textContent='AI予想：2頭×6点＝12点｜各100円';panel.append(head);
+  if(!pred?.tickets?.length){const p=document.createElement('p');p.textContent='このレースのAI買い目を取得できませんでした。';panel.append(p);return;}
+  for(const ticket of pred.tickets){const key=ticket.combination,v=validOdds(map[key]),row=document.createElement('div');row.className='v431-toolbar';
+   const left=document.createElement('span'),right=document.createElement('strong');left.textContent=key;right.textContent=v===null?'--':`${v.toFixed(1)}倍 / ${money(v*100)}（差引 ${money(v*100-(pred.total_stake_yen||pred.tickets.reduce((s,t)=>s+(Number(t.stake_yen)||0),0)))}）`;row.append(left,right);panel.append(row);}
+ }
+ async function load(){const id=++requestId;loaded=true;odds=null;pred=null;draw();$('v431Status').textContent='オッズとAI予想を取得中…';$('v431Stamp').textContent='取得中';
+  const qs=new URLSearchParams({date:date.value,venue:venue.value,race:race.value});
+  const [o,p]=await Promise.allSettled([fetch(API+'/odds?'+qs,{cache:'no-store'}),fetch(API+'/predict?'+qs,{cache:'no-store'})]);if(id!==requestId)return;
+  const messages=[];
+  if(o.status==='fulfilled'){try{const j=await o.value.json();if(o.value.ok){odds=j;messages.push('オッズ '+(j.count||0)+'/120通り');}else messages.push('オッズ未取得：HTTP '+o.value.status);}catch{messages.push('オッズの応答形式が不正');}}else messages.push('オッズ通信失敗');
+  if(p.status==='fulfilled'){try{const j=await p.value.json();if(p.value.ok){pred=j;messages.push('AI予想取得');}else messages.push('AI予想 HTTP '+p.value.status);}catch{messages.push('AI予想の応答形式が不正');}}else messages.push('AI予想通信失敗');
+  if(id!==requestId)return;
+  $('v431Status').textContent=messages.join(' ／ ')+(odds?.count?' ／ 出典更新時刻 '+(odds.source_updated_at||'不明'):' ／ 架空の数値は表示しません');
+  $('v431Stamp').textContent='画面取得 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});draw();
+ }
+ [date,venue,race].forEach(x=>x.addEventListener('change',load));first.addEventListener('change',draw);$('v431Refresh').addEventListener('click',load);
+})();
+// Keep the full nationwide deadline schedule separate from ranked recommendations.
+(()=>{
+ const nav=document.querySelector('.tabs'),watch=document.getElementById('watchlistView');
+ const panel=watch?.querySelector('.v430-panel');if(!nav||!watch||!panel)return;
+ const section=document.createElement('section');section.id='v431ScheduleMain';section.className='hidden';
+ watch.before(section);section.append(panel);
+ const b=document.createElement('button');b.type='button';b.dataset.tab='v431ScheduleMain';b.textContent='締切順';
+ const watchButton=nav.querySelector('[data-tab="watchlistView"]');if(watchButton)nav.insertBefore(b,watchButton);else nav.append(b);
+ const previous=tab;tab=function(name){previous(name);section.classList.toggle('hidden',name!=='v431ScheduleMain');};
+ b.addEventListener('click',()=>{tab('v431ScheduleMain');panel.querySelector('#v430Refresh')?.click();});
 })();
 </script>
 </body>
