@@ -279,6 +279,19 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     .v424-reco{border-top:1px solid #493c63;padding:12px 0;line-height:1.7;font-size:12px}
     .v424-reco strong{color:#e7c679}
 </style>
+<style>
+.v425-controls{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
+.v425-controls label{font-size:12px;flex:1;min-width:130px}
+.v425-controls select{display:block;width:100%;margin-top:5px;background:#251b49;color:#f8e9bd;border:1px solid #8569a9;border-radius:10px;padding:9px}
+.v425-table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #725890;border-radius:12px;margin-top:12px}
+.v425-table{border-collapse:collapse;min-width:780px;width:100%;font-size:12px;color:#f0e8f7}
+.v425-table th,.v425-table td{padding:10px 8px;text-align:left;border-bottom:1px solid #594473;white-space:nowrap}
+.v425-table th{position:sticky;top:0;background:#32244f;color:#f1cf79}
+.v425-table tr:nth-child(even){background:#30244b}
+.v425-table .v425-outside{color:#ffbd8c;font-weight:700}
+.v425-table button{font-size:12px;padding:6px 10px}
+.v425-warning{font-size:12px;line-height:1.7;margin-top:12px}
+</style>
 </head>
 <body>
 <header><div class="eyebrow">BOAT RACE / 24 VENUES · v3.9</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
@@ -1634,6 +1647,21 @@ loadSchedule();
 })();
 
 
+// v4.2.5: Dedicated watchlist tab, independent from the 24-venue selector.
+(()=>{
+ const panel=document.getElementById('v424RecommendationsPanel');
+ const nav=document.querySelector('.tabs');
+ const stats=document.getElementById('stats');
+ if(!panel||!nav||!stats)return;
+ const section=document.createElement('section');section.id='watchlistView';section.className='hidden';
+ stats.before(section);section.append(panel);
+ const button=document.createElement('button');button.type='button';button.dataset.tab='watchlistView';button.textContent='注目レース';
+ const statsButton=nav.querySelector('[data-tab="stats"]');nav.insertBefore(button,statsButton);
+ button.addEventListener('click',()=>tab('watchlistView'));
+ const previousTab=tab;
+ tab=function(name){previousTab(name);section.classList.toggle('hidden',name!=='watchlistView');};
+})();
+
 // v4.2.3: Cron run history panel, read-only.
 (()=>{
  const API='https://boat-race-api.7phr5nzkbt.workers.dev';
@@ -1711,37 +1739,64 @@ loadSchedule();
   });
 })();
 
-// v4.2.4: Read-only, time-filtered experimental race discovery.
+// v4.2.5: Two-stage watchlist, table view. Not a betting recommendation.
 (()=>{
  const API='https://boat-race-api.7phr5nzkbt.workers.dev',el=id=>document.getElementById(id);
- let busy=false;
+ const panel=el('v424RecommendationsPanel'),list=el('v424RecommendList');
+ if(!panel||!list)return;
+ const intro=panel.querySelector('p.muted');
+ if(intro)intro.textContent='締切2分以上前・8時間以内の非公式データを表示。展示確認済みと展示待ちを分けて比較します。得点は1着確率ではありません。';
+ const controls=document.createElement('div');controls.className='v425-controls';
+ controls.innerHTML='<label>表示 <select id="v425Filter"><option value="all">すべての候補</option><option value="confirmed">展示確認済み</option><option value="waiting">展示待ち</option></select></label><label>並び順 <select id="v425Sort"><option value="time">締切時刻順</option><option value="gap">評価差が大きい順</option></select></label>';
+ list.before(controls);
+ const warning=document.createElement('p');warning.className='muted v425-warning';warning.textContent='1号艇以外の頭予想は、艇の総合評価点による暫定順位です。コース別の1着率を学習した確率モデルではありません。';list.after(warning);
+ let busy=false,latest=null;
+ const number=n=>Number.isFinite(Number(n))?Number(n).toFixed(1):'--';
+ const cell=(tr,value)=>{const td=document.createElement('td');td.textContent=String(value);tr.append(td);return td;};
+ function draw(){
+  if(!latest)return;
+  list.replaceChildren();
+  let items=(latest.items||[]).filter(x=>Number(x.coverage_percent)>=75&&Number(x.score_gap)>=8);
+  const filter=el('v425Filter').value;
+  if(filter==='confirmed')items=items.filter(x=>x.passes_criteria);
+  if(filter==='waiting')items=items.filter(x=>!x.passes_criteria);
+  if(el('v425Sort').value==='gap')items.sort((a,b)=>b.score_gap-a.score_gap);
+  else items.sort((a,b)=>String(a.closing_at).localeCompare(String(b.closing_at)));
+  const all=(latest.items||[]).filter(x=>x.coverage_percent>=75&&x.score_gap>=8);
+  el('v424RecommendStatus').textContent='締切前 '+latest.upcoming_races+'R ／ 展示確認済み '+all.filter(x=>x.passes_criteria).length+'R ／ 展示待ち '+all.filter(x=>!x.passes_criteria).length+'R ／ 表示 '+items.length+'R（API最大30件）';
+  if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent=filter==='confirmed'?'展示確認済みの候補はまだありません。展示待ちに切り替えて確認できます。':filter==='waiting'?'展示待ち候補はありません。':'現在、充足率75%以上かつ評価差8点以上の候補はありません。';list.append(p);return;}
+  const wrap=document.createElement('div');wrap.className='v425-table-scroll';
+  const table=document.createElement('table');table.className='v425-table';
+  const thead=document.createElement('thead'),head=document.createElement('tr');
+  ['状態','競艇場・R','締切','AI頭','1号艇','1位差','充足','展示','詳細'].forEach(x=>{const th=document.createElement('th');th.textContent=x;head.append(th);});thead.append(head);table.append(thead);
+  const body=document.createElement('tbody');
+  for(const x of items){
+   const tr=document.createElement('tr');
+   const status=x.passes_criteria?'展示確認済':'展示待ち';cell(tr,status);cell(tr,x.venue_name+' '+x.race+'R');
+   cell(tr,(x.closing_at||'').slice(11,16));
+   const top=cell(tr,x.top_boat+'号艇 ('+number(x.top_score)+'点)');if(x.top_boat!==1)top.className='v425-outside';
+   const first=x.first_boat_score==null?'取得不可':number(x.first_boat_score)+'点 / '+(x.first_boat_rank||'?')+'位';cell(tr,first);
+   cell(tr,number(x.score_gap)+'点');cell(tr,number(x.coverage_percent)+'%');cell(tr,x.exhibition_count+'/6');
+   const td=document.createElement('td'),btn=document.createElement('button');btn.type='button';btn.className='secondary';btn.textContent='開く';
+   btn.addEventListener('click',()=>{
+    const date=el('scheduleDate');if(date)date.value=latest.date;
+    const venue=el('heroVenue'),race=el('heroRace');
+    if(venue){venue.value=String(x.venue);venue.dispatchEvent(new Event('change'));}
+    if(race){race.value=String(x.race);race.dispatchEvent(new Event('change'));}
+    document.querySelector('[data-tab="raceView"]')?.click();
+   });td.append(btn);tr.append(td);body.append(tr);
+  }
+  table.append(body);wrap.append(table);list.append(wrap);
+ }
  async function refresh(){
-  if(busy)return;busy=true;el('v424RecommendStatus').textContent='本日のレースを確認中…';
-  try{
-   const r=await fetch(API+'/recommendations',{cache:'no-store'}),j=await r.json();
-   if(!r.ok)throw Error(j.error||'HTTP '+r.status);
-   const list=el('v424RecommendList');list.replaceChildren();
-   const items=(j.items||[]).filter(x=>x.passes_criteria);
-   el('v424RecommendStatus').textContent='対象 '+j.upcoming_races+'レース ／ 条件一致 '+j.qualifying_races+'レース（最大30件表示・非公式データ）';
-   if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent='現在、条件を満たす締切前レースはありません。';list.append(p);}
-   items.slice(0,12).forEach(x=>{
-    const row=document.createElement('div');row.className='v424-reco';
-    const title=document.createElement('strong');title.textContent=x.venue_name+' '+x.race+'R ／ 1位 '+x.top_boat+'号艇';row.append(title);
-    const desc=document.createElement('div');desc.textContent='締切 '+x.closing_at+' ／ 評価差 '+x.score_gap+'点 ／ 充足 '+x.coverage_percent+'% ／ 展示 '+x.exhibition_count+'/6';row.append(desc);
-    const bet=document.createElement('div');bet.className='muted';bet.textContent='試作6点：'+(x.tickets||[]).map(t=>t.combination).join(' / ');row.append(bet);
-    const b=document.createElement('button');b.className='secondary';b.type='button';b.textContent='レースを開く';
-    b.addEventListener('click',()=>{
-      const date=el('scheduleDate');if(date)date.value=j.date;
-      const venue=el('heroVenue'),race=el('heroRace');
-      if(venue){venue.value=String(x.venue);venue.dispatchEvent(new Event('change'));}if(race){race.value=String(x.race);race.dispatchEvent(new Event('change'));}
-      const tab=document.querySelector('[data-tab="raceView"]');if(tab)tab.click();
-    });row.append(b);list.append(row);
-   });
-  }catch(e){el('v424RecommendStatus').textContent='候補取得失敗：'+e.message;}
+  if(busy)return;busy=true;el('v424RecommendStatus').textContent='本日の候補を取得中…';
+  try{const r=await fetch(API+'/recommendations',{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);latest=j;draw();}
+  catch(e){el('v424RecommendStatus').textContent='候補取得失敗：'+e.message;}
   finally{busy=false;}
  }
+ el('v425Filter').addEventListener('change',draw);el('v425Sort').addEventListener('change',draw);
  el('v424RecommendRefresh')?.addEventListener('click',refresh);
- document.querySelector('nav')?.addEventListener('click',e=>{if(e.target.closest('[data-tab="home"]'))refresh();});
+ document.querySelector('nav')?.addEventListener('click',e=>{if(e.target.closest('[data-tab="watchlistView"]'))refresh();});
 })();
 </script>
 </body>
