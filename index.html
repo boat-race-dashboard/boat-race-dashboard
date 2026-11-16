@@ -104,7 +104,18 @@
       <div class="row" style="margin-top:20px"><h2>☁️ 保存済み事前予想</h2><button type="button" class="secondary" id="refreshSnapshots">更新</button></div>
       <p class="muted" id="snapshotListStatus" style="font-size:12px" aria-live="polite">履歴を読み込んでいます…</p>
       <div id="snapshotList"></div>
-      <p class="muted" style="font-size:11px;margin-top:12px">保存された履歴は現在、API URLを知っている人も閲覧できます。機密情報は入力しないでください。保存は舟券の購入ではありません。買い目の的中・回収率への自動反映はまだありません。</p>
+      <p class="muted" style="font-size:11px;margin-top:12px">保存された履歴は現在、API URLを知っている人も閲覧できます。機密情報は入力しないでください。保存は舟券の購入ではありません。照合済みの事前予想は下の「事前予想の結果・成績」に表示されます。</p>
+    </div>
+    <div class="panel" id="snapshotResultsPanel">
+      <div class="row"><h2>📊 事前予想の結果・成績</h2><button type="button" class="secondary" id="refreshSnapshotChecks">更新</button></div>
+      <p class="muted" id="snapshotChecksStatus" style="font-size:12px" aria-live="polite">照合状況を読み込み中…</p>
+      <div class="grid" style="margin:12px 0">
+        <div class="metric"><span>的中率</span><b id="snapshotHitRate">--%</b><span id="snapshotHitSub">0 / 0 レース</span></div>
+        <div class="metric"><span>回収率</span><b id="snapshotRoi">--%</b><span>確定分のみ</span></div>
+        <div class="metric"><span>仮想収支</span><b id="snapshotProfit">¥0</b><span>確定分のみ</span></div>
+      </div>
+      <div id="snapshotChecksList"></div>
+      <p class="muted" style="font-size:11px;margin-top:12px">非公式データによる試験的な照合です。公式確認済みではありません。集計は最新100件まで、結果確定分だけが対象です。更新ボタンは照合の保存処理を実行しません。</p>
     </div>
     <div class="panel">
       <div class="row"><h2>この端末の最近の予想</h2><span class="pill" id="count">0件</span></div>
@@ -159,7 +170,7 @@
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v2.2<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v2.5<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -744,6 +755,70 @@ snapshotSaveBtn.addEventListener('click',async()=>{
 });
 snapshotRefreshBtn.addEventListener('click',loadSnapshots);
 loadSnapshots();
+
+// v2.5: Read-only settlement dashboard. This GET does not trigger a settlement.
+const snapshotChecksBtn=$('refreshSnapshotChecks');
+const snapshotChecksStatus=$('snapshotChecksStatus');
+const snapshotChecksList=$('snapshotChecksList');
+async function loadSnapshotChecks(){
+  snapshotChecksBtn.disabled=true;
+  snapshotChecksStatus.textContent='照合状況を取得中…';
+  snapshotChecksList.replaceChildren();
+  try{
+    const response=await fetch(API+'/snapshot-checks',{cache:'no-store'});
+    if(!response.ok)throw Error('HTTP '+response.status);
+    const payload=await response.json();
+    if(!Array.isArray(payload.results)||!payload.summary||typeof payload.summary!=='object'){
+      throw Error('レスポンス形式を確認できません');
+    }
+    const rows=payload.results;
+    const summary=payload.summary;
+    const settled=Number(summary.settled_shown)||0;
+    const hits=Number(summary.hit_shown)||0;
+    const returned=Number(summary.returned_yen)||0;
+    const spent=Number(summary.stake_yen)||0;
+    $('snapshotHitRate').textContent=settled?(hits/settled*100).toFixed(1)+'%':'--%';
+    $('snapshotHitSub').textContent=hits+' / '+settled+' レース';
+    $('snapshotRoi').textContent=settled&&spent?(returned/spent*100).toFixed(1)+'%':'--%';
+    $('snapshotProfit').textContent=yen(Number(summary.profit_yen)||0);
+    snapshotChecksStatus.textContent='保存済み '+rows.length+'件 / 照合済み '+settled+'件 / 結果待ち '+(rows.length-settled)+'件';
+    if(!rows.length){
+      snapshotChecksList.append(el('div','まだ保存済み事前予想がありません','empty'));
+      return;
+    }
+    for(const r of rows){
+      const item=el('div',undefined,'record');
+      const venueName=VENUES[Number(r.venue)-1]||('場番号'+r.venue);
+      const heading=el('div',undefined,'row');
+      const settledRecord=r.result_status==='settled_unofficial';
+      heading.append(
+        el('strong',(r.date||'日付不明')+' '+venueName+' '+r.race+'R / ID '+r.snapshot_id),
+        el('span',settledRecord?'照合済み（非公式）':'結果待ち','pill')
+      );
+      item.append(heading);
+      const tickets=Array.isArray(r.tickets)?r.tickets:[];
+      item.append(el('div',tickets.map(t=>
+        String(t.combination||'?')+' '+yen(Number(t.stake_yen)||0)
+      ).join(' / ')||'買い目不明','muted'));
+      if(settledRecord){
+        item.append(el('div','確定着順（非公式）：'+(r.winning_trifecta||'不明')));
+        item.append(el('div','仮想購入額 '+yen(Number(r.stake_yen)||0)+' / 払戻 '+yen(Number(r.returned_yen)||0)+' / 仮想収支 '+yen(Number(r.profit_yen)||0)));
+        item.append(el('div','取得元：'+(r.source||'不明')+' / 照合日時（UTC）：'+(r.checked_at||'不明'),'muted'));
+      }else{
+        item.append(el('div','結果はまだ照合・保存されていません。照合はHTTP APIの別操作が必要です。','muted'));
+      }
+      snapshotChecksList.append(item);
+    }
+  }catch(error){
+    snapshotChecksStatus.textContent='照合データを取得できませんでした：'+error.message;
+    $('snapshotHitRate').textContent='--%';
+    $('snapshotRoi').textContent='--%';
+    $('snapshotProfit').textContent='¥0';
+    $('snapshotHitSub').textContent='取得失敗';
+  }finally{snapshotChecksBtn.disabled=false;}
+}
+snapshotChecksBtn.addEventListener('click',loadSnapshotChecks);
+loadSnapshotChecks();
 
 $('refreshSchedule').onclick=loadSchedule;
 scheduleDate.onchange=loadSchedule;
