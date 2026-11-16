@@ -729,6 +729,38 @@ function snapshotSummaryError(status, obj){
   if(status===503)return 'サーバー側の認証設定が未完了です。';
   return '保存できませんでした（HTTP '+status+'）。'+(code?' '+code:'');
 }
+
+// v2.9: Explanation from recorded numeric inputs; never invent missing measurements.
+function predictionReasons(saved){
+  const wrap=el('details');
+  wrap.style.marginTop='10px';
+  const summary=el('summary','📋 この予想の根拠を見る');
+  summary.style.cursor='pointer';
+  wrap.append(summary);
+  const ranking=Array.isArray(saved.ranking)?saved.ranking:[];
+  if(!ranking.length){wrap.append(el('p','この保存データには評価順位が記録されていません。','muted'));return wrap;}
+  const weights=saved.weights||{};
+  const w=el('p','評価項目：全国勝率 '+(weights.national_win_rate??40)+' / モーター2連対率 '+(weights.motor_top_2_percent??25)+' / 平均ST '+(weights.average_start_timing??20)+' / 展示タイム '+(weights.exhibition_time??15),'muted');
+  w.style.fontSize='12px';wrap.append(w);
+  ranking.forEach((r,i)=>{
+    const item=el('div',undefined,'record');
+    const score=Number(r.score);
+    item.append(el('strong',(i+1)+'位 '+r.boat+'号艇 '+(r.name||'')+'｜'+(Number.isFinite(score)?score.toFixed(1):'--')+'点'));
+    const fmt=(v,d=2)=>v==null||v===''||!Number.isFinite(Number(v))?'未取得':Number(v).toFixed(d);
+    item.append(el('div','全国勝率 '+fmt(r.national_win_rate)+' / モーター2連対率 '+fmt(r.motor_top_2_percent)+'% / 平均ST '+fmt(r.average_start_timing)+' / 展示 '+fmt(r.exhibition_time),'muted'));
+    wrap.append(item);
+  });
+  const first=ranking[0],second=ranking[1],third=ranking[2];
+  if(first&&second){
+    const diff=Number(first.score)-Number(second.score);
+    wrap.append(el('p',first.boat+'号艇を1着候補にしたのは、記録された評価点が最上位だったためです。'+(Number.isFinite(diff)?'2位との差は'+diff.toFixed(1)+'点です。':''),'muted'));
+  }
+  if(second&&third)wrap.append(el('p','2・3着候補は評価上位の艇を中心に組み合わせています。ただし順位点は着順確率ではなく、展開・進入・オッズを保証しません。','muted'));
+  if(ranking.some(r=>r.exhibition_time==null))wrap.append(el('p','⚠️ 展示タイム未取得の艇があります。展示の優劣は根拠として判断できません。','muted'));
+  wrap.append(el('p','これは保存当時の計算入力の説明です。事後の結果を使って予想理由を書き換えるものではありません。','muted'));
+  return wrap;
+}
+
 async function loadSnapshots(){
   snapshotRefreshBtn.disabled=true;
   snapshotListStatus.textContent='保存済み予想を取得中…';
@@ -754,6 +786,7 @@ async function loadSnapshots(){
         const t=Array.isArray(saved.tickets)?saved.tickets:[];
         const line=t.map(x=>String(x.combination||'不明')+' '+yen(Number(x.stake_yen)||0)).join(' / ');
         block.append(el('div','記録した買い目：'+(line||'未取得')));
+        block.append(predictionReasons(saved));
         const recorded= saved.snapshot_recorded_at_utc;
         if(recorded)block.append(el('div','保存時刻（UTC）：'+recorded,'muted'));
       }catch{
@@ -870,6 +903,7 @@ const autoPredictionList=$('autoPredictionList');
 const autoPredictionStatus=$('autoPredictionStatus');
 const autoVenueStats=$('autoVenueStats');
 let autoRows=[];
+let autoSnapshotMap=new Map();
 VENUES.forEach((name,i)=>{const opt=document.createElement('option');opt.value=String(i+1);opt.textContent=name;autoVenueFilter.append(opt);});
 function renderAutoPredictions(){
   const venue=autoVenueFilter.value, status=autoStatusFilter.value;
@@ -900,6 +934,8 @@ function renderAutoPredictions(){
       item.append(el('div','結果の照合待ち','muted'));
     }
     item.append(el('div','保存ID '+r.snapshot_id+' / モデル '+(r.model||'不明'),'muted'));
+    const original=autoSnapshotMap.get(Number(r.snapshot_id));
+    if(original)item.append(predictionReasons(original));
     autoPredictionList.append(item);
   });
   autoVenueStats.replaceChildren();
@@ -927,6 +963,15 @@ async function loadAutoPredictions(){
     const payload=await response.json();
     if(!Array.isArray(payload.results))throw Error('レスポンス形式が不正です');
     autoRows=payload.results;
+    try{
+      const sr=await fetch(API+'/snapshots',{cache:'no-store'});
+      if(sr.ok){
+        const sp=await sr.json();
+        autoSnapshotMap=new Map((sp.snapshots||[]).flatMap(x=>{
+          try{return [[Number(x.id),JSON.parse(x.prediction_json)]];}catch{return [];}
+        }));
+      }
+    }catch{/* keep results list available even if details cannot be fetched */}
     renderAutoPredictions();
   }catch(e){
     autoPredictionStatus.textContent='取得できませんでした：'+e.message;
