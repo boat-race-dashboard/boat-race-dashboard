@@ -252,8 +252,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 @media(max-width:390px){#home .venue-grid button{font-size:15px!important;min-height:100px!important}#raceView .cockpit-tabs button{font-size:11px!important}}
 
 
-/* v4.0: compact mobile cockpit */
+/* v4.0.1: compact mobile cockpit — view toggle visibility fix */
 .v40-view-switch{display:flex;gap:7px;margin:12px 0}.v40-view-switch button{flex:1;border:1px solid #8063a3;background:#2b204c;color:#eadbf8;border-radius:11px;padding:11px;font-weight:750}.v40-view-switch button.active{background:linear-gradient(120deg,#ffe69c,#e5b85d);color:#29183c;border-color:#e5b85d}
+/* v4.0.1: explicit hidden rules override display:grid for both entry modes */
+#linkedEntryBody .v40-compact-list[hidden],#linkedEntryBody .cockpit-cards[hidden]{display:none!important}
 .v40-compact-list{display:grid;gap:7px;margin-top:10px}.v40-compact-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;background:#30234f;border:1px solid #6b5388;border-radius:12px;padding:10px}.v40-compact-row .v40-name{font-weight:750;font-size:13px}.v40-compact-row small{display:block;font-size:10px;color:#cdbfe0;margin-top:3px}.v40-compact-row .v40-stats{text-align:right;font-size:11px;white-space:nowrap}.v40-compact-row .v40-stats b{display:block;color:#f4d17c;font-size:12px}
 .v40-ticket-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.v40-ticket{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#281d48;border:1px solid #7a609a;border-radius:12px;padding:12px 9px;font-variant-numeric:tabular-nums}.v40-ticket b{font-size:15px;white-space:nowrap}.v40-ticket span{font-size:11px;color:#e9d49b;white-space:nowrap}
 .v40-rank{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #665080}.v40-rank-name{font-size:12px;min-width:0}.v40-rank-name strong{display:block}.v40-rank-track{height:7px;background:#4a3865;border-radius:9px;overflow:hidden;margin-top:6px}.v40-rank-fill{height:100%;background:linear-gradient(90deg,#9b77d3,#f4d17c);border-radius:9px}.v40-rank-score{font-size:12px;font-weight:800;color:#f7d987;white-space:nowrap}
