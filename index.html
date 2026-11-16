@@ -261,6 +261,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .v40-rank{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #665080}.v40-rank-name{font-size:12px;min-width:0}.v40-rank-name strong{display:block}.v40-rank-track{height:7px;background:#4a3865;border-radius:9px;overflow:hidden;margin-top:6px}.v40-rank-fill{height:100%;background:linear-gradient(90deg,#9b77d3,#f4d17c);border-radius:9px}.v40-rank-score{font-size:12px;font-weight:800;color:#f7d987;white-space:nowrap}
 #raceView .cockpit-tabs{position:sticky;top:0;z-index:25;box-shadow:0 6px 18px #110a26a8}#raceView .cockpit-pane{scroll-margin-top:82px}#raceView .race-dots{scroll-margin-top:78px}
 @media(max-width:380px){.v40-ticket{padding:10px 6px}.v40-ticket b{font-size:13px}.v40-compact-row .v40-stats{font-size:10px}}
+
+/* v4.2.2: single-model analytics */
+.v422-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.v422-metric{background:linear-gradient(150deg,#30234f,#211937);border:1px solid #6b5388;border-radius:14px;padding:14px;min-width:0}
+.v422-metric small{display:block;color:#cdbfe0;font-size:11px;margin-bottom:8px}
+.v422-metric strong{font-size:clamp(20px,5vw,27px);color:#f4d17c;overflow-wrap:anywhere}
+.v422-metric em{display:block;color:#cdbfe0;font-size:10px;font-style:normal;margin-top:5px}
+.v422-subtle{color:#cdbfe0;font-size:12px;line-height:1.6}
+.v422-negative{color:#ff9eaa!important}
+.v422-positive{color:#9de4b5!important}
+@media(min-width:700px){.v422-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -397,8 +408,22 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="panel"><h2>端末内の旧方式の登録済み結果</h2><div id="settled" class="empty">まだ結果がありません</div></div>
   </section>
   <section id="stats" class="hidden">
-    <div class="panel"><h2>☁️ D1の予想成績</h2><p class="muted" id="cloudStatsStatus">データを取得中…</p><div id="cloudBreakdown"></div>
-      <p class="muted" style="font-size:12px">D1から取得した最大100件の予想と最大100件の結果で集計します。100件以上ある場合は全期間集計ではありません。TESTの予想も含みます。</p></div>
+    <div class="panel" id="v422AnalyticsPanel">
+      <div class="row"><h2>📊 新AIモデルの運用成績</h2><button type="button" class="secondary" id="v422Refresh">更新</button></div>
+      <p class="v422-subtle">8項目モデルの事前保存予想だけをD1から集計。結果は非公式データによる暫定値です。</p>
+      <p class="muted" id="v422Status" aria-live="polite">「分析」を開くと最新の成績を取得します。</p>
+      <div class="v422-metrics">
+        <div class="v422-metric"><small>保存済み予想</small><strong id="v422Saved">--</strong><em id="v422Pending">照合待ち --</em></div>
+        <div class="v422-metric"><small>的中率</small><strong id="v422Hit">--</strong><em id="v422HitCount">--</em></div>
+        <div class="v422-metric"><small>回収率</small><strong id="v422Roi">--</strong><em>照合済み・仮想投票</em></div>
+        <div class="v422-metric"><small>仮想収支</small><strong id="v422Profit">--</strong><em id="v422Stake">購入はしていません</em></div>
+      </div>
+      <p class="v422-subtle" id="v422Excluded"></p>
+      <p class="v422-subtle">締切前の保存時刻を検査した記録のみ対象。外部データの公開時刻と公式結果は未検証です。保存件数が少ない間は精度を判断できません。</p>
+    </div>
+
+    <div class="panel"><h2>☁️ 旧方式の参考集計</h2><p class="muted" id="cloudStatsStatus">データを取得中…</p><div id="cloudBreakdown"></div>
+      <p class="muted" style="font-size:12px">旧方式の参考表示です。新AIモデルの正式な分析には上の「新AIモデルの運用成績」を使用してください。</p></div>
     <div class="panel"><h2>端末内の旧記録の成績</h2><div id="breakdown" class="empty">データが集まると集計します</div></div>
     <div class="panel"><h2>データの管理</h2>
       <p class="muted" style="font-size:12px">この端末のブラウザに保存されます。別端末との同期やバックアップはまだありません。</p>
@@ -1569,6 +1594,46 @@ loadSchedule();
   if(dateInput)dateInput.addEventListener('change',()=>{if(status)status.textContent='指定日のデータを確認中…';});
 })();
 
+
+// v4.2.2: read-only analytics for the current eight-factor model.
+(()=>{
+  const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+  const model='rule-based-demo-3-course-local-preview';
+  const get=id=>document.getElementById(id);
+  const fmt=n=>Number(n).toLocaleString('ja-JP');
+  let busy=false;
+  async function refresh(){
+    if(busy)return;
+    busy=true;get('v422Status').textContent='D1の集計データを取得中…';
+    try{
+      const response=await fetch(API+'/analytics',{cache:'no-store'});
+      if(!response.ok)throw new Error('API HTTP '+response.status);
+      const payload=await response.json();
+      if(payload.error)throw new Error(String(payload.error));
+      const d=payload.models?.[model];
+      const total=Number(payload.total_snapshot_rows||0);
+      const excluded=payload.excluded||{};
+      const excludedCount=Object.values(excluded).reduce((a,b)=>a+(Number(b)||0),0);
+      const saved=Number(d?.snapshots||0),pending=Number(d?.pending||0),settled=Number(d?.settled||0),hits=Number(d?.hits||0);
+      get('v422Saved').textContent=fmt(saved)+'件';
+      get('v422Pending').textContent='照合待ち '+fmt(pending)+'件';
+      get('v422Hit').textContent=settled?Number(d.hit_rate_percent).toFixed(1)+'%':'--';
+      get('v422HitCount').textContent=settled?fmt(hits)+'的中 / '+fmt(settled)+'レース':'結果照合待ち';
+      get('v422Roi').textContent=settled&&Number(d.stake_yen)>0?Number(d.roi_percent).toFixed(1)+'%':'--';
+      const profit=get('v422Profit');profit.classList.remove('v422-negative','v422-positive');
+      profit.textContent=settled?(Number(d.profit_yen)>=0?'+':'−')+'¥'+fmt(Math.abs(Number(d.profit_yen))):'--';
+      if(settled)profit.classList.add(Number(d.profit_yen)<0?'v422-negative':'v422-positive');
+      get('v422Stake').textContent=settled?'仮想投資 ¥'+fmt(d.stake_yen)+' / 払戻 ¥'+fmt(d.returned_yen):'実際の舟券購入なし';
+      get('v422Excluded').textContent='対象外 '+fmt(excludedCount)+'件'+(payload.truncated?' ／ 集計上限に到達（全件ではありません）':'');
+      get('v422Status').textContent=saved?'保存 '+fmt(saved)+'件・照合済み '+fmt(settled)+'件（暫定）':total===0?'保存データはまだありません。Cronによる事前保存を待っています。':'有効な新モデル予想はまだありません。';
+    }catch(e){get('v422Status').textContent='成績を取得できませんでした：'+e.message;}
+    finally{busy=false;}
+  }
+  get('v422Refresh')?.addEventListener('click',refresh);
+  document.querySelector('nav')?.addEventListener('click',event=>{
+    if(event.target.closest('[data-tab="stats"]'))refresh();
+  });
+})();
 </script>
 </body>
 </html>
