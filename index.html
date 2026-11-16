@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v4.2.4</title>
+  <title>BOAT RACE AI Dashboard v4.2.6</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -1431,6 +1431,35 @@ loadAutoPredictions();
       }
       ranking.append(details);
       ranking.append(el('p','8項目：全国勝率25・当地勝率12・モーター16・平均ST12・展示タイム12・展示ST8・進入コース10・級別5点。欠損は中立点。点数は的中確率ではありません。','muted'));
+      // v4.2.6: display only real stored course/technique counts; never fabricate statistics.
+      const historyPanel=el('details',undefined,'v424-breakdown');historyPanel.append(el('summary','選手別コース実績・決まり手（蓄積データ）'));
+      const historyBody=el('div','選手履歴を確認中…','muted');historyPanel.append(historyBody);ranking.append(historyPanel);
+      try{
+        const raceResp=await fetch(API+'/race?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
+        if(!raceResp.ok)throw Error('出走表を取得できません');
+        const raceInfo=await raceResp.json();if(id!==predictionRequestId)return;
+        const entrants=(raceInfo.racers||[]).filter(r=>Number.isInteger(Number(r.registration_number))&&Number(r.registration_number)>=1000);
+        const ids=entrants.map(r=>Number(r.registration_number));
+        if(!ids.length){historyBody.textContent='登録番号を取得できません。';return;}
+        const res=await fetch(API+'/racer-history?ids='+encodeURIComponent(ids.join(',')),{cache:'no-store'});
+        if(!res.ok)throw Error('履歴API HTTP '+res.status);
+        const info=await res.json();if(id!==predictionRequestId)return;
+        historyBody.replaceChildren();
+        for(const racer of entrants){
+          const profile=(info.profiles||[]).find(p=>p.registration_number===Number(racer.registration_number));
+          const section=el('div',undefined,'v424-breakdown-boat');section.append(el('strong',racer.entry_number+'号艇 '+show(racer.name)+'（'+racer.registration_number+'）'));
+          if(!profile?.courses?.length){section.append(el('p','実進入コースが確認できる履歴はまだありません。','muted'));}
+          else for(const c of profile.courses){
+            const starts=Number(c.starts)||0,wins=Number(c.wins)||0;
+            const detail=c.course+'コース：'+starts+'走 / 1着'+wins+'回（'+(starts?100*wins/starts:0).toFixed(1)+'%）'+
+              ' / 逃げ'+(c.escape_wins||0)+'・差し'+(c.sashi_wins||0)+'・まくり'+(c.makuri_wins||0)+'・まくり差し'+(c.makurizashi_wins||0);
+            section.append(el('div',detail,'muted'));
+          }
+          historyBody.append(section);
+        }
+        historyBody.append(el('p','蓄積できた実進入コースの記録のみ表示。決まり手0件は未取得の可能性があります。現時点では8項目の予想点に加算していません。','muted'));
+      }catch(err){if(id===predictionRequestId)historyBody.textContent='選手履歴は取得できません：'+err.message;}
+
     }catch(e){if(id===predictionRequestId)tickets.textContent='予想を取得できません：'+e.message;}
   }
 
