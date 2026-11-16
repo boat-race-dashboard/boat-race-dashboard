@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE Dashboard v3.6</title>
+  <title>BOAT RACE AI Dashboard v4.2.4</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -272,6 +272,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .v422-negative{color:#ff9eaa!important}
 .v422-positive{color:#9de4b5!important}
 @media(min-width:700px){.v422-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    .v424-insight{margin-top:12px;padding:12px;border:1px solid #9c7c3b;border-radius:11px;background:#2b2440;line-height:1.8;font-size:12px}
+    .v424-breakdown{margin-top:12px;padding:12px;border:1px solid #57476f;border-radius:10px;font-size:12px}
+    .v424-breakdown summary{cursor:pointer;color:#e7c679;font-weight:700}
+    .v424-breakdown-boat{padding:10px 0;border-bottom:1px solid #3c3555;line-height:1.7}
+    .v424-reco{border-top:1px solid #493c63;padding:12px 0;line-height:1.7;font-size:12px}
+    .v424-reco strong{color:#e7c679}
 </style>
 </head>
 <body>
@@ -297,6 +303,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
       <div class="venue-grid" id="venues"></div>
       <p class="muted" style="font-size:12px" id="venueLabel">選択中：桐生</p>
       <button class="primary" id="goAdd">この場の予想を登録</button>
+    </div>
+    <div class="panel" id="v424RecommendationsPanel">
+      <div class="row"><h2>✦ 本日の注目レース（試験運用）</h2><button class="secondary" type="button" id="v424RecommendRefresh">更新</button></div>
+      <p class="muted" style="font-size:12px">締切2分以上前・結果未記録のレースのみ。データ充足率75%以上、1位と2位の評価差8点以上、展示4艇以上を目安に抽出。的中確率ではありません。</p>
+      <p class="muted" id="v424RecommendStatus" aria-live="polite">更新すると本日の候補を確認します。</p>
+      <div id="v424RecommendList"></div>
     </div>
     <div class="panel" id="autoPredictionPanel">
       <div class="row"><h2>🤖 自動保存された事前予想</h2><button type="button" class="secondary" id="refreshAutoPredictions">更新</button></div>
@@ -418,6 +430,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <div class="v422-metric"><small>回収率</small><strong id="v422Roi">--</strong><em>照合済み・仮想投票</em></div>
         <div class="v422-metric"><small>仮想収支</small><strong id="v422Profit">--</strong><em id="v422Stake">購入はしていません</em></div>
       </div>
+      <div class="row" style="margin-top:12px;flex-wrap:wrap"><label for="v424Period" style="margin:0">分析期間</label><select id="v424Period" style="width:auto;min-width:145px"><option value="7">直近7日</option><option value="30">直近30日</option><option value="all" selected>全期間</option></select></div>
       <p class="v422-subtle" id="v422Excluded"></p>
       <p class="v422-subtle">締切前の保存時刻を検査した記録のみ対象。外部データの公開時刻と公式結果は未検証です。保存件数が少ない間は精度を判断できません。</p>
     </div>
@@ -432,6 +445,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
         <div class="v422-metric"><small>直近の処理エラー</small><strong id="v423Errors" style="font-size:18px">--</strong><em>理由は下に表示</em></div>
       </div>
       <p class="v422-subtle" id="v423Details"></p>
+      <p class="v422-subtle" id="v424CronAlert" aria-live="polite">Cronの実行時刻を確認中…</p>
       <p class="v422-subtle">実行履歴は新しいWorkerを公開した後から蓄積します。Cron設定そのものの有効性はCloudflareの画面で確認してください。</p>
     </div>
     <div class="panel" hidden style="display:none"><h2>☁️ 旧方式の参考集計</h2><p class="muted" id="cloudStatsStatus">データを取得中…</p><div id="cloudBreakdown"></div>
@@ -1383,6 +1397,12 @@ loadAutoPredictions();
       tickets.replaceChildren();const ticketGrid=el('div',undefined,'v40-ticket-grid');
       data.tickets.forEach(t=>{const card=el('div',undefined,'v40-ticket');card.append(el('b',t.combination),el('span',yen(t.stake_yen)));ticketGrid.append(card);});tickets.append(ticketGrid);
       meta.textContent='計 '+yen(data.total_stake_yen||data.tickets.reduce((a,t)=>a+(t.stake_yen||0),0))+' ／ '+data.model+' ／ 展示 '+(data.exhibition_times_received??0)+'/6艇'+(data.retrospective_risk||data.is_result_available?' ／ ⚠ 結果判明後の参考評価':'');
+      const available=data.ranking.reduce((n,r)=>n+(Number(r.available_fields)||0),0);
+      const gap=Number(data.ranking[0]?.score||0)-Number(data.ranking[1]?.score||0);
+      const insight=el('div',undefined,'v424-insight');
+      insight.append(el('strong','評価差 '+gap.toFixed(1)+'点 ／ データ充足 '+available+'/48（'+(available/48*100).toFixed(1)+'%）'));
+      insight.append(el('div','展示タイム '+(data.exhibition_times_received||0)+'/6艇 ／ これは的中確率や信頼度の保証ではありません。','muted'));
+      tickets.append(insight);
       data.ranking.forEach((r,i)=>{
         const row=el('div',undefined,'v40-rank');row.append(el('span',String(r.boat),'linked-boat-chip linked-boat-'+r.boat));
         const label=el('div',undefined,'v40-rank-name');label.append(el('strong',(i+1)+'位 '+show(r.name)));
@@ -1390,7 +1410,14 @@ loadAutoPredictions();
         fill.style.width=Math.max(0,Math.min(100,Number(r.score)||0))+'%';track.append(fill);label.append(track);
         row.append(label,el('span',Number.isFinite(Number(r.score))?Number(r.score).toFixed(1)+'点':'—','v40-rank-score'));ranking.append(row);
       });
-      ranking.append(el('p','全国勝率40・モーター25・平均ST20・展示15点。欠損項目は中立点を付与。順位は確率ではありません。','muted'));
+      const details=el('details',undefined,'v424-breakdown');details.append(el('summary','8項目の採点根拠を表示'));
+      for(const r of data.ranking){
+        const section=el('div',undefined,'v424-breakdown-boat');section.append(el('strong',r.boat+'号艇 '+show(r.name)+' ／ '+Number(r.score).toFixed(1)+'点'));
+        for(const [key,b] of Object.entries(r.score_breakdown||{}))section.append(el('div',(b.label||key)+'：'+b.points+'/'+b.max_points+'点'+(b.imputed_neutral?'（欠損・中立点）':''),'muted'));
+        details.append(section);
+      }
+      ranking.append(details);
+      ranking.append(el('p','8項目：全国勝率25・当地勝率12・モーター16・平均ST12・展示タイム12・展示ST8・進入コース10・級別5点。欠損は中立点。点数は的中確率ではありません。','muted'));
     }catch(e){if(id===predictionRequestId)tickets.textContent='予想を取得できません：'+e.message;}
   }
 
@@ -1618,7 +1645,7 @@ loadSchedule();
   try{
    const r=await fetch(API+'/cron-status',{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.detail||j.error||'HTTP '+r.status);
    const x=j.last_run;
-   if(!x){el('v423CronStatus').textContent='まだCronの実行履歴がありません。次の定期実行後に確認してください。';return;}
+   if(!x){el('v423CronStatus').textContent='まだCronの実行履歴がありません。次の定期実行後に確認してください。';el('v424CronAlert').textContent='⚠ 実行記録なし：Cron設定とD1への書き込みを確認してください。';return;}
    const date=new Date(x.ran_at_utc);el('v423LastRun').textContent=Number.isNaN(date.getTime())?'不明':date.toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
    el('v423LastReason').textContent=reason[x.save_reason]||x.save_reason||'--';
    el('v423Created').textContent=Number(x.save_created||0)+'件';el('v423Candidates').textContent='候補 '+Number(x.save_candidates||0)+'件 / 試行 '+Number(x.save_attempted||0)+'件';
@@ -1626,6 +1653,8 @@ loadSchedule();
    el('v423Errors').textContent=x.error_message?'あり':'なし';
    el('v423Details').textContent='保存：'+(reason[x.save_reason]||x.save_reason||'不明')+' ／ 結果照合：'+(reason[x.check_reason]||x.check_reason||'不明')+(x.error_message?' ／ エラー：'+x.error_message:'');
    el('v423CronStatus').textContent='実行履歴 '+(j.recent_runs?.length||0)+'件を取得しました。';
+   const age=Date.now()-date.getTime();
+   el('v424CronAlert').textContent=Number.isNaN(age)?'⚠ 最終実行時刻を解釈できません':age>25*60000?'⚠ 最終記録から25分以上経過。Cron・D1を確認してください。':'最終記録は25分以内です（Cloudflare側の成功を保証するものではありません）。';
   }catch(e){el('v423CronStatus').textContent='取得失敗：'+e.message;}
   finally{busy=false;}
  }
@@ -1644,7 +1673,15 @@ loadSchedule();
     if(busy)return;
     busy=true;get('v422Status').textContent='D1の集計データを取得中…';
     try{
-      const response=await fetch(API+'/analytics',{cache:'no-store'});
+      const period=get('v424Period')?.value||'all';
+      let query='';
+      if(period!=='all'){
+        const now=new Date();const jstToday=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Tokyo'}));
+        jstToday.setDate(jstToday.getDate()-Number(period)+1);
+        const y=jstToday.getFullYear(),m=String(jstToday.getMonth()+1).padStart(2,'0'),d=String(jstToday.getDate()).padStart(2,'0');
+        query='?from='+y+'-'+m+'-'+d;
+      }
+      const response=await fetch(API+'/analytics'+query,{cache:'no-store'});
       if(!response.ok)throw new Error('API HTTP '+response.status);
       const payload=await response.json();
       if(payload.error)throw new Error(String(payload.error));
@@ -1667,10 +1704,44 @@ loadSchedule();
     }catch(e){get('v422Status').textContent='成績を取得できませんでした：'+e.message;}
     finally{busy=false;}
   }
+  get('v424Period')?.addEventListener('change',refresh);
   get('v422Refresh')?.addEventListener('click',refresh);
   document.querySelector('nav')?.addEventListener('click',event=>{
     if(event.target.closest('[data-tab="stats"]'))refresh();
   });
+})();
+
+// v4.2.4: Read-only, time-filtered experimental race discovery.
+(()=>{
+ const API='https://boat-race-api.7phr5nzkbt.workers.dev',el=id=>document.getElementById(id);
+ let busy=false;
+ async function refresh(){
+  if(busy)return;busy=true;el('v424RecommendStatus').textContent='本日のレースを確認中…';
+  try{
+   const r=await fetch(API+'/recommendations',{cache:'no-store'}),j=await r.json();
+   if(!r.ok)throw Error(j.error||'HTTP '+r.status);
+   const list=el('v424RecommendList');list.replaceChildren();
+   const items=(j.items||[]).filter(x=>x.passes_criteria);
+   el('v424RecommendStatus').textContent='対象 '+j.upcoming_races+'レース ／ 条件一致 '+j.qualifying_races+'レース（最大30件表示・非公式データ）';
+   if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent='現在、条件を満たす締切前レースはありません。';list.append(p);}
+   items.slice(0,12).forEach(x=>{
+    const row=document.createElement('div');row.className='v424-reco';
+    const title=document.createElement('strong');title.textContent=x.venue_name+' '+x.race+'R ／ 1位 '+x.top_boat+'号艇';row.append(title);
+    const desc=document.createElement('div');desc.textContent='締切 '+x.closing_at+' ／ 評価差 '+x.score_gap+'点 ／ 充足 '+x.coverage_percent+'% ／ 展示 '+x.exhibition_count+'/6';row.append(desc);
+    const bet=document.createElement('div');bet.className='muted';bet.textContent='試作6点：'+(x.tickets||[]).map(t=>t.combination).join(' / ');row.append(bet);
+    const b=document.createElement('button');b.className='secondary';b.type='button';b.textContent='レースを開く';
+    b.addEventListener('click',()=>{
+      const date=el('scheduleDate');if(date)date.value=j.date;
+      const venue=el('heroVenue'),race=el('heroRace');
+      if(venue){venue.value=String(x.venue);venue.dispatchEvent(new Event('change'));}if(race){race.value=String(x.race);race.dispatchEvent(new Event('change'));}
+      const tab=document.querySelector('[data-tab="raceView"]');if(tab)tab.click();
+    });row.append(b);list.append(row);
+   });
+  }catch(e){el('v424RecommendStatus').textContent='候補取得失敗：'+e.message;}
+  finally{busy=false;}
+ }
+ el('v424RecommendRefresh')?.addEventListener('click',refresh);
+ document.querySelector('nav')?.addEventListener('click',e=>{if(e.target.closest('[data-tab="home"]'))refresh();});
 })();
 </script>
 </body>
