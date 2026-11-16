@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#09162a">
-  <title>BOAT RACE Dashboard v3.5</title>
+  <meta name="theme-color" content="#171032">
+  <title>BOAT RACE Dashboard v3.6</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -166,6 +166,37 @@ label,.race-table th,.score-compare th{color:#aecbd3!important}.notice{backgroun
 .outcome-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}.outcome-metrics>div{background:#173d4e;border:1px solid #365e6c;border-radius:16px;padding:15px 8px}.outcome-metrics span{display:block;font-size:11px;color:#a9c6d0}.outcome-metrics strong{display:block;font-size:22px;margin-top:7px}
 .outcome-card{width:100%;background:linear-gradient(120deg,#173d4d,#103342);border:1px solid #426775;color:#eefafa;border-radius:20px;padding:15px;margin:10px 0;text-align:left}.outcome-card .oc-top,.outcome-card .oc-bottom{display:flex;justify-content:space-between;align-items:center;gap:9px}.outcome-card .oc-top strong{font-size:17px}.outcome-card .oc-bottom{margin-top:13px}.oc-boats{display:flex;gap:5px}.oc-boat{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;font-weight:900;border:2px solid #ffffff44}.oc-1{background:#f8fafb;color:#182330}.oc-2{background:#161a20;color:#fff}.oc-3{background:#e8383c;color:#fff}.oc-4{background:#287ce3;color:#fff}.oc-5{background:#f4d33b;color:#182330}.oc-6{background:#23ae63;color:#fff}.oc-status{font-size:12px;border-radius:99px;padding:5px 9px;background:#31515e;color:#c7dfe4}.oc-status.hit{background:#1e785d;color:#d0ffed}.oc-status.miss{background:#78434b;color:#ffe0e0}.oc-money{font-weight:800;font-size:16px}.oc-sub{font-size:11px;color:#a9c5cf;margin-top:9px}.outcome-disclaimer{font-size:11px;color:#a7c6ce;line-height:1.7;margin:20px 4px}
 @media(max-width:380px){.venue-board .venue-tiles{gap:6px}.venue-tile{padding:9px 7px;min-height:77px}.venue-tile b{font-size:14px}.outcome-card{padding:12px}}
+
+/* v3.6 unified amethyst / champagne-gold visual theme. Presentation only; API and D1 unchanged. */
+:root{color-scheme:dark;--v35bg:#100d27;--v35card:#241b49;--v35line:#64508d;--v35mint:#f4d27f;background:#100d27!important;color:#f9f4ff!important}
+html{background:#100d27!important}body{background:radial-gradient(ellipse at 92% 5%,#41216b 0,transparent 35%),linear-gradient(160deg,#171032,#0c0c22 70%)!important;color:#f9f4ff!important;min-height:100vh}
+header{padding:26px 20px 23px!important;background:radial-gradient(ellipse at 80% 0%,#5b328c80,transparent 58%),linear-gradient(115deg,#16112f,#2c174c)!important;border-bottom:2px solid #b9934d!important}
+header h1{font-size:clamp(24px,7vw,34px)!important;letter-spacing:.5px;font-weight:850}header h1 span{color:#f5d789!important;background:linear-gradient(135deg,#fff0ad,#d5a957);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+header small,.muted{color:#c5b8dd!important}.eyebrow{color:#f0d184!important;letter-spacing:2.5px}
+main{padding-top:19px!important}.panel,.metric,.race-hero{background:linear-gradient(135deg,#302354,#1c183b)!important;color:#fff9ff!important;border:1px solid #6b5193!important;box-shadow:0 10px 30px #06031255!important;border-radius:20px!important}
+main>.grid:first-child{gap:9px}.metric{padding:15px 5px!important}.metric b{color:#f6d989!important;font-size:clamp(19px,5.3vw,26px)!important;font-variant-numeric:tabular-nums}.metric span{color:#c7b9df!important}
+.tabs{background:#251b49f5!important;border:1px solid #795da5!important;border-radius:999px!important;padding:5px!important;box-shadow:0 8px 24px #08051c77!important;gap:3px!important}
+.tabs button{background:transparent!important;color:#e2d5f1!important;border:0!important;border-radius:999px!important;min-width:78px!important}
+.tabs button.active,.primary{background:linear-gradient(135deg,#fff0ac,#e4b75c)!important;color:#26183c!important;border-color:#ffdb7b!important;box-shadow:0 4px 15px #c89d4a44!important;font-weight:800!important}
+.secondary{background:#362857!important;color:#f8ebff!important;border:1px solid #856aab!important}
+input,select,textarea{background:#18132f!important;color:#fff8ff!important;border:1px solid #8069a8!important}
+label,.race-table th,.score-compare th{color:#d3c2eb!important}.notice{background:#30244e!important;color:#eee1ff!important;border-left-color:#f5d17b!important}
+.record,.race-table td,.race-table th,.score-compare td,.score-compare th{border-color:#655184!important}.pill{background:#5b427d!important;color:#ffdfa0!important}
+.venue-grid button{background:#34264f!important;color:#f4eaff!important;border-color:#715b94!important}.venue-grid button.has-data{background:#4a3668!important;color:#fff3d5!important;border-color:#b99862!important}.venue-grid button.selected{background:#725292!important;color:#fff!important;outline-color:#f4d27f!important}
+.schedule-summary span,.race-meta span{background:#3c2c5e!important;color:#f2e6ff!important;border-color:#795f9e!important}
+.hero-overline,.hero-sub,.hero-caption{color:#cbbde5!important}.hero-status{color:#f7d98c!important;border-color:#f4d27f!important}
+.race-dots button{background:#3b2c60!important;color:#f1e3ff!important;border-color:#8569a9!important}.race-dots button.active{background:#f5d27d!important;color:#251636!important;border-color:#f5d27d!important}
+.hero-reco{background:linear-gradient(120deg,#564078,#302454)!important;border:1px solid #f5d27d!important;color:#fff7e7!important}.hero-reco strong{color:#ffdf8c!important}.hero-reco .meta{color:#e1cbe8!important}
+.linked-entry{background:#261c47!important;border-color:#71578f!important}.linked-entry h3{color:#fff4d8!important}.linked-entry .linked-status,.linked-entry .linked-note{color:#d3c2e7!important}.linked-entry .race-table td:first-child{color:#f8d27c!important}
+.extra-functions>summary,.boat-score{background:#342552!important;color:#f3e6ff!important;border-color:#7d639d!important}.score-track{background:#463461!important}.score-fill{background:#f2cb6f!important}.score-best{background:#594274!important;color:#fff9ee!important}.footer{color:#b7a4d3!important}
+.venue-board{background:#21193e!important;border-color:#735b96!important}.venue-tile{background:#352651!important;color:#fff0ff!important;border-color:#745a96!important}.venue-tile small,.venue-tiles-note{color:#c8b4df!important}.venue-tile.active{background:#5a407a!important;border-color:#f5d27d!important}
+.outcomes-head h2{color:#fff6e4!important}.outcomes-head p{color:#cdbfe4!important}
+.outcome-filters button{background:#35274f!important;border-color:#775f9a!important;color:#e6d9f5!important}.outcome-filters button.active{background:linear-gradient(135deg,#ffedac,#e3b35b)!important;color:#251634!important;border-color:#f4d27f!important}
+.outcome-metrics>div{background:linear-gradient(135deg,#33244f,#21183d)!important;border-color:#715591!important}.outcome-metrics span{color:#d5c3eb!important}.outcome-metrics strong{color:#f5d486!important}
+.outcome-card{background:linear-gradient(120deg,#342451,#1d173b)!important;border:1px solid #8363aa!important;color:#fff8ff!important;border-left:4px solid #f5d27d!important;box-shadow:0 8px 20px #07041755!important}
+.oc-status{background:#584577!important;color:#f3e9ff!important}.oc-status.hit{background:#356c5b!important;color:#d5ffe7!important}.oc-status.miss{background:#6c3b5e!important;color:#ffe2e7!important}.oc-sub,.outcome-disclaimer{color:#c9b9df!important}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #ffdf8e!important;outline-offset:2px}
+@media(max-width:480px){header{padding:24px 17px 20px!important}.metric{min-height:106px}.metric span{font-size:10px!important}.tabs button{font-size:12px!important}}
 </style>
 </head>
 <body>
