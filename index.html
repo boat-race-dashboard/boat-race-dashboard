@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v4.2.6</title>
+  <title>BOAT RACE AI Dashboard v4.2.8 UI</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -291,6 +291,36 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .v425-table .v425-outside{color:#ffbd8c;font-weight:700}
 .v425-table button{font-size:12px;padding:6px 10px}
 .v425-warning{font-size:12px;line-height:1.7;margin-top:12px}
+</style>
+<style>
+/* v4.2.8 UI: mobile legibility, accessible tap targets, keep existing indigo/gold identity */
+html{scroll-padding-top:88px}body{font-variant-numeric:tabular-nums}
+button,select,input{touch-action:manipulation}button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #f3ce77!important;outline-offset:3px}
+.tabs{scroll-snap-type:x proximity;overscroll-behavior-x:contain;gap:7px!important;padding:7px!important;top:env(safe-area-inset-top,0px)!important}
+.tabs button{flex:0 0 auto!important;min-height:46px!important;padding:11px 15px!important;scroll-snap-align:center;font-size:13px!important}
+.tabs button.active{outline:1px solid #f7d986;outline-offset:-2px}
+#watchlistView .panel{margin-top:10px}#watchlistView .v425-controls{gap:8px}#watchlistView .v425-controls label{margin:4px 0;min-width:0}
+#watchlistView .v425-controls select{min-height:45px}
+.v428-updated{font-size:11px;color:#c9badb;margin:7px 0 0;line-height:1.6}
+.v428-quick{display:flex;gap:8px;flex-wrap:wrap;margin:11px 0}
+.v428-quick button{min-height:42px;padding:10px 13px;border-radius:12px;border:1px solid #8668aa;background:#34244e;color:#f8e6b6;font-weight:750}
+.v428-mobile-list{display:none}.v428-card{background:linear-gradient(140deg,#33244e,#241b3d);border:1px solid #765c98;border-radius:15px;padding:13px;margin:10px 0;box-shadow:0 5px 16px #0b071c44}
+.v428-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+.v428-card-head strong{font-size:17px;color:#fff3d3}.v428-state{border-radius:30px;background:#483764;color:#f3d28a;padding:5px 8px;font-size:11px;white-space:nowrap}
+.v428-card-main{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v428-card-main>div{border:1px solid #584371;border-radius:11px;padding:10px;background:#251c3d}
+.v428-card-main small{display:block;color:#d2c2e0;font-size:11px;margin-bottom:4px}
+.v428-card-main b{display:block;color:#fff5d9;font-size:17px}
+.v428-card-meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;color:#d7c8e6;font-size:12px;line-height:1.5}
+.v428-card-meta span{background:#39294f;border-radius:8px;padding:6px 8px}
+.v428-card .v428-open{width:100%;min-height:44px;border:1px solid #e7be68;border-radius:11px;background:linear-gradient(135deg,#ffefb2,#e6b962);color:#291a3e;font-size:14px;font-weight:800}
+.v428-empty{padding:18px;border:1px dashed #725b8d;border-radius:13px;color:#dbcde8;line-height:1.7}
+.v428-shortcuts{display:flex;gap:8px;margin:10px 0 14px}
+.v428-shortcuts button{flex:1;min-height:44px;background:#30234e;color:#f6d887;border:1px solid #8065a1;border-radius:12px;font-size:13px;font-weight:750}
+.v428-timestamp{font-size:11px;color:#cabbd8;margin-top:8px}
+@media(max-width:650px){.v425-table-scroll{display:none}.v428-mobile-list{display:block}.panel{overflow-wrap:anywhere}#watchlistView .v425-warning{font-size:11px}}
+@media(min-width:651px){.v428-mobile-list{display:none}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -1793,7 +1823,7 @@ loadSchedule();
   else items.sort((a,b)=>String(a.closing_at).localeCompare(String(b.closing_at)));
   const all=(latest.items||[]).filter(x=>x.coverage_percent>=75&&x.score_gap>=8);
   el('v424RecommendStatus').textContent='締切前 '+latest.upcoming_races+'R ／ 展示確認済み '+all.filter(x=>x.passes_criteria).length+'R ／ 展示待ち '+all.filter(x=>!x.passes_criteria).length+'R ／ 表示 '+items.length+'R（API最大30件）';
-  if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent=filter==='confirmed'?'展示確認済みの候補はまだありません。展示待ちに切り替えて確認できます。':filter==='waiting'?'展示待ち候補はありません。':'現在、充足率75%以上かつ評価差8点以上の候補はありません。';list.append(p);return;}
+  if(!items.length){const p=document.createElement('p');p.className='muted';p.textContent=filter==='confirmed'?'展示確認済みの候補はまだありません。展示待ちに切り替えて確認できます。':filter==='waiting'?'展示待ち候補はありません。':'現在、充足率75%以上かつ評価差8点以上の候補はありません。';p.classList.add('v428-empty');list.append(p);return;}
   const wrap=document.createElement('div');wrap.className='v425-table-scroll';
   const table=document.createElement('table');table.className='v425-table';
   const thead=document.createElement('thead'),head=document.createElement('tr');
@@ -1816,16 +1846,65 @@ loadSchedule();
    });td.append(btn);tr.append(td);body.append(tr);
   }
   table.append(body);wrap.append(table);list.append(wrap);
+  const mobile=document.createElement('div');mobile.className='v428-mobile-list';
+  for(const x of items){
+    const card=document.createElement('article');card.className='v428-card';
+    const heading=document.createElement('div');heading.className='v428-card-head';
+    const title=document.createElement('strong');title.textContent=x.venue_name+' '+x.race+'R';
+    const status=document.createElement('span');status.className='v428-state';status.textContent=x.passes_criteria?'展示確認済':'展示待ち';
+    heading.append(title,status);card.append(heading);
+    const main=document.createElement('div');main.className='v428-card-main';
+    for(const [label,value] of [['AI本命',x.top_boat+'号艇'],['評価差',number(x.score_gap)+'点']]){
+      const cell=document.createElement('div');const small=document.createElement('small');small.textContent=label;const strong=document.createElement('b');strong.textContent=value;cell.append(small,strong);main.append(cell);
+    }
+    card.append(main);
+    const meta=document.createElement('div');meta.className='v428-card-meta';
+    for(const value of ['締切 '+String(x.closing_at||'').slice(11,16),'充足 '+number(x.coverage_percent)+'%','展示 '+x.exhibition_count+'/6','1号艇 '+number(x.first_boat_score)+'点 / '+(x.first_boat_rank||'?')+'位']){const span=document.createElement('span');span.textContent=value;meta.append(span);}
+    card.append(meta);
+    const open=document.createElement('button');open.type='button';open.className='v428-open';open.textContent='レース詳細・AI予想を見る';
+    open.addEventListener('click',()=>{
+      const date=el('scheduleDate');if(date)date.value=latest.date;
+      const venue=el('heroVenue'),race=el('heroRace');
+      if(venue){venue.value=String(x.venue);venue.dispatchEvent(new Event('change'));}
+      if(race){race.value=String(x.race);race.dispatchEvent(new Event('change'));}
+      document.querySelector('[data-tab="raceView"]')?.click();
+      document.querySelector('[data-cockpit-tab="prediction"]')?.click();
+    });card.append(open);mobile.append(card);
+  }
+  list.append(mobile);
  }
  async function refresh(){
   if(busy)return;busy=true;el('v424RecommendStatus').textContent='本日の候補を取得中…';
-  try{const r=await fetch(API+'/recommendations',{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);latest=j;draw();}
+  try{const r=await fetch(API+'/recommendations',{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);latest=j;draw();const stamp=el('v428WatchUpdated');if(stamp)stamp.textContent='取得時刻 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+'（表示端末の時刻）';}
   catch(e){el('v424RecommendStatus').textContent='候補取得失敗：'+e.message;}
   finally{busy=false;}
  }
  el('v425Filter').addEventListener('change',draw);el('v425Sort').addEventListener('change',draw);
  el('v424RecommendRefresh')?.addEventListener('click',refresh);
  document.querySelector('nav')?.addEventListener('click',e=>{if(e.target.closest('[data-tab="watchlistView"]'))refresh();});
+})();
+</script>
+<script>
+// v4.2.8: UI-only enhancement; no API writes, no changes to prediction scores.
+(()=>{
+ const nav=document.querySelector('.tabs');
+ if(!nav)return;
+ const watch=document.getElementById('v424RecommendationsPanel');
+ if(watch){
+   const stamp=document.createElement('p');stamp.id='v428WatchUpdated';stamp.className='v428-updated';stamp.textContent='未更新（「更新」を押すと最新候補を取得）';
+   document.getElementById('v424RecommendStatus')?.after(stamp);
+ }
+ const home=document.getElementById('home');
+ if(home){
+   const quick=document.createElement('div');quick.className='v428-shortcuts';
+   const entries=[['✦ 注目レース','watchlistView'],['🚤 レース選択','raceView']];
+   entries.forEach(([name,id])=>{const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>document.querySelector('[data-tab="'+id+'"]')?.click());quick.append(b);});
+   home.insertBefore(quick,home.firstChild);
+ }
+ const activate=e=>{const b=e.target.closest('[data-tab]');if(!b)return;requestAnimationFrame(()=>b.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'}));};
+ nav.addEventListener('click',activate);
+ // When opening the dashboard, show the current tab clearly on narrow screens.
+ const active=nav.querySelector('[data-tab].active');if(active)requestAnimationFrame(()=>active.scrollIntoView({inline:'center',block:'nearest'}));
 })();
 </script>
 </body>
