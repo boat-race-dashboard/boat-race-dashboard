@@ -76,6 +76,24 @@
       <p class="muted" style="font-size:12px" id="venueLabel">選択中：桐生</p>
       <button class="primary" id="goAdd">この場の予想を登録</button>
     </div>
+    <div class="panel" id="autoPredictionPanel">
+      <div class="row"><h2>🤖 自動保存された事前予想</h2><button type="button" class="secondary" id="refreshAutoPredictions">更新</button></div>
+      <p class="muted" style="font-size:12px">Cronで保存された予想を含むD1履歴です。手動保存分も含まれ、保存方法は区別できません。購入履歴ではありません。</p>
+      <div class="two">
+        <div><label for="autoVenueFilter">競艇場</label><select id="autoVenueFilter"><option value="all">全国すべて</option></select></div>
+        <div><label for="autoStatusFilter">照合状況</label><select id="autoStatusFilter"><option value="all">すべて</option><option value="pending">結果待ち</option><option value="settled">照合済み</option></select></div>
+      </div>
+      <p id="autoPredictionStatus" class="muted" style="font-size:12px" aria-live="polite">履歴を取得中…</p>
+      <div class="grid" style="margin:12px 0">
+        <div class="metric"><span>表示中の的中率</span><b id="autoHit">--%</b><span id="autoHitSub">0 / 0</span></div>
+        <div class="metric"><span>表示中の回収率</span><b id="autoRoi">--%</b><span>照合済みのみ</span></div>
+        <div class="metric"><span>表示中の仮想収支</span><b id="autoProfit">¥0</b><span>照合済みのみ</span></div>
+      </div>
+      <div id="autoPredictionList"></div>
+      <h3 style="margin:20px 0 8px;font-size:15px">競艇場別の成績（照合済み）</h3>
+      <div id="autoVenueStats"></div>
+      <p class="muted" style="font-size:11px;margin-top:12px">非公式データによる試験的照合。直近最大100件のみで、公式確認済みではありません。更新操作は結果の照合処理を実行しません。</p>
+    </div>
     <div class="panel" id="raceDetailPanel">
       <h2>🚤 レース詳細・選手比較</h2>
       <p class="muted" style="font-size:12px">上で選んだ競艇場と日付を使います。非公式の参考データです。展示情報は未取得の場合があります。</p>
@@ -172,7 +190,7 @@
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v2.5<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v2.8<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -843,6 +861,81 @@ async function loadSnapshotChecks(){
 }
 snapshotChecksBtn.addEventListener('click',loadSnapshotChecks);
 loadSnapshotChecks();
+
+
+// v2.8: Read-only consolidated pre-race snapshot list, filters and per-venue stats.
+const autoVenueFilter=$('autoVenueFilter');
+const autoStatusFilter=$('autoStatusFilter');
+const autoPredictionList=$('autoPredictionList');
+const autoPredictionStatus=$('autoPredictionStatus');
+const autoVenueStats=$('autoVenueStats');
+let autoRows=[];
+VENUES.forEach((name,i)=>{const opt=document.createElement('option');opt.value=String(i+1);opt.textContent=name;autoVenueFilter.append(opt);});
+function renderAutoPredictions(){
+  const venue=autoVenueFilter.value, status=autoStatusFilter.value;
+  const rows=autoRows.filter(r=>(venue==='all'||Number(r.venue)===Number(venue))&&
+    (status==='all'||(status==='settled'?(r.result_status==='settled_unofficial'):(r.result_status!=='settled_unofficial'))));
+  const done=rows.filter(r=>r.result_status==='settled_unofficial');
+  const hits=done.filter(r=>Number(r.returned_yen)>0).length;
+  const spent=done.reduce((a,r)=>a+(Number(r.stake_yen)||0),0);
+  const returned=done.reduce((a,r)=>a+(Number(r.returned_yen)||0),0);
+  $('autoHit').textContent=done.length?(hits/done.length*100).toFixed(1)+'%':'--%';
+  $('autoHitSub').textContent=hits+' / '+done.length+' レース';
+  $('autoRoi').textContent=spent?(returned/spent*100).toFixed(1)+'%':'--%';
+  $('autoProfit').textContent=yen(returned-spent);
+  autoPredictionStatus.textContent='表示 '+rows.length+'件 / 照合済み '+done.length+'件 / 結果待ち '+(rows.length-done.length)+'件（取得上限100件）';
+  autoPredictionList.replaceChildren();
+  if(!rows.length)autoPredictionList.append(el('div','該当する予想がありません','empty'));
+  rows.forEach(r=>{
+    const item=el('div',undefined,'record');
+    const venueName=VENUES[Number(r.venue)-1]||('場番号'+r.venue);
+    const settled=r.result_status==='settled_unofficial';
+    const head=el('div',undefined,'row');
+    head.append(el('strong',(r.date||'日付不明')+' '+venueName+' '+r.race+'R'),el('span',settled?'照合済み':'結果待ち','pill'));
+    item.append(head);
+    item.append(el('div',(Array.isArray(r.tickets)?r.tickets:[]).map(t=>String(t.combination||'?')+' '+yen(Number(t.stake_yen)||0)).join(' / ')||'買い目未取得'));
+    if(settled){
+      item.append(el('div','着順 '+(r.winning_trifecta||'不明')+' / 払戻 '+yen(Number(r.returned_yen)||0)+' / 収支 '+yen(Number(r.profit_yen)||0)));
+    }else{
+      item.append(el('div','結果の照合待ち','muted'));
+    }
+    item.append(el('div','保存ID '+r.snapshot_id+' / モデル '+(r.model||'不明'),'muted'));
+    autoPredictionList.append(item);
+  });
+  autoVenueStats.replaceChildren();
+  const groups=new Map();
+  for(const r of done){
+    const v=Number(r.venue);
+    if(!groups.has(v))groups.set(v,{count:0,hits:0,stake:0,returned:0});
+    const g=groups.get(v);g.count++;g.hits+=Number(r.returned_yen)>0?1:0;
+    g.stake+=Number(r.stake_yen)||0;g.returned+=Number(r.returned_yen)||0;
+  }
+  if(!groups.size)autoVenueStats.append(el('div','照合済みデータはありません','empty'));
+  [...groups.entries()].sort((a,b)=>a[0]-b[0]).forEach(([v,g])=>{
+    const item=el('div',undefined,'record');
+    item.append(el('strong',(VENUES[v-1]||'場番号'+v)+'：'+g.hits+'/'+g.count+' 的中（'+(g.hits/g.count*100).toFixed(1)+'%）'));
+    item.append(el('div','回収率 '+(g.stake?(g.returned/g.stake*100).toFixed(1)+'%':'--%')+' / 仮想収支 '+yen(g.returned-g.stake),'muted'));
+    autoVenueStats.append(item);
+  });
+}
+async function loadAutoPredictions(){
+  const btn=$('refreshAutoPredictions');btn.disabled=true;
+  autoPredictionStatus.textContent='D1の履歴を取得中…';
+  try{
+    const response=await fetch(API+'/snapshot-checks',{cache:'no-store'});
+    if(!response.ok)throw Error('HTTP '+response.status);
+    const payload=await response.json();
+    if(!Array.isArray(payload.results))throw Error('レスポンス形式が不正です');
+    autoRows=payload.results;
+    renderAutoPredictions();
+  }catch(e){
+    autoPredictionStatus.textContent='取得できませんでした：'+e.message;
+  }finally{btn.disabled=false;}
+}
+$('refreshAutoPredictions').addEventListener('click',loadAutoPredictions);
+autoVenueFilter.addEventListener('change',renderAutoPredictions);
+autoStatusFilter.addEventListener('change',renderAutoPredictions);
+loadAutoPredictions();
 
 $('refreshSchedule').onclick=loadSchedule;
 scheduleDate.onchange=loadSchedule;
