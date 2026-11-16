@@ -40,8 +40,8 @@
 <main>
   <div class="grid">
     <div class="metric"><span>的中率</span><b id="hit">--%</b><span id="hitSub">0 / 0 レース</span></div>
-    <div class="metric"><span>回収率</span><b id="roi">--%</b><span>確定分のみ</span></div>
-    <div class="metric"><span>仮想収支</span><b id="profit">¥0</b><span>記録ベース</span></div>
+    <div class="metric"><span>回収率</span><b id="roi">--%</b><span>D1結果確定分</span></div>
+    <div class="metric"><span>仮想収支</span><b id="profit">¥0</b><span>D1結果確定分</span></div>
   </div>
   <div class="tabs">
     <button class="active" data-tab="home">ホーム</button><button data-tab="add">予想登録</button>
@@ -55,14 +55,14 @@
       <button class="primary" id="goAdd">この場の予想を登録</button>
     </div>
     <div class="panel">
-      <div class="row"><h2>最近の予想</h2><span class="pill" id="count">0件</span></div>
+      <div class="row"><h2>この端末の最近の予想</h2><span class="pill" id="count">0件</span></div>
       <div id="recent" class="empty">まだ予想がありません</div>
     </div>
     <div class="panel">
       <div class="row"><h2>☁️ D1に保存された予想</h2><button class="secondary" id="refreshCloud" type="button">更新</button></div>
       <p class="muted" id="cloudStatus" style="font-size:12px" aria-live="polite">読み込み中…</p>
       <div id="cloudPredictions"></div>
-      <p class="muted" style="font-size:12px">この欄にはD1の保存結果を表示します。上の「最近の予想」、結果入力、成績は引き続きこの端末の記録を使います。</p>
+      <p class="muted" style="font-size:12px">この欄にはD1の保存結果を表示します。成績はD1の結果確定分を使用します。端末内の旧記録とは別管理です。</p>
     </div>
     <div class="panel"><div class="notice">この画面は記録・分析用です。リアルタイムの出走表、展示、オッズ、AI予想は未接続です。表示する金額は実際の投票履歴ではありません。</div></div>
   </section>
@@ -82,14 +82,22 @@
       <input id="writeKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="API_WRITE_KEY の値" required>
       <button class="primary" id="submitPrediction" type="submit">D1と端末に予想を保存する</button>
     </form>
-    <p class="muted" style="font-size:12px">1レースの登録金額は合計600円以内。実際の舟券購入は行いません。認証が成功した場合のみD1とこの端末に保存します。キーは画面上で一時利用し、保存しません。結果・分析は引き続き端末の記録を使用します。</p>
+    <p class="muted" style="font-size:12px">1レースの登録金額は合計600円以内。実際の舟券購入は行いません。認証が成功した場合のみD1とこの端末に保存します。キーは画面上で一時利用し、保存しません。結果・分析はD1のデータを利用します。</p>
   </div></section>
   <section id="results" class="hidden">
-    <div class="panel"><h2>レース結果を登録</h2><div id="pending" class="empty">結果待ちの予想はありません</div></div>
-    <div class="panel"><h2>結果登録済み</h2><div id="settled" class="empty">まだ結果がありません</div></div>
+    <div class="panel"><div class="row"><h2>☁️ D1の結果待ち予想</h2><button class="secondary" id="refreshResults" type="button">更新</button></div>
+      <p class="muted" id="resultsStatus" aria-live="polite">読み込み中…</p>
+      <p class="notice">結果入力は実際の確定着順と、選択した券種の100円あたりの公式払戻額を入力してください。テスト用の予想には実際の結果を登録しないでください。</p>
+      <div id="cloudPending"></div></div>
+    <div class="panel"><h2>☁️ D1の結果登録済み</h2><div id="cloudSettled"></div></div>
+    <div class="panel"><h2>端末内の旧方式の結果入力</h2><p class="muted">旧記録の確認用です。ここへの登録はD1へ送信されず、上部のD1集計にも入りません。</p>
+      <div id="pending" class="empty">結果待ちの予想はありません</div></div>
+    <div class="panel"><h2>端末内の旧方式の登録済み結果</h2><div id="settled" class="empty">まだ結果がありません</div></div>
   </section>
   <section id="stats" class="hidden">
-    <div class="panel"><h2>予想の成績</h2><div id="breakdown" class="empty">データが集まると集計します</div></div>
+    <div class="panel"><h2>☁️ D1の予想成績</h2><p class="muted" id="cloudStatsStatus">データを取得中…</p><div id="cloudBreakdown"></div>
+      <p class="muted" style="font-size:12px">D1から取得した最大100件の予想と最大100件の結果で集計します。100件以上ある場合は全期間集計ではありません。TESTの予想も含みます。</p></div>
+    <div class="panel"><h2>端末内の旧記録の成績</h2><div id="breakdown" class="empty">データが集まると集計します</div></div>
     <div class="panel"><h2>データの管理</h2>
       <p class="muted" style="font-size:12px">この端末のブラウザに保存されます。別端末との同期やバックアップはまだありません。</p>
       <button class="secondary" id="export">記録をJSONで書き出す</button>
@@ -99,7 +107,7 @@
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v1.3<br>公式BOAT RACE・1MARKとは未連携 / 自動予想なし</div>
+  <div class="footer">個人用ダッシュボード v1.5<br>公式BOAT RACE・1MARKとは未連携 / 自動予想なし</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -145,10 +153,7 @@ function renderList(container,arr,mode){
 function render(){
   const settled=data.filter(p=>p.result);
   const spent=settled.reduce((a,p)=>a+p.s1+p.s2,0),returned=settled.reduce((a,p)=>a+p.payout,0),hits=settled.filter(p=>p.payout>0).length;
-  $('hit').textContent=settled.length?(100*hits/settled.length).toFixed(1)+'%':'--%';
-  $('hitSub').textContent=`${hits} / ${settled.length} レース`;
-  $('roi').textContent=spent?(100*returned/spent).toFixed(1)+'%':'--%';
-  $('profit').textContent=yen(returned-spent);
+  // 上部の成績カードはD1確定結果からのみ計算する。
   $('count').textContent=data.length+'件';
   const sorted=[...data].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
   renderList($('recent'),sorted.slice(0,5),'recent');
@@ -197,7 +202,7 @@ $('predictionForm').onsubmit=async e=>{
     save();
     $('ticket1').value='';$('ticket2').value='';$('memo').value='';
     tab('home');
-    await loadCloudPredictions();
+    await refreshCloudData();
     alert('D1に保存しました（ID: '+result.id+'）。端末にも記録しました');
   }catch(error){
     alert(error.message+'。重複を避けるため、再送信前にD1の一覧を確認してください。');
@@ -222,28 +227,159 @@ $('clear').onclick=()=>{if(confirm('全記録を削除しますか？この操�
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='boat-race-records-'+localDate()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 render();
 
-// D1の予想は閲覧専用。秘密キーはブラウザに配置しない。
-async function loadCloudPredictions(){
-  const status=$('cloudStatus'),list=$('cloudPredictions');
-  status.textContent='読み込み中…';list.replaceChildren();
-  try{
-    const response=await fetch('https://boat-race-api.7phr5nzkbt.workers.dev/predictions',{cache:'no-store'});
-    if(!response.ok)throw new Error('HTTP '+response.status);
-    const body=await response.json();
-    if(!Array.isArray(body.predictions))throw new Error('データ形式が違います');
-    status.textContent=body.predictions.length+'件取得しました';
-    if(!body.predictions.length){list.className='empty';list.textContent='D1にはまだ予想がありません';return}
-    list.className='';
-    for(const p of body.predictions){
-      const item=el('div',undefined,'record');
-      const heading=el('strong',`${p.race_date||''} ${p.venue||''} ${p.race_number||''}R`);
-      const detail=el('div',`${p.bet_type||''}  ${p.ticket1||''} / ${p.ticket2||''} ・ 合計 ${yen(Number(p.amount1||0)+Number(p.amount2||0))}`,'muted');
-      item.append(heading,detail);list.appendChild(item)
-    }
-  }catch(error){status.textContent='D1から取得できませんでした（通信設定やAPIを確認してください）'}
+// D1のGETは閲覧専用。POSTで入力されたキーは一時利用し保存しない。
+let cloudPredictions=[];
+let cloudResults=[];
+let cloudReady=false;
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+function isMatch(ticket, resultTicket, type){
+  const a=String(ticket||'').split('-');
+  const b=String(resultTicket||'').split('-');
+  const count=type.startsWith('2')?2:3;
+  if(a.length!==count||b.length<3)return false;
+  const target=b.slice(0,count);
+  if(type.endsWith('複'))return [...a].sort().join('-')===[...target].sort().join('-');
+  return a.join('-')===target.join('-');
 }
-$('refreshCloud').onclick=loadCloudPredictions;
-loadCloudPredictions();
+function payoutFor(p,r){
+  if(!r)return 0;
+  const unit=Number(r.payout_per_100);
+  const first=isMatch(p.ticket1,r.result_ticket,p.bet_type)?Number(p.amount1)/100*unit:0;
+  const second=isMatch(p.ticket2,r.result_ticket,p.bet_type)?Number(p.amount2)/100*unit:0;
+  return first+second;
+}
+function summaryRow(label,value){
+  const row=el('div',undefined,'row record');
+  row.append(el('span',label),el('strong',String(value)));
+  return row;
+}
+function renderCloudStats(){
+  const box=$('cloudBreakdown');
+  box.replaceChildren();
+  if(!cloudReady)return;
+  const resultById=new Map(cloudResults.map(r=>[Number(r.prediction_id),r]));
+  const completed=cloudPredictions.filter(p=>resultById.has(Number(p.id)));
+  const staked=completed.reduce((n,p)=>n+Number(p.amount1)+Number(p.amount2),0);
+  const returned=completed.reduce((n,p)=>n+payoutFor(p,resultById.get(Number(p.id))),0);
+  const hits=completed.filter(p=>payoutFor(p,resultById.get(Number(p.id)))>0).length;
+  $('hit').textContent=completed.length?(100*hits/completed.length).toFixed(1)+'%':'--%';
+  $('hitSub').textContent=hits+' / '+completed.length+' レース';
+  $('roi').textContent=staked?(100*returned/staked).toFixed(1)+'%':'--%';
+  $('profit').textContent=yen(returned-staked);
+  $('cloudStatsStatus').textContent='D1確定結果から集計（仮想収支）';
+  for(const [label,value] of [
+    ['D1予想取得',cloudPredictions.length+'件'],
+    ['結果確定',completed.length+'件'],
+    ['的中',hits+'件'],
+    ['確定分の登録金額',yen(staked)],
+    ['確定分の払戻合計',yen(returned)],
+    ['仮想収支',yen(returned-staked)]
+  ])box.append(summaryRow(label,value));
+}
+function renderCloudResults(){
+  const pending=$('cloudPending');
+  const settled=$('cloudSettled');
+  pending.replaceChildren();settled.replaceChildren();
+  if(!cloudReady)return;
+  const resultById=new Map(cloudResults.map(r=>[Number(r.prediction_id),r]));
+  const open=cloudPredictions.filter(p=>!resultById.has(Number(p.id)));
+  const done=cloudPredictions.filter(p=>resultById.has(Number(p.id)));
+  $('resultsStatus').textContent=open.length+'件が結果待ち／'+done.length+'件確定';
+  if(!open.length)pending.append(el('p','結果待ちの予想はありません','empty'));
+  for(const p of open){
+    const record=el('div',undefined,'record');
+    record.append(el('strong',`ID ${p.id} ・ ${p.race_date} ${p.venue} ${p.race_number}R`));
+    record.append(el('div',`${p.bet_type} ${p.ticket1} / ${p.ticket2} ・ ${yen(Number(p.amount1)+Number(p.amount2))}`,'muted'));
+    if(String(p.confidence||'').toUpperCase()==='TEST'){
+      record.append(el('p','TEST予想です。実際の成績に混ぜないよう、結果入力は控えてください。','muted'));
+      pending.appendChild(record);
+      continue;
+    }
+    const form=document.createElement('form');
+    const lab1=el('label','確定着順（例 1-2-3）');
+    const ticket=document.createElement('input');ticket.placeholder='1-2-3';ticket.required=true;
+    const lab2=el('label',`${p.bet_type} の100円あたり公式払戻額（不成立・不的中でも払戻表の値）`);
+    const payout=document.createElement('input');payout.type='number';payout.min='0';payout.max='100000000';payout.step='1';payout.required=true; 
+    const lab3=el('label','D1登録用の認証キー（保存しません）');
+    const key=document.createElement('input');key.type='password';key.autocomplete='off';key.required=true;key.placeholder='API_WRITE_KEY の値';
+    const btn=el('button','D1に結果を保存','primary');btn.type='submit';
+    form.append(lab1,ticket,lab2,payout,lab3,key,btn);
+    form.onsubmit=async e=>{
+      e.preventDefault();
+      const value=ticket.value.trim();
+      const parts=value.split('-');
+      if(!/^[1-6]-[1-6]-[1-6]$/.test(value)||new Set(parts).size!==3){alert('着順は重複なしの1-2-3形式で入力してください');return;}
+      const number=Number(payout.value);
+      if(!Number.isSafeInteger(number)||number<0||number>100000000){alert('払戻額を確認してください');return;}
+      const secret=key.value.trim();key.value='';
+      if(!secret){alert('認証キーが必要です');return;}
+      if(!confirm(`予想ID ${p.id} に結果 ${value}／100円払戻 ${yen(number)} を確定しますか？`))return;
+      btn.disabled=true;btn.textContent='保存中…';
+      try{
+        const response=await fetch(API+'/results',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+secret},
+          body:JSON.stringify({prediction_id:Number(p.id),result_ticket:value,payout_per_100:number}),
+          cache:'no-store'
+        });
+        const body=await response.json().catch(()=>({}));
+        if(!response.ok||body.status!=='created')throw Error(response.status===409?'この予想の結果はすでに登録されています':response.status===401?'認証キーが一致しません':'保存できませんでした（HTTP '+response.status+'）');
+        alert('D1に結果を登録しました（結果ID: '+body.id+'）');
+        await refreshCloudData();
+      }catch(error){alert(error.message+'。再送信する前に「更新」で登録状況を確認してください。');}
+      finally{btn.disabled=false;btn.textContent='D1に結果を保存';}
+    };
+    record.appendChild(form);pending.appendChild(record);
+  }
+  if(!done.length)settled.append(el('p','まだD1に結果がありません','empty'));
+  for(const p of done){
+    const r=resultById.get(Number(p.id));
+    const returned=payoutFor(p,r);
+    const spent=Number(p.amount1)+Number(p.amount2);
+    const record=el('div',undefined,'record');
+    record.append(el('strong',`ID ${p.id} ・ ${p.race_date} ${p.venue} ${p.race_number}R`));
+    record.append(el('div',`結果 ${r.result_ticket} ／ 100円払戻 ${yen(r.payout_per_100)} ／ 払戻合計 ${yen(returned)} ／ 仮想収支 ${yen(returned-spent)}`,'muted'));
+    settled.appendChild(record);
+  }
+}
+async function refreshCloudData(){
+  $('resultsStatus').textContent='読み込み中…';
+  try{
+    const [a,b]=await Promise.all([
+      fetch(API+'/predictions',{cache:'no-store'}),
+      fetch(API+'/results',{cache:'no-store'})
+    ]);
+    if(!a.ok||!b.ok)throw Error('APIへの接続に失敗しました');
+    const [predictions,results]=await Promise.all([a.json(),b.json()]);
+    if(!Array.isArray(predictions.predictions)||!Array.isArray(results.results))throw Error('データ形式が不正です');
+    cloudPredictions=predictions.predictions;
+    cloudResults=results.results;
+    cloudReady=true;
+    const list=$('cloudPredictions');list.replaceChildren();
+    $('cloudStatus').textContent=cloudPredictions.length+'件取得しました';
+    if(!cloudPredictions.length){list.className='empty';list.textContent='D1にはまだ予想がありません';}
+    else{
+      list.className='';
+      for(const p of cloudPredictions){
+        const item=el('div',undefined,'record');
+        item.append(el('strong',`${p.race_date} ${p.venue} ${p.race_number}R`));
+        item.append(el('div',`${p.bet_type} ${p.ticket1} / ${p.ticket2} ・ 合計 ${yen(Number(p.amount1)+Number(p.amount2))}`,'muted'));
+        list.appendChild(item);
+      }
+    }
+    renderCloudResults();renderCloudStats();
+  }catch(error){
+    cloudReady=false;
+    $('cloudStatus').textContent='D1から取得できませんでした';
+    $('resultsStatus').textContent='D1のデータを取得できませんでした';
+    $('cloudStatsStatus').textContent='D1のデータを取得できませんでした';
+    $('hit').textContent='--%';$('hitSub').textContent='取得失敗';
+    $('roi').textContent='--%';$('profit').textContent='--';
+  }
+}
+$('refreshCloud').onclick=refreshCloudData;
+$('refreshResults').onclick=refreshCloudData;
+refreshCloudData();
 </script>
 </body>
 </html>
