@@ -204,7 +204,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 #linkedEntryBody .race-table{min-width:1100px}#linkedEntryBody .race-table td{font-variant-numeric:tabular-nums}
 
 /* v3.8: single race cockpit with independent panes; retain original legacy panels for data compatibility */
-.cockpit-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:18px 0 8px;background:#1b1539;padding:5px;border-radius:16px;border:1px solid #7557a0}
+.cockpit-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:18px 0 8px;background:#1b1539;padding:5px;border-radius:16px;border:1px solid #7557a0}
 .cockpit-tabs button{padding:12px 3px;border:0;border-radius:11px;background:transparent;color:#d2c4eb;font-size:12px;font-weight:800;white-space:nowrap}
 .cockpit-tabs button.active{background:linear-gradient(120deg,#ffe69c,#e5b85d);color:#2a1744}
 .cockpit-pane[hidden]{display:none!important}.cockpit-pane .linked-entry{margin-top:0}
@@ -278,6 +278,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     .v424-breakdown-boat{padding:10px 0;border-bottom:1px solid #3c3555;line-height:1.7}
     .v424-reco{border-top:1px solid #493c63;padding:12px 0;line-height:1.7;font-size:12px}
     .v424-reco strong{color:#e7c679}
+
+/* v4.2.9 odds */
+.odds-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:14px 0;flex-wrap:wrap}.odds-head select,.odds-head button{border:1px solid #9677b5;border-radius:10px;background:#241a3f;color:#fff;padding:10px}.odds-head button{background:#e9c477;color:#291b40;font-weight:800}.odds-notice{font-size:12px;color:#dfcdee;line-height:1.6}.odds-grid{width:100%;border-collapse:collapse;font-size:13px}.odds-grid th{background:#36234e;color:#f5d88a;padding:10px 5px}.odds-grid td{border-bottom:1px solid #66517d;padding:10px 5px;text-align:center}.odds-grid td:last-child{text-align:right}.odds-gold{color:#f5d88a;font-weight:800}.odds-payout-panel{border:1px solid #a98a51;border-radius:12px;background:#281f42;margin:12px 0;padding:12px;font-size:13px}.odds-payout-panel>strong{color:#f5d88a}.odds-payout-row{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:6px;border-bottom:1px solid #55436d;padding:9px 0}.odds-payout-row strong{text-align:right;color:#f5d88a}.cockpit-tabs button{font-size:11px!important;padding:11px 1px!important}
 </style>
 <style>
 .v425-controls{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
@@ -1349,10 +1352,11 @@ loadAutoPredictions();
     <div class="hero-top"><div><div class="hero-title" id="heroRaceTitle">レース選択</div><div class="hero-sub" id="heroRaceSub">日付・会場・レースを選択</div></div><div class="hero-status" id="heroRaceStatus">非公式<br>参考</div></div>
     <div class="hero-choose"><div><label for="heroVenue">競艇場</label><select id="heroVenue"></select></div><div class="hero-race-label">レースは下の1R〜12Rから選択<select id="heroRace" aria-label="選択中のレース" hidden></select></div></div>
     <div class="race-dots" id="heroRaceDots"></div>
-    <div class="cockpit-tabs" role="tablist" aria-label="レース情報の切替"><button type="button" data-cockpit-tab="entries" class="active" aria-selected="true">出走表</button><button type="button" data-cockpit-tab="preview" aria-selected="false">直前情報</button><button type="button" data-cockpit-tab="prediction" aria-selected="false">AI予想</button><button type="button" data-cockpit-tab="result" aria-selected="false">結果</button></div>
+    <div class="cockpit-tabs" role="tablist" aria-label="レース情報の切替"><button type="button" data-cockpit-tab="entries" class="active" aria-selected="true">出走表</button><button type="button" data-cockpit-tab="preview" aria-selected="false">直前情報</button><button type="button" data-cockpit-tab="prediction" aria-selected="false">AI予想</button><button type="button" data-cockpit-tab="odds" aria-selected="false">オッズ</button><button type="button" data-cockpit-tab="result" aria-selected="false">結果</button></div>
     <div class="cockpit-pane" id="cockpitEntries"><div class="linked-entry"><h3 id="linkedEntryTitle">📋 出走表</h3><div class="linked-status" id="linkedEntryStatus" aria-live="polite">選択中のレースを取得しています…</div><div id="linkedEntryBody"></div><div class="linked-note">非公式APIの参考データです。締切・展示などは公式情報を確認してください。</div></div></div>
     <div class="cockpit-pane" id="cockpitPreview" hidden><div class="linked-entry"><h3>直前情報</h3><div id="cockpitPreviewBody" class="linked-status">データを取得中…</div></div></div>
     <div class="cockpit-pane" id="cockpitPrediction" hidden><div class="hero-reco"><strong>✧ AI予想（試作ルール型）</strong><div class="tickets v40-tickets" id="heroTickets">選択すると予想を取得します</div><div class="meta" id="heroPredictionMeta">評価点は的中確率ではありません</div><div id="cockpitRanking"></div><button type="button" class="primary" id="heroPredict">予想を更新</button></div></div>
+    <div class="cockpit-pane" id="cockpitOdds" hidden><div class="linked-entry"><h3>3連単オッズ（非公式・約30分更新）</h3><div class="odds-notice" id="oddsNotice">選択中のレースのオッズを取得します</div><div class="odds-head"><label>1着固定 <select id="oddsFirst"><option value="1">1号艇</option><option value="2">2号艇</option><option value="3">3号艇</option><option value="4">4号艇</option><option value="5">5号艇</option><option value="6">6号艇</option></select></label><button type="button" id="oddsRefresh">オッズを更新</button></div><div id="oddsTable"></div><p class="muted">オッズは確定値ではありません。100円購入時の払戻見込みです。実際の購入前に公式情報を確認してください。</p></div></div>
     <div class="cockpit-pane" id="cockpitResult" hidden><div class="linked-entry"><h3>レース結果</h3><div id="cockpitResultBody" class="linked-status">結果を取得中…</div></div></div>
     <button type="button" id="heroLoadDetail" hidden>旧詳細画面</button>
     <div class="hero-caption">Boatrace Open APIによる非公式参考情報。的中確率や期待値を保証しません。締切・開催・投票可否は公式情報で確認してください。</div>`;
@@ -1367,14 +1371,14 @@ loadAutoPredictions();
     [...dots.children].forEach((b,i)=>b.classList.toggle('active',i+1===r));
   }
   for(let i=1;i<=12;i++){const b=document.createElement('button');b.type='button';b.textContent=i+'R';b.setAttribute('aria-label',i+'レースを選択');b.onclick=()=>{hr.value=String(i);syncToDetail();requestAnimationFrame(()=>document.querySelector('.cockpit-tabs')?.scrollIntoView({behavior:'smooth',block:'start'}));};dots.append(b);}
-  function syncToDetail(){raceVenueSelect.value=hv.value;raceNumberSelect.value=hr.value;selected=VENUES[Number(hv.value)-1];renderVenues();updateHero();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';document.getElementById('heroPredictionMeta').textContent='評価点は的中確率ではありません';loadLinkedEntry();if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();}
+  function syncToDetail(){raceVenueSelect.value=hv.value;raceNumberSelect.value=hr.value;selected=VENUES[Number(hv.value)-1];renderVenues();updateHero();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';document.getElementById('heroPredictionMeta').textContent='評価点は的中確率ではありません';loadLinkedEntry();if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();if(!document.getElementById('cockpitOdds').hidden)loadOdds();}
   function syncFromDetail(){hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();loadLinkedEntry();}
   let entryRequestId=0, predictionRequestId=0;
-  const paneMap={entries:'cockpitEntries',preview:'cockpitPreview',prediction:'cockpitPrediction',result:'cockpitResult'};
+  const paneMap={entries:'cockpitEntries',preview:'cockpitPreview',prediction:'cockpitPrediction',odds:'cockpitOdds',result:'cockpitResult'};
   function setCockpitTab(tab){
     for(const [key,id] of Object.entries(paneMap))document.getElementById(id).hidden=key!==tab;
     document.querySelectorAll('[data-cockpit-tab]').forEach(b=>{const active=b.dataset.cockpitTab===tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
-    if(tab==='prediction')loadCockpitPrediction();
+    if(tab==='prediction')loadCockpitPrediction();if(tab==='odds')loadOdds();
     requestAnimationFrame(()=>{const tabs=document.querySelector('.cockpit-tabs');if(tabs&&document.getElementById('raceView')&&!document.getElementById('raceView').classList.contains('hidden'))tabs.scrollIntoView({behavior:'smooth',block:'start'});});
   }
   document.querySelectorAll('[data-cockpit-tab]').forEach(b=>b.onclick=()=>setCockpitTab(b.dataset.cockpitTab));
@@ -1384,7 +1388,7 @@ loadAutoPredictions();
     racers.forEach(r=>{
       const row=el('div',undefined,'v40-compact-row');
       row.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number));
-      const name=el('div',undefined,'v40-name');name.append(el('span',show(r.name)),el('small','登録 '+show(r.registration_number)+' ／ '+({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別不明')));
+      const name=el('div',undefined,'v40-name');name.append(el('span',({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')+' '+show(r.name)),el('small','登録 '+show(r.registration_number)));
       const stats=el('div',undefined,'v40-stats');stats.append(el('b','全国 '+show(r.national_win_rate)),el('span','M '+show(r.motor_top_2_percent,'%')+' ／ ST '+show(r.average_start_timing)));
       row.append(name,stats);list.append(row);
     });return list;
@@ -1428,6 +1432,48 @@ loadAutoPredictions();
     finished.forEach(r=>{const row=el('div',undefined,'cockpit-preview-row');row.append(el('strong',show(r.finish_place)+'着'),el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number),el('span',show(r.name)));box.append(row);});
     box.append(el('p','非公式の着順データです。払戻・的中照合は保存済み予想の「結果一覧」で確認してください。','muted'));
   }
+  let oddsRequestId=0,oddsCache=null;
+  const oddsFirst=document.getElementById('oddsFirst'),oddsTable=document.getElementById('oddsTable'),oddsNotice=document.getElementById('oddsNotice');
+  const money=n=>Number(n).toLocaleString('ja-JP')+'円';
+  function renderOdds(){
+    oddsTable.replaceChildren();const map=oddsCache?.odds||{},first=Number(oddsFirst.value);
+    const table=document.createElement('table');table.className='odds-grid';
+    const head=document.createElement('tr');['2着','3着','オッズ','100円的中時'].forEach(x=>{const th=document.createElement('th');th.textContent=x;head.append(th);});table.append(head);
+    for(let b=1;b<=6;b++)if(b!==first)for(let c=1;c<=6;c++)if(c!==first&&c!==b){
+      const tr=document.createElement('tr'),v=map[[first,b,c].join('-')];
+      [String(b),String(c),v==null?'--':Number(v).toFixed(1)+'倍',v==null?'--':money(Math.floor(Number(v)*100))].forEach((x,i)=>{const td=document.createElement('td');td.textContent=x;if(i===2)td.className='odds-gold';tr.append(td);});table.append(tr);
+    }
+    oddsTable.append(table);
+  }
+  async function loadOdds(){
+    const id=++oddsRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
+    oddsCache=null;oddsNotice.textContent='非公式オッズを取得中…';renderOdds();
+    try{
+      const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
+      if(!res.ok)throw Error('HTTP '+res.status);
+      const data=await res.json();if(id!==oddsRequestId)return;oddsCache=data;
+      const time=data.source_updated_at?'元データ更新 '+data.source_updated_at:'元データ更新時刻は未確認';
+      oddsNotice.textContent='取得 '+data.count+'/120通り ／ '+time+' ／ 画面取得 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+'（約30分更新・非公式）';
+      if(!data.count)oddsNotice.textContent+=' ／ 未配信または形式未対応';
+      renderOdds();
+    }catch(e){if(id!==oddsRequestId)return;oddsNotice.textContent='オッズを取得できません：'+e.message+'。架空の数値は表示しません。';}
+  }
+  oddsFirst.addEventListener('change',renderOdds);
+  document.getElementById('oddsRefresh').addEventListener('click',loadOdds);
+  async function renderTicketPayouts(tickets,date,venue,race,container){
+    const panel=el('div',undefined,'odds-payout-panel');panel.textContent='オッズと払戻見込みを照合中…';container.append(panel);
+    try{
+      const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
+      if(!res.ok)throw Error('オッズ未取得');const data=await res.json();
+      if(scheduleDate.value!==date||hv.value!==venue||hr.value!==race)return;
+      panel.replaceChildren();panel.append(el('strong','6点の的中時払戻見込み（非公式・暫定）'));
+      for(const t of tickets){const v=data.odds?.[t.combination],line=el('div',undefined,'odds-payout-row');
+        line.append(el('span',t.combination),el('span',v==null?'オッズ未取得':Number(v).toFixed(1)+'倍'),el('strong',v==null?'--':money(Math.floor(Number(v)*Number(t.stake_yen)))));
+        panel.append(line);
+      }
+      panel.append(el('p','6点合計600円の場合、差引収支＝的中時払戻－600円。未確定オッズであり購入額の保証ではありません。','muted'));
+    }catch{panel.textContent='オッズ未取得：払戻見込みは表示できません。';}
+  }
   async function loadCockpitPrediction(){
     const id=++predictionRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
     const tickets=document.getElementById('heroTickets'),meta=document.getElementById('heroPredictionMeta'),ranking=document.getElementById('cockpitRanking');
@@ -1446,9 +1492,10 @@ loadAutoPredictions();
       insight.append(el('strong','評価差 '+gap.toFixed(1)+'点 ／ データ充足 '+available+'/48（'+(available/48*100).toFixed(1)+'%）'));
       insight.append(el('div','展示タイム '+(data.exhibition_times_received||0)+'/6艇 ／ これは的中確率や信頼度の保証ではありません。','muted'));
       tickets.append(insight);
+      renderTicketPayouts(data.tickets,date,venue,race,tickets);
       data.ranking.forEach((r,i)=>{
         const row=el('div',undefined,'v40-rank');row.append(el('span',String(r.boat),'linked-boat-chip linked-boat-'+r.boat));
-        const label=el('div',undefined,'v40-rank-name');label.append(el('strong',(i+1)+'位 '+show(r.name)));
+        const label=el('div',undefined,'v40-rank-name');label.append(el('strong',(i+1)+'位 '+({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')+' '+show(r.name)));
         const track=el('div',undefined,'v40-rank-track'),fill=el('div',undefined,'v40-rank-fill');
         fill.style.width=Math.max(0,Math.min(100,Number(r.score)||0))+'%';track.append(fill);label.append(track);
         row.append(label,el('span',Number.isFinite(Number(r.score))?Number(r.score).toFixed(1)+'点':'—','v40-rank-score'));ranking.append(row);
@@ -1905,6 +1952,62 @@ loadSchedule();
  nav.addEventListener('click',activate);
  // When opening the dashboard, show the current tab clearly on narrow screens.
  const active=nav.querySelector('[data-tab].active');if(active)requestAnimationFrame(()=>active.scrollIntoView({inline:'center',block:'nearest'}));
+})();
+</script>
+<style>
+.v430-panel{background:linear-gradient(135deg,#302249,#211934);border:1px solid #80649f;border-radius:20px;padding:16px;margin:16px 0;color:#f9f0ff}
+.v430-panel h2{color:#f1d087;margin:0 0 8px;font-size:19px}
+.v430-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 0;border-bottom:1px solid #655078}
+.v430-row:last-child{border-bottom:0}.v430-time{font-size:19px;color:#f1d087;font-weight:800;font-variant-numeric:tabular-nums}
+.v430-place{font-size:15px;font-weight:700}.v430-status{font-size:11px;color:#c9b6db}
+.v430-open{border:1px solid #d6b975;background:#edcf85;color:#24172d;border-radius:11px;padding:10px 12px;font-weight:800;white-space:nowrap}
+.v430-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:12px 0}.v430-controls label{flex:1;min-width:120px;color:#ddd0ed;font-size:12px}
+.v430-controls select,.v430-controls input{width:100%;padding:10px;background:#211934;color:white;border:1px solid #80649f;border-radius:10px}
+.v430-controls button{padding:11px;border-radius:10px;background:#47345f;color:#fff;border:1px solid #8c6eaa}
+.v430-hint{color:#c9b6db;font-size:12px;line-height:1.6}.v430-past{opacity:.58}
+</style>
+<script>
+// v4.3.0: Schedule is ordered by planned betting deadline, NOT actual race start time.
+(()=>{
+ const api='https://boat-race-api.7phr5nzkbt.workers.dev';
+ const target=document.getElementById('watchlistView');if(!target)return;
+ const panel=document.createElement('div');panel.className='v430-panel';
+ panel.innerHTML='<h2>🕒 全国レース・締切予定順</h2><p class="v430-hint">全国のレースを締切予定時刻の早い順に表示。実際のレース開始時刻とは異なります。非公式データのため、締切変更・中止は公式で確認してください。</p><div class="v430-controls"><label>対象日<input id="v430Date" type="date"></label><label>表示<select id="v430Filter"><option value="upcoming">これから締切</option><option value="all">全レース</option></select></label><button id="v430Refresh" type="button">更新</button></div><p id="v430Status" class="v430-hint">取得待ち</p><div id="v430List"></div>';
+ target.insertBefore(panel,target.firstChild);
+ const date=panel.querySelector('#v430Date'),filter=panel.querySelector('#v430Filter'),status=panel.querySelector('#v430Status'),list=panel.querySelector('#v430List');
+ const localToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ date.value=localToday();let entries=[],loadedDate='',busy=false;
+ const valid=s=>/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s||'');
+ const millis=s=>Date.parse(s.replace(' ','T')+'+09:00');
+ const open=(v,r)=>{
+   const globalDate=document.getElementById('scheduleDate');if(globalDate)globalDate.value=date.value;
+   const venue=document.getElementById('heroVenue'),race=document.getElementById('heroRace');
+   if(venue){venue.value=String(v);venue.dispatchEvent(new Event('change'));}
+   if(race){race.value=String(r);race.dispatchEvent(new Event('change'));}
+   document.querySelector('[data-tab="raceView"]')?.click();
+ };
+ function render(){
+  list.replaceChildren();const now=Date.now();
+  const rows=entries.filter(x=>filter.value==='all'||millis(x.closing_at)>now).sort((a,b)=>millis(a.closing_at)-millis(b.closing_at));
+  status.textContent='締切時刻を取得できた '+entries.length+'R ／ 表示 '+rows.length+'R（'+loadedDate+'）';
+  if(!rows.length){const p=document.createElement('p');p.className='v430-hint';p.textContent='表示対象がありません。全レース表示に切り替えるか、時間をおいて更新してください。';list.append(p);return;}
+  const fragment=document.createDocumentFragment();
+  for(const x of rows){const row=document.createElement('div');row.className='v430-row'+(millis(x.closing_at)<=now?' v430-past':'');
+   const left=document.createElement('div');const time=document.createElement('div');time.className='v430-time';time.textContent=x.closing_at.slice(11,16);
+   const place=document.createElement('div');place.className='v430-place';place.textContent=x.name+' '+x.race+'R';
+   const state=document.createElement('div');state.className='v430-status';state.textContent=millis(x.closing_at)<=now?'締切予定時刻を経過':'締切予定・非公式';left.append(time,place,state);
+   const btn=document.createElement('button');btn.type='button';btn.className='v430-open';btn.textContent='レースを見る';btn.addEventListener('click',()=>open(x.venue,x.race));row.append(left,btn);fragment.append(row);
+  }list.append(fragment);
+ }
+ async function load(){if(busy)return;busy=true;status.textContent='全国24場の締切予定時刻を取得中…';list.replaceChildren();
+  try{const response=await fetch(api+'/schedule?date='+encodeURIComponent(date.value),{cache:'no-store'});const j=await response.json();if(!response.ok)throw Error(j.error||'HTTP '+response.status);
+   if(!Array.isArray(j.venues))throw Error('開催データ形式が一致しません');
+   entries=[];for(const v of j.venues){for(const t of v.race_closing_times||[]){if(valid(t.closing_at))entries.push({venue:v.number,name:v.name,race:t.race,closing_at:t.closing_at});}}
+   loadedDate=j.date;if(!entries.length){status.textContent='締切時刻が未取得です。Workerがv4.3.0に更新されているか確認してください。';return;}render();
+  }catch(e){status.textContent='取得エラー：'+e.message;}finally{busy=false;}
+ }
+ filter.addEventListener('change',()=>{if(loadedDate)render();});date.addEventListener('change',load);panel.querySelector('#v430Refresh').addEventListener('click',load);
+ document.querySelector('[data-tab="watchlistView"]')?.addEventListener('click',()=>{if(!loadedDate||loadedDate!==date.value)load();});
 })();
 </script>
 </body>
