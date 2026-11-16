@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#09162a">
-  <title>BOAT RACE Dashboard v3.4</title>
+  <title>BOAT RACE Dashboard v3.5</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -83,7 +83,6 @@
     .score-extra{margin:8px 0}
     .score-extra>summary{cursor:pointer;color:#a4d8ff;font-size:12px;padding:8px 0}
     @media(max-width:370px){.score-compare{font-size:10px}.score-compare th{font-size:9px}}
-  <style>
 
 /* v3.3 MARK-inspired original mobile UI; no third-party branding/assets */
 :root{color-scheme:dark;--mint:#42e6c0;--deep:#061f2b;--panel:#153845;--line:#35616b;--soft:#a8c4cb;color:#f0fbfb;background:var(--deep)}
@@ -134,6 +133,39 @@ label,.race-table th,.score-compare th{color:#61718c!important}
 .linked-entry .race-table{min-width:570px;font-size:12px}.linked-entry .race-table th{font-size:11px}.linked-entry .race-table td:first-child{color:#245a9e!important}
 .linked-entry .linked-note{font-size:11px;color:#7486a1;margin-top:10px;line-height:1.6}
 @media(max-width:480px){.race-hero{padding:13px!important}.linked-entry{padding:11px 8px}.race-dots{grid-template-columns:repeat(6,minmax(0,1fr))}}
+
+/* v3.5 original midnight-teal results and venue navigation */
+:root{--v35bg:#061b29;--v35card:#123646;--v35line:#315768;--v35mint:#51e4c1}
+body{background:linear-gradient(180deg,#082b39,#061b29 55%,#061b29)!important;color:#eef8fa!important}
+header{background:linear-gradient(115deg,#061a29,#104455)!important;border-bottom:1px solid #285766!important;color:#f1ffff!important}
+header small,.muted{color:#a9c4cf!important}.eyebrow{color:#62e5ca!important}
+.panel,.metric,.race-hero{background:linear-gradient(140deg,#163d4c,#0e2c3c)!important;color:#edf9fa!important;border-color:#365c6c!important;box-shadow:0 7px 20px #03172238!important}
+.tabs{background:#092b39f5!important;border:1px solid #346170!important;position:sticky;top:0;z-index:20}
+.tabs button{background:transparent!important;color:#c0d7de!important;border:0!important;flex:0 0 auto!important;min-width:77px!important}
+.tabs button.active,.primary{background:#51e4c1!important;color:#072d35!important;border-color:#51e4c1!important}
+.secondary{background:#194657!important;color:#d7f7f4!important;border-color:#487785!important}
+input,select,textarea{background:#0a2b3a!important;color:#f2ffff!important;border-color:#47717e!important}
+label,.race-table th,.score-compare th{color:#aecbd3!important}.notice{background:#163f50!important;color:#d2f0f1!important;border-left-color:#51e4c1!important}
+.record,.race-table td,.race-table th,.score-compare td,.score-compare th{border-color:#365b69!important}.pill{background:#1b645d!important;color:#9dffe3!important}
+.venue-grid button{background:#1a3e4d!important;color:#d9f2f4!important;border-color:#446a78!important}.venue-grid button.has-data{background:#18574d!important;color:#caffed!important;border-color:#3cb799!important}.venue-grid button.selected{background:#237f74!important;color:#fff!important;outline-color:#51e4c1!important}
+.schedule-summary span,.race-meta span{background:#194655!important;color:#c9e5eb!important;border-color:#396775!important}
+.hero-overline,.hero-sub,.hero-caption{color:#a9c8d0!important}.hero-status{color:#61ebcc!important;border-color:#51e4c1!important}
+.race-dots button{background:#214653!important;color:#c7e2e5!important;border-color:#47717c!important}.race-dots button.active{background:#51e4c1!important;color:#07343b!important;border-color:#51e4c1!important}
+.hero-reco{background:linear-gradient(120deg,#185a58,#10404d)!important;border:1px solid #51e4c1!important;color:#edfffb!important}.hero-reco strong{color:#75ffda!important}.hero-reco .meta{color:#b4d8d8!important}
+.linked-entry{background:#0e3040!important;border-color:#3a6673!important}.linked-entry h3{color:#f0ffff!important}.linked-entry .linked-status,.linked-entry .linked-note{color:#aacbd2!important}.linked-entry .race-table td:first-child{color:#76efd5!important}
+.extra-functions>summary,.boat-score{background:#194253!important;color:#d6f7f4!important;border-color:#49717d!important}.score-track{background:#294b5c!important}.score-fill{background:#51e4c1!important}.score-best{background:#1b5a56!important;color:#e8fffb!important}.footer{color:#91b5c1!important}
+#home>.panel:first-of-type{margin-top:16px}
+.venue-board{margin:13px 0 0;padding:14px;background:#0b2c3a;border:1px solid #3b6573;border-radius:18px}
+.venue-board h3{margin:0 0 8px;font-size:17px}.venue-board .venue-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.venue-tile{min-height:86px;background:#163e4c;color:#e5f9fa;border:1px solid #3c6674;border-radius:16px;padding:12px 9px;text-align:left}
+.venue-tile b{display:block;font-size:16px;margin-bottom:8px}.venue-tile small{font-size:11px;color:#acc9d0}.venue-tile.active{border:2px solid #51e4c1;background:#205c58}.venue-tile.unavailable{opacity:.55}
+.venue-tiles-note{font-size:11px;color:#9abec8;line-height:1.6;margin:9px 0}
+.outcomes-head{margin:18px 4px 15px}.outcomes-head h2{font-size:27px;margin:7px 0}.outcomes-head p{font-size:12px;color:#a6c6d0}
+.outcome-toolbar{display:flex;align-items:end;gap:9px;margin:15px 0}.outcome-toolbar label{display:block;font-size:12px;margin:0 0 6px}.outcome-toolbar input{min-width:0}.outcome-toolbar button{height:43px;flex:none}
+.outcome-filters{display:flex;gap:7px;overflow-x:auto;margin:14px 0 18px}.outcome-filters button{background:#194050;border:1px solid #3c6471;border-radius:99px;color:#c3dbe0;padding:10px 14px;white-space:nowrap}.outcome-filters button.active{background:#51e4c1;color:#07323b;border-color:#51e4c1;font-weight:800}
+.outcome-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}.outcome-metrics>div{background:#173d4e;border:1px solid #365e6c;border-radius:16px;padding:15px 8px}.outcome-metrics span{display:block;font-size:11px;color:#a9c6d0}.outcome-metrics strong{display:block;font-size:22px;margin-top:7px}
+.outcome-card{width:100%;background:linear-gradient(120deg,#173d4d,#103342);border:1px solid #426775;color:#eefafa;border-radius:20px;padding:15px;margin:10px 0;text-align:left}.outcome-card .oc-top,.outcome-card .oc-bottom{display:flex;justify-content:space-between;align-items:center;gap:9px}.outcome-card .oc-top strong{font-size:17px}.outcome-card .oc-bottom{margin-top:13px}.oc-boats{display:flex;gap:5px}.oc-boat{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;font-weight:900;border:2px solid #ffffff44}.oc-1{background:#f8fafb;color:#182330}.oc-2{background:#161a20;color:#fff}.oc-3{background:#e8383c;color:#fff}.oc-4{background:#287ce3;color:#fff}.oc-5{background:#f4d33b;color:#182330}.oc-6{background:#23ae63;color:#fff}.oc-status{font-size:12px;border-radius:99px;padding:5px 9px;background:#31515e;color:#c7dfe4}.oc-status.hit{background:#1e785d;color:#d0ffed}.oc-status.miss{background:#78434b;color:#ffe0e0}.oc-money{font-weight:800;font-size:16px}.oc-sub{font-size:11px;color:#a9c5cf;margin-top:9px}.outcome-disclaimer{font-size:11px;color:#a7c6ce;line-height:1.7;margin:20px 4px}
+@media(max-width:380px){.venue-board .venue-tiles{gap:6px}.venue-tile{padding:9px 7px;min-height:77px}.venue-tile b{font-size:14px}.outcome-card{padding:12px}}
 </style>
 </head>
 <body>
@@ -146,7 +178,7 @@ label,.race-table th,.score-compare th{color:#61718c!important}
   </div>
   <div class="tabs">
     <button class="active" data-tab="home">ホーム</button><button data-tab="add">予想登録</button>
-    <button data-tab="results">結果入力</button><button data-tab="stats">分析</button>
+    <button data-tab="outcomes">結果一覧</button><button data-tab="results">結果入力</button><button data-tab="stats">分析</button>
   </div>
   <section id="home">
     <div class="panel">
@@ -233,6 +265,14 @@ label,.race-table th,.score-compare th{color:#61718c!important}
     </div>
     <div class="panel"><div class="notice">この画面は記録・分析用です。開催データは非公式・参考情報です。レース詳細・展示は非公式の参考情報で、オッズ・学習済みAI予想は未接続です。表示する金額は実際の投票履歴ではありません。</div></div>
   </section>
+  <section id="outcomes" class="hidden">
+    <div class="outcomes-head"><div class="eyebrow">RESULTS / SNAPSHOT HISTORY</div><h2>結果一覧</h2><p>自動保存された事前予想と非公式の照合結果</p></div>
+    <div class="outcome-toolbar"><label for="outcomeDate">日付</label><input type="date" id="outcomeDate"><button type="button" id="outcomeRefresh" class="secondary">更新</button></div>
+    <div class="outcome-filters" id="outcomeFilters"><button data-filter="all" class="active">すべて</button><button data-filter="hit">的中</button><button data-filter="miss">ハズレ</button><button data-filter="pending">結果待ち</button></div>
+    <div class="outcome-metrics"><div><span>照合済み</span><strong id="outcomeSettled">—</strong></div><div><span>的中</span><strong id="outcomeHits">—</strong></div><div><span>回収率</span><strong id="outcomeRoi">—</strong></div></div>
+    <p id="outcomeStatus" class="muted" aria-live="polite">結果を読み込み中…</p><div id="outcomeList"></div>
+    <p class="outcome-disclaimer">非公式データで照合した直近最大100件の事前予想のみ。全国の全レース結果ではありません。実購入履歴ではありません。</p>
+  </section>
   <section id="add" class="hidden"><div class="panel">
     <h2>予想を登録する</h2>
     <form id="predictionForm">
@@ -286,7 +326,7 @@ let scheduleByVenue=new Map();
 const $=id=>document.getElementById(id);
 const yen=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){alert('保存に失敗しました。ブラウザの保存設定を確認してください。')}}
-function tab(name){for(const id of ['home','add','results','stats'])$(id).classList.toggle('hidden',id!==name);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));render()}
+function tab(name){for(const id of ['home','outcomes','add','results','stats'])$(id).classList.toggle('hidden',id!==name);document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));render()}
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>tab(b.dataset.tab));
 $('goAdd').onclick=()=>{$('venue').value=selected;tab('add')};
 const vg=$('venues');
@@ -1188,6 +1228,91 @@ loadAutoPredictions();
   document.getElementById('venues').addEventListener('click',()=>{queueMicrotask(syncFromDetail)});
   scheduleDate.addEventListener('change',()=>{updateHero();loadLinkedEntry();});
   hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();loadLinkedEntry();
+})();
+
+
+// v3.5: linked venue cards and a dedicated read-only results tab.
+(function setupV35(){
+  const board=document.createElement('div');board.className='venue-board';board.id='venueBoard';
+  board.innerHTML='<h3>🚤 全国24場から選択</h3><div class="muted" style="font-size:12px">データがある会場を選ぶと、上のレース・出走表に連動します。</div><div class="venue-tiles" id="venueTiles"></div><p class="venue-tiles-note">開催の確定情報ではありません。非公式APIのレースデータ有無で表示します。</p>';
+  const cockpit=document.getElementById('raceCockpit');cockpit.append(board);
+  const tiles=document.getElementById('venueTiles');
+  function paint(){
+    tiles.replaceChildren();const available=VENUES.map((name,i)=>({name,i,v:scheduleByVenue.get(name)})).filter(x=>x.v?.data_available);
+    const list=available.length?available:VENUES.map((name,i)=>({name,i,v:scheduleByVenue.get(name)}));
+    for(const x of list){
+      const b=document.createElement('button');b.type='button';b.className='venue-tile';
+      if(Number(document.getElementById('heroVenue').value)===x.i+1)b.classList.add('active');
+      if(!x.v?.data_available)b.classList.add('unavailable');
+      const title=document.createElement('b');title.textContent=x.name;
+      const sub=document.createElement('small');sub.textContent=x.v?.data_available?String(x.v.race_count||0)+'Rデータあり':'データ未確認';
+      b.append(title,sub);b.onclick=()=>{
+        const hv=document.getElementById('heroVenue');hv.value=String(x.i+1);hv.dispatchEvent(new Event('change'));
+        paint();cockpit.scrollIntoView({behavior:'smooth',block:'start'});
+      };tiles.append(b);
+    }
+  }
+  const scheduleObserver=new MutationObserver(paint);scheduleObserver.observe(document.getElementById('scheduleStatus'),{childList:true,subtree:true,characterData:true});
+  document.getElementById('heroVenue').addEventListener('change',paint);
+  paint();
+  const date=document.getElementById('outcomeDate');date.value=document.getElementById('scheduleDate').value;
+  let rows=[],filter='all',busy=false;
+  function paintResults(){
+    const selectedDate=date.value;
+    const dated=rows.filter(r=>String(r.date)===selectedDate);
+    const settled=dated.filter(r=>r.result_status==='settled_unofficial');
+    const hits=settled.filter(r=>Number(r.returned_yen)>0);
+    const spent=settled.reduce((sum,r)=>sum+(Number(r.stake_yen)||0),0);
+    const returned=settled.reduce((sum,r)=>sum+(Number(r.returned_yen)||0),0);
+    document.getElementById('outcomeSettled').textContent=settled.length+'R';
+    document.getElementById('outcomeHits').textContent=hits.length+'R';
+    document.getElementById('outcomeRoi').textContent=spent?(100*returned/spent).toFixed(1)+'%':'—';
+    const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)>0)||(filter==='miss'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)===0)||(filter==='pending'&&r.result_status!=='settled_unofficial'));
+    const target=document.getElementById('outcomeList');target.replaceChildren();
+    document.getElementById('outcomeStatus').textContent=selectedDate+'：'+shown.length+'件表示（取得した最新最大100件の範囲）';
+    if(!shown.length){target.append(el('div','該当する事前予想・照合記録がありません','empty'));return;}
+    for(const r of shown){
+      const venue=Number(r.venue),race=Number(r.race),settled=r.result_status==='settled_unofficial',hit=settled&&Number(r.returned_yen)>0;
+      const card=document.createElement('button');card.type='button';card.className='outcome-card';
+      const top=el('div',undefined,'oc-top');top.append(el('strong',(VENUES[venue-1]||'場番号'+venue)+' '+race+'R'));
+      const badge=el('span',!settled?'結果待ち':hit?'的中':'ハズレ','oc-status'+(!settled?'':hit?' hit':' miss'));top.append(badge);card.append(top);
+      const bottom=el('div',undefined,'oc-bottom');const boats=el('div',undefined,'oc-boats');
+      if(settled&&/^([1-6]-){2}[1-6]$/.test(String(r.winning_trifecta||''))){
+        for(const n of r.winning_trifecta.split('-'))boats.append(el('span',n,'oc-boat oc-'+n));
+      }else boats.append(el('span','着順未取得','muted'));
+      bottom.append(boats,el('span',settled?'払戻 '+yen(Number(r.payout_per_100)||0)+'/100円':'照合待ち','oc-money'));card.append(bottom);
+      const bets=Array.isArray(r.tickets)?r.tickets.map(t=>t.combination).join(' ・ '):'不明';
+      card.append(el('div','事前買い目 '+bets+' ／ '+(settled?'仮想収支 '+yen(Number(r.profit_yen)||0):'結果待ち'),'oc-sub'));
+      card.onclick=()=>{
+        tab('home');document.getElementById('scheduleDate').value=date.value;
+        document.getElementById('heroVenue').value=String(venue);
+        document.getElementById('heroRace').value=String(race);
+        document.getElementById('heroVenue').dispatchEvent(new Event('change'));
+        document.getElementById('heroRace').dispatchEvent(new Event('change'));
+        loadSchedule();document.getElementById('raceCockpit').scrollIntoView({behavior:'smooth',block:'start'});
+      };
+      target.append(card);
+    }
+  }
+  async function refresh(){
+    if(busy)return;busy=true;document.getElementById('outcomeRefresh').disabled=true;
+    document.getElementById('outcomeStatus').textContent='事前予想の結果を取得中…';
+    try{
+      const response=await fetch(API+'/snapshot-checks',{cache:'no-store'});
+      if(!response.ok)throw Error('HTTP '+response.status);
+      const obj=await response.json();if(!Array.isArray(obj.results))throw Error('データ形式が異なります');
+      rows=obj.results;paintResults();
+    }catch(e){document.getElementById('outcomeStatus').textContent='結果を取得できませんでした：'+e.message;}
+    finally{busy=false;document.getElementById('outcomeRefresh').disabled=false;}
+  }
+  document.getElementById('outcomeRefresh').onclick=refresh;
+  date.onchange=paintResults;
+  document.getElementById('outcomeFilters').addEventListener('click',e=>{
+    const b=e.target.closest('button[data-filter]');if(!b)return;filter=b.dataset.filter;
+    document.querySelectorAll('#outcomeFilters button').forEach(x=>x.classList.toggle('active',x===b));paintResults();
+  });
+  document.querySelector('[data-tab="outcomes"]').addEventListener('click',refresh);
+  refresh();
 })();
 
 $('refreshSchedule').onclick=loadSchedule;
