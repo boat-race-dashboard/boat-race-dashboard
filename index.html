@@ -216,10 +216,45 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .cockpit-table-details{margin:12px 0}.cockpit-table-details summary{cursor:pointer;color:#f2d17f;font-size:12px;padding:10px}.cockpit-preview-rows{margin-top:15px}.cockpit-preview-row,.cockpit-rank-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #624c83;padding:10px 0;font-size:12px}.cockpit-preview-row>strong:nth-child(2){flex:1}.cockpit-rank-row span:nth-child(2){flex:1}.cockpit-rank-row strong{color:#ffe19b}
 #heroPredict{width:100%;margin-top:12px}.hero-reco{margin-top:0!important}
 @media(max-width:400px){.cockpit-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.cockpit-tabs button{font-size:11px}}
+
+/* v3.9: venue-first mobile navigation; keep legacy logic intact */
+#home>.panel:first-child{margin-top:12px}
+#home>.panel:first-child h2{font-size:22px}
+#home .venue-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+#home .venue-grid button{min-width:0!important;min-height:112px!important;border-radius:17px!important;padding:14px 6px!important;text-align:left!important;background:linear-gradient(145deg,#382752,#21193c)!important;border:1px solid #70558c!important;font-size:17px!important;font-weight:800!important;position:relative!important}
+#home .venue-grid button.has-data{background:linear-gradient(145deg,#45325e,#2d214b)!important;border-color:#ba9559!important}
+#home .venue-grid button.selected{outline:none!important;border-color:#f5d17b!important}
+#home .venue-grid button small{display:block!important;margin-top:13px!important;font-size:11px!important;color:#c9b6dd!important;font-weight:500!important}
+#home .venue-grid button:after{content:'›';position:absolute;right:11px;top:9px;color:#f4d17c;font-size:22px}
+#raceView .race-hero{margin-top:12px!important}
+#raceView .race-dots{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+#raceView .race-dots button{aspect-ratio:1!important;min-width:0!important}
+#raceView .cockpit-cards{display:grid;grid-template-columns:1fr;gap:10px}
+#raceView .cockpit-card{padding:13px!important}
+#raceView .cockpit-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+#raceView .cockpit-metric{min-width:0;padding:9px 5px!important}
+#raceView .cockpit-metric strong{overflow-wrap:anywhere;font-size:13px}
+#raceView .hero-choose{grid-template-columns:1fr!important}
+#raceView .hero-race-label{display:none!important}
+#raceView .hero-status{flex-shrink:0}
+#raceView .hero-title{font-size:27px!important}
+#raceView .cockpit-tabs{position:sticky;top:4px;z-index:10}
+#raceView .hero-caption{font-size:11px}
+.v39-back{display:inline-flex;align-items:center;gap:7px;background:transparent;color:#f4d17c;border:1px solid #8b70a5;border-radius:99px;padding:9px 15px;margin:12px 0 2px;font-weight:700}
+.v39-intro{font-size:12px;color:#d4c2e9;line-height:1.6;margin:8px 0 14px}
+.v39-management{margin-top:14px}
+.v39-management button{width:100%;margin:5px 0}
+.v39-archive{margin-top:12px;border:1px solid #6d5488;border-radius:16px;padding:12px;background:#251b40}
+.v39-archive summary{color:#f5d17b;cursor:pointer;font-weight:700;padding:6px}
+.v39-archive .panel{margin-top:12px}
+#home #goAdd{display:none}
+#home #venueLabel{font-size:12px!important}
+@media(max-width:390px){#home .venue-grid button{font-size:15px!important;min-height:100px!important}#raceView .cockpit-tabs button{font-size:11px!important}}
+
 </style>
 </head>
 <body>
-<header><div class="eyebrow">BOAT RACE / PERSONAL ANALYTICS</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
+<header><div class="eyebrow">BOAT RACE / 24 VENUES · v3.9</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
 <main>
   <div class="grid">
     <div class="metric"><span>的中率</span><b id="hit">--%</b><span id="hitSub">0 / 0 レース</span></div>
@@ -1420,6 +1455,78 @@ loadAutoPredictions();
 $('refreshSchedule').onclick=loadSchedule;
 scheduleDate.onchange=loadSchedule;
 loadSchedule();
+
+// v3.9 — navigate between a 24-venue home and a dedicated race screen.
+// Existing APIs, snapshot history, D1 and manual forms remain intact.
+(function setupVenueFirstNavigation(){
+  const home=document.getElementById('home');
+  const cockpit=document.getElementById('raceCockpit');
+  const nav=document.querySelector('.tabs');
+  if(!home||!cockpit||!nav)return;
+  const raceView=document.createElement('section');raceView.id='raceView';raceView.className='hidden';
+  const back=document.createElement('button');back.type='button';back.className='v39-back';back.textContent='‹ 全国24場へ戻る';
+  back.addEventListener('click',()=>tab('home'));
+  raceView.append(back,cockpit);
+  home.after(raceView);
+  const homePanel=home.querySelector('.panel');
+  if(homePanel){
+    const heading=homePanel.querySelector('h2');if(heading)heading.textContent='🚤 全国24場から選択';
+    const description=homePanel.querySelector('p.muted');if(description)description.textContent='競艇場をタップすると1〜12Rの専用画面が開きます。データありは開催確定を意味しません。';
+  }
+  const only=document.getElementById('onlyDataVenues');
+  if(only){only.checked=false;renderVenues();}
+  const status=document.getElementById('scheduleStatus');
+  const venueGrid=document.getElementById('venues');
+  venueGrid.addEventListener('click',event=>{
+    const button=event.target.closest('button[data-venue]');if(!button)return;
+    const venueName=button.dataset.venue;
+    const index=VENUES.indexOf(venueName);
+    if(index<0)return;
+    // Run after the original venue click handler and its existing microtask.
+    setTimeout(()=>{
+      const hv=document.getElementById('heroVenue');
+      if(hv){hv.value=String(index+1);hv.dispatchEvent(new Event('change',{bubbles:true}));}
+      tab('raceView');window.scrollTo({top:0,behavior:'instant'});
+    },0);
+  });
+  // Consolidate legacy detailed tools into analysis, without deleting or disabling them.
+  const stats=document.getElementById('stats');
+  const archive=document.createElement('details');archive.className='v39-archive';
+  const archiveLabel=document.createElement('summary');archiveLabel.textContent='旧データ・保存済み予想・詳細ツール';archive.append(archiveLabel);
+  const oldTools=home.querySelector('.extra-functions');if(oldTools)archive.append(oldTools);
+  const moveIds=['autoPredictionPanel','snapshotResultsPanel'];
+  for(const id of moveIds){const node=document.getElementById(id);if(node)archive.append(node);}
+  const homePanels=[...home.children].filter(el=>el.classList?.contains('panel')&&el!==homePanel);
+  for(const node of homePanels)archive.append(node);
+  if(stats)stats.append(archive);
+  // Keep legacy manual forms accessible from one compact management tab.
+  const manage=document.createElement('section');manage.id='manageView';manage.className='hidden';
+  manage.innerHTML='<div class="panel v39-management"><h2>⚙️ 管理・手動入力</h2><p class="muted">通常は自動保存・自動照合を使用します。必要な場合だけ手動登録や結果入力を開いてください。</p><button type="button" class="secondary" id="v39Add">予想を手動登録</button><button type="button" class="secondary" id="v39Result">結果を手動入力</button></div>';
+  raceView.after(manage);
+  document.getElementById('v39Add').onclick=()=>tab('add');
+  document.getElementById('v39Result').onclick=()=>tab('results');
+  // Rebuild top navigation: one primary action per screen.
+  nav.replaceChildren();
+  for(const [id,label] of [['home','全国24場'],['raceView','レース'],['outcomes','結果一覧'],['stats','分析'],['manageView','管理']]){
+    const b=document.createElement('button');b.type='button';b.dataset.tab=id;b.textContent=label;
+    b.addEventListener('click',()=>tab(id));nav.append(b);
+  }
+  tab=function(name){
+    for(const id of ['home','raceView','outcomes','stats','manageView','add','results']){
+      const node=document.getElementById(id);if(node)node.classList.toggle('hidden',id!==name);
+    }
+    nav.querySelectorAll('button[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+    render();
+    if(name==='outcomes'){
+      const refresh=document.getElementById('outcomeRefresh');if(refresh)refresh.click();
+    }
+  };
+  tab('home');
+  // Date changes affect the selected race and must be reflected after the existing reload.
+  const dateInput=document.getElementById('scheduleDate');
+  if(dateInput)dateInput.addEventListener('change',()=>{if(status)status.textContent='指定日のデータを確認中…';});
+})();
+
 </script>
 </body>
 </html>
