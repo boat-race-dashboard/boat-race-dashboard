@@ -72,6 +72,17 @@
     .extra-functions>summary{padding:13px;background:#17334b;border:1px solid #34516e;border-radius:12px;font-weight:650;cursor:pointer}
     .extra-functions[open]>summary{margin-bottom:10px}
     @media(max-width:480px){main{padding:10px 10px 70px}.panel{padding:12px;margin-top:10px}.metric{padding:9px 5px}.metric b{margin:5px 0;font-size:17px}.record{padding:9px 0}header{padding:15px 14px 12px}h1{font-size:19px}}
+
+    /* v3.2 compact six-boat score comparison */
+    .score-compare{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px;margin:7px 0}
+    .score-compare th,.score-compare td{padding:8px 2px;text-align:right;border-bottom:1px solid #29415e;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .score-compare th:first-child,.score-compare td:first-child{text-align:left;width:23%}
+    .score-compare th:last-child,.score-compare td:last-child{font-weight:750}
+    .score-compare th{color:#a9bbd2;font-size:10px}
+    .score-best{background:#1b3550;color:#d5edff}
+    .score-extra{margin:8px 0}
+    .score-extra>summary{cursor:pointer;color:#a4d8ff;font-size:12px;padding:8px 0}
+    @media(max-width:370px){.score-compare{font-size:10px}.score-compare th{font-size:9px}}
   </style>
 </head>
 <body>
@@ -672,7 +683,7 @@ async function loadPredictionDemo(){
     }
     const payload=await response.json();
     if(!Array.isArray(payload.ranking)||payload.ranking.length!==6||
-      !Array.isArray(payload.tickets)||payload.tickets.length!==2){
+      !Array.isArray(payload.tickets)||![2,6].includes(payload.tickets.length)){
       throw Error('予想APIのデータ形式が一致しません');
     }
     status.textContent=VENUES[venue-1]+' '+race+'R ・ '+date+' の試作評価';
@@ -753,54 +764,66 @@ function snapshotSummaryError(status, obj){
   return '保存できませんでした（HTTP '+status+'）。'+(code?' '+code:'');
 }
 
-// v3.0: Show the actual saved per-field point contributions, when present.
+// v3.2: all six boats in one compact table, expandable bar charts on demand.
 function predictionReasons(saved, expanded=false){
   const wrap=el('details');wrap.className='compact-reasons';
   if(expanded)wrap.open=true;
-  wrap.append(el('summary','📊 採点内訳・根拠'));
+  wrap.append(el('summary','📊 6艇の採点比較・根拠'));
   const ranking=Array.isArray(saved?.ranking)?saved.ranking:[];
   if(!ranking.length){wrap.append(el('p','採点順位の記録がありません。','score-hint'));return wrap;}
-  const names={national_win_rate:'全国勝率',motor_top_2_percent:'モーター',average_start_timing:'平均ST',exhibition_time:'展示タイム'};
-  const maxes={national_win_rate:40,motor_top_2_percent:25,average_start_timing:20,exhibition_time:15};
+  const fields=['national_win_rate','motor_top_2_percent','average_start_timing','exhibition_time'];
+  const labels=['勝率','モーター','ST','展示'];
+  const maxes=[40,25,20,15];
   const exCount=ranking.filter(r=>r.exhibition_time!=null&&Number(r.exhibition_time)>0).length;
   const hasBreakdown=ranking.some(r=>r.score_breakdown&&typeof r.score_breakdown==='object');
-  const first=ranking[0],second=ranking[1];
-  const difference=second?Number(first.score)-Number(second.score):NaN;
-  wrap.append(el('div','1着候補 '+first.boat+'号艇 '+Number(first.score).toFixed(1)+'点'+(Number.isFinite(difference)?'（2位差 '+difference.toFixed(1)+'点）':'')+' ／ 展示 '+exCount+'/6艇','score-hint'));
-  if(!hasBreakdown)wrap.append(el('div','旧データ：項目別得点は保存されていません。','score-hint'));
+  wrap.append(el('div','展示 '+exCount+'/6艇'+(exCount<6?'（未取得は中立点）':'')+' ／ 各列は獲得点','score-hint'));
+  const table=el('table');table.className='score-compare';
+  const thead=document.createElement('thead'),hr=document.createElement('tr');
+  ['順位/艇',...labels,'合計'].forEach(s=>{const th=document.createElement('th');th.textContent=s;hr.append(th);});
+  thead.append(hr);table.append(thead);
+  const tbody=document.createElement('tbody');
+  for(const [i,r] of ranking.entries()){
+    const tr=document.createElement('tr');
+    if(i===0)tr.className='score-best';
+    const boat=document.createElement('td');boat.textContent=(i+1)+'位 '+r.boat+'号';tr.append(boat);
+    for(const field of fields){
+      const td=document.createElement('td');
+      const c=r.score_breakdown?.[field];
+      td.textContent=c&&Number.isFinite(Number(c.points))?Number(c.points).toFixed(1)+(c.imputed_neutral?'*':''):'—';
+      if(c?.imputed_neutral)td.title='未取得のため仮配点';
+      tr.append(td);
+    }
+    const total=document.createElement('td');total.textContent=Number.isFinite(Number(r.score))?Number(r.score).toFixed(1):'—';tr.append(total);
+    tbody.append(tr);
+  }
+  table.append(tbody);wrap.append(table);
+  if(!hasBreakdown)wrap.append(el('div','旧保存データ：内訳点は記録されていません。','score-hint'));
+  const first=ranking[0],second=ranking[1],diff=second?Number(first.score)-Number(second.score):NaN;
+  wrap.append(el('div','1着固定 '+first.boat+'号艇'+(Number.isFinite(diff)?'（2位との差 '+diff.toFixed(1)+'点）':'')+' ／ * は未取得の仮点','score-hint'));
+  const detail=el('details');detail.className='score-extra';
+  detail.append(el('summary','各艇の実測値・横棒グラフを見る'));
   ranking.forEach((r,i)=>{
     const boat=el('details');boat.className='boat-score';
-    if(i===0&&hasBreakdown)boat.open=true;
-    const head=el('summary');
-    const name=el('span',(i+1)+'位 '+r.boat+'号艇 '+(r.name||''));
-    const score=el('strong',Number.isFinite(Number(r.score))?Number(r.score).toFixed(1)+'点':'--点');
-    head.append(name,score);boat.append(head);
+    const head=el('summary',(i+1)+'位 '+r.boat+'号艇 '+(r.name||'')+'　'+Number(r.score).toFixed(1)+'点');
+    boat.append(head);
     const body=el('div');body.className='boat-score-body';
-    const breakdown=r.score_breakdown;
-    if(breakdown&&typeof breakdown==='object'){
-      for(const [key,label] of Object.entries(names)){
-        const c=breakdown[key];const max=Number(c?.max_points??saved.weights?.[key]??maxes[key]);
-        const points=Number(c?.points);const valid=c&&Number.isFinite(points)&&Number.isFinite(max)&&max>0;
-        const raw=r[key];
-        const rawText=raw==null?'未取得':String(raw)+(key==='motor_top_2_percent'?'%':key==='exhibition_time'?'秒':'');
-        const line=el('div',undefined,'score-line');
-        line.append(el('span',label+' · '+rawText),el('span',valid?points.toFixed(1)+' / '+max+'点':'--'));
-        body.append(line);
-        if(valid){
-          const track=el('div',undefined,'score-track');const fill=el('div',undefined,'score-fill');
-          fill.style.width=Math.max(0,Math.min(100,points/max*100))+'%';track.append(fill);body.append(track);
-        }
-        if(c?.imputed_neutral)body.append(el('div','未取得のため中立点を仮配点','score-hint'));
+    fields.forEach((key,j)=>{
+      const c=r.score_breakdown?.[key],points=Number(c?.points),max=Number(c?.max_points??maxes[j]);
+      const raw=r[key],rawText=raw==null?'未取得':String(raw)+(key==='motor_top_2_percent'?'%':key==='exhibition_time'?'秒':'');
+      const line=el('div',undefined,'score-line');
+      line.append(el('span',labels[j]+' '+rawText),el('span',c&&Number.isFinite(points)?points.toFixed(1)+' / '+max+'点':'—'));
+      body.append(line);
+      if(c&&Number.isFinite(points)&&Number.isFinite(max)&&max>0){
+        const track=el('div',undefined,'score-track'),fill=el('div',undefined,'score-fill');
+        fill.style.width=Math.max(0,Math.min(100,points/max*100))+'%';
+        track.append(fill);body.append(track);
       }
-    }else{
-      body.append(el('div','全国勝率 '+(r.national_win_rate??'未取得')+' ／ モーター '+(r.motor_top_2_percent??'未取得')+'%','score-hint'));
-      body.append(el('div','平均ST '+(r.average_start_timing??'未取得')+' ／ 展示 '+(r.exhibition_time??'未取得'),'score-hint'));
-    }
-    boat.append(body);wrap.append(boat);
+      if(c?.imputed_neutral)body.append(el('div','未取得のため仮配点','score-hint'));
+    });
+    boat.append(body);detail.append(boat);
   });
-  wrap.append(el('div','※ 得点は的中確率ではありません。オッズ・進入は十分に反映していません。','score-hint'));
-  if(exCount<6)wrap.append(el('div','※ 展示未取得の艇あり。未取得は不利という意味ではありません。','score-hint'));
-  wrap.append(el('div','※ 保存済み予想は当時の記録で、後から再採点しません。','score-hint'));
+  wrap.append(detail);
+  wrap.append(el('div','※ 点数は的中確率ではありません。旧データは再採点しません。','score-hint'));
   return wrap;
 }
 async function loadSnapshots(){
