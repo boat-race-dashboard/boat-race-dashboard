@@ -2591,7 +2591,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.9.0';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.9.1';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -3031,19 +3031,20 @@ async function refreshActualPurchaseSummary(){
   profit.textContent=data.settled?money(data.profit_yen):'--';
   sub.textContent=data.hits+' / '+data.settled+' 件（未照合 '+data.pending+' 件）';
   $('realRoiSub').textContent='確定 '+data.settled+' 件・非公式結果';
-  $('realProfitSub').textContent=data.partial?'一部集計・上限到達':'確定購入分のみ';
+  $('realProfitSub').textContent=(data.partial?'一部集計・上限到達':'確定購入分のみ')+' ／ 更新 '+new Date(data.refreshed_at_utc||Date.now()).toLocaleTimeString('ja-JP');
   let trend=document.getElementById('v490PurchaseTrend');if(!trend){trend=document.createElement('div');trend.id='v490PurchaseTrend';const history=document.getElementById('v434History');if(history)history.parentElement.insertBefore(trend,history);}
   if(trend){const days=Object.entries(data.daily_purchases||{}).sort((a,b)=>a[0].localeCompare(b[0]));const max=Math.max(1,...days.map(([,v])=>Math.abs(v.profit_yen)));trend.innerHTML='<h3>📈 実購入の日別収支（照合済みのみ）</h3>'+(days.length?days.map(([date,v])=>'<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span>'+date+' ('+v.settled+'件)</span><strong>'+money(v.profit_yen)+'</strong></div><div style="background:#49375d;border-radius:8px;height:8px;overflow:hidden"><div style="height:100%;width:'+Math.max(2,Math.round(Math.abs(v.profit_yen)/max*100))+'%;background:'+(v.profit_yen>=0?'#d9bd72':'#d77b85')+'"></div></div></div>').join(''):'<p class="muted">結果照合済みの購入記録はまだありません。</p>')+'<p class="muted">非公式結果・実購入のみ。未照合分は含みません。</p>'; }
  }catch(e){if(seq!==realSummaryRequest)return;hit.textContent='--%';roi.textContent='--%';profit.textContent='--';sub.textContent='実購入集計失敗：'+e.message;}
 }
 // Update actual-purchase KPIs at a predictable cadence, even when another tab is selected.
 let lastSummaryRefresh=0;
+let summaryTimerBusy=false;
 const originalRefreshActualPurchaseSummary=refreshActualPurchaseSummary;
 async function timedPurchaseSummary(){
- if(document.hidden||!$('v434Key').value)return;
+ if(document.hidden||!$('v434Key').value||summaryTimerBusy)return;
  if(Date.now()-lastSummaryRefresh<45000)return;
- lastSummaryRefresh=Date.now();
- await originalRefreshActualPurchaseSummary();
+ lastSummaryRefresh=Date.now();summaryTimerBusy=true;
+ try{await originalRefreshActualPurchaseSummary();}finally{summaryTimerBusy=false;}
 }
 setInterval(timedPurchaseSummary,60000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){lastSummaryRefresh=0;timedPurchaseSummary();}});
@@ -3052,8 +3053,8 @@ $('v434Key').addEventListener('change',()=>{lastSummaryRefresh=Date.now();});
 $('v434Key').addEventListener('change',refreshActualPurchaseSummary);
 $('v434Key').addEventListener('input',()=>{if(!$('v434Key').value)refreshActualPurchaseSummary();});
 
-$('v434Save').onclick=async()=>{if(!venue.value||!race.value){msg.textContent='開催場とレースを選択してください。';return;}if(!tickets.length){msg.textContent='買い目を追加してください。';return;}if(!$('v434Key').value){msg.textContent='D1保存にはAPI_WRITE_KEYが必要です。';return;}
- const btn=$('v434Save');btn.disabled=true;msg.textContent='D1に保存中…';try{const r=await fetch(API+'/purchases',{method:'POST',headers:auth(),body:JSON.stringify({date:date.value,venue:Number(venue.value),race:Number(race.value),tickets})});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);msg.textContent='D1保存完了 ID '+j.id+' ／ '+money(j.total_yen);tickets=[];renderTickets();$('v434Refresh').click();refreshActualPurchaseSummary();}catch(e){msg.textContent='保存失敗：'+e.message;}finally{btn.disabled=false;}};
+$('v434Save').onclick=async()=>{if(!venue.value||!race.value){msg.textContent='開催場とレースを選択してください。';return;}if(!tickets.length){msg.textContent='買い目を追加してください。';return;}if(!$('v434Key').value){msg.textContent='D1保存にはAPI_WRITE_KEYが必要です。';return;}const totalYen=tickets.reduce((s,t)=>s+Number(t.amount||0),0);if(!confirm(date.value+' '+names[Number(venue.value)-1]+' '+race.value+'R\n'+tickets.length+'点・合計 '+money(totalYen)+' を実購入としてD1に保存しますか？'))return;
+ const btn=$('v434Save');btn.disabled=true;msg.textContent='D1に保存中…';try{const r=await fetch(API+'/purchases',{method:'POST',headers:auth(),body:JSON.stringify({date:date.value,venue:Number(venue.value),race:Number(race.value),tickets})});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);msg.textContent='D1保存完了 ID '+j.id+' ／ '+money(j.total_yen);tickets=[];renderTickets();$('v434Refresh').click();refreshActualPurchaseSummary();}catch(e){msg.textContent='保存失敗：'+e.message+'（重複判定の場合は購入履歴を確認してください）';}finally{btn.disabled=false;}};
 $('v434Refresh').onclick=async()=>{const target=$('v434History');if(!$('v434Key').value){target.textContent='キーを入力してください。';return;}target.textContent='読み込み中…';try{const r=await fetch(API+'/purchases?date='+encodeURIComponent(date.value),{headers:auth(),cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);target.replaceChildren();let spent=0;
  for(const x of j.purchases||[]){spent+=Number(x.total_yen)||0;const card=document.createElement('div');card.className='v434-history';card.textContent=names[x.venue-1]+' '+x.race+'R｜'+(x.tickets?.length||0)+'点｜'+money(x.total_yen)+'｜'+x.created_at+' UTC';target.append(card);}
  refreshActualPurchaseSummary();
