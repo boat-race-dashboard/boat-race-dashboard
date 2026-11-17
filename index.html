@@ -3733,3 +3733,42 @@ body.enterprise-simple #home>.panel:not(#v424RecommendationsPanel):not(#raceDeta
  apply(stored);
 })();
 </script>
+
+<!-- Enterprise UI Phase 2: information architecture, no API or prediction logic changes -->
+<style id="enterprise-phase2-css">
+#enterpriseQuickNav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:15px}
+#enterpriseQuickNav button{padding:13px 8px;background:#182a40;color:#e7f0fb;border:1px solid #35506a;border-radius:12px;font-size:13px;font-weight:700}
+#enterpriseQuickNav button:hover{background:#25425a}
+#enterpriseSafety{padding:13px 15px;border-radius:12px;border:1px solid #40556d;background:#101f32;margin:0 0 17px;font-size:12px;color:#b8c9dc;line-height:1.75}
+#enterpriseSafety strong{color:#f3f7fd}
+#enterpriseLegend{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+#enterpriseLegend span{border:1px solid #3b536d;background:#192c42;color:#c4d7e9;padding:5px 9px;border-radius:7px;font-size:11px}
+#home #v424RecommendationsPanel{border-color:#387d87!important;box-shadow:inset 3px 0 #3eafa5,0 5px 22px rgba(0,0,0,.09)!important}
+#home #raceDetailPanel{border-color:#405875!important}
+#home .panel{scroll-margin-top:18px}
+#enterpriseBar{margin-bottom:12px}
+body.enterprise-simple #home>#predictionDemoPanel,body.enterprise-simple #home>#snapshotPanel,body.enterprise-simple #home>#autoPredictionPanel,body.enterprise-simple #home>#snapshotResultsPanel{display:none!important}
+@media(max-width:520px){#enterpriseQuickNav{gap:6px}#enterpriseQuickNav button{font-size:11px;padding:12px 4px}#enterpriseSafety{font-size:11px}}
+</style>
+<script id="enterprise-phase2-js">
+(function(){'use strict';
+ const home=document.getElementById('home'),bar=document.getElementById('enterpriseBar');
+ if(!home||!bar||document.getElementById('enterpriseQuickNav'))return;
+ const nav=document.createElement('div');nav.id='enterpriseQuickNav';nav.setAttribute('aria-label','主要情報へ移動');
+ const items=[['本日の開催','#home'],['注目レース','#v424RecommendationsPanel'],['6艇・展示','#raceDetailPanel']];
+ items.forEach(([label,selector])=>{const target=document.querySelector(selector);if(!target)return;
+ const b=document.createElement('button');b.type='button';b.textContent=label;
+ b.addEventListener('click',()=>{if(home.classList.contains('hidden')){
+ const tab=[...document.querySelectorAll('.tabs button')].find(x=>x.textContent.trim()==='ホーム');if(tab)tab.click();
+ }target.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});});nav.appendChild(b)});
+ bar.insertAdjacentElement('afterend',nav);
+ const safety=document.createElement('div');safety.id='enterpriseSafety';
+ safety.innerHTML='<strong>データ確認ガイド</strong>　画面内の「注目」は購入を保証するものではありません。展示反映・保存済み予想・現在のオッズは別情報です。購入前に公式の締切時刻・展示・オッズを確認してください。';
+ nav.insertAdjacentElement('afterend',safety);
+ const legend=document.createElement('div');legend.id='enterpriseLegend';
+ ['注目レース＝条件による抽出','試作買い目＝検証用','D1保存＝購入記録ではない','実購入＝手入力の記録'].forEach(label=>{const x=document.createElement('span');x.textContent=label;legend.appendChild(x)});
+ safety.appendChild(legend);
+ const rec=document.getElementById('v424RecommendationsPanel');if(rec){rec.setAttribute('aria-label','本日の注目レース・試験運用');}
+ const race=document.getElementById('raceDetailPanel');if(race){race.setAttribute('aria-label','レース詳細と展示情報');}
+})();
+</script>
