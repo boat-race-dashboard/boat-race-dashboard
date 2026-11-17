@@ -576,7 +576,7 @@ button.secondary,.secondary{padding:7px 9px!important;font-size:12px!important}
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v4.4.6<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v4.4.8<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -2578,7 +2578,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.6';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.8';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -2992,5 +2992,40 @@ renderChoices();renderTickets();
  setInterval(()=>{if(!document.hidden)render();},1000);
  setInterval(()=>{if(!document.hidden)refresh();},60000);
  refresh();
+})();
+</script>
+
+<!-- v4.4.8: Cron / D1 settlement status; read-only -->
+<style id="v448-monitor-style">
+#v448Monitor{margin:16px auto;max-width:1100px;padding:16px;border:1px solid #8362ac;border-radius:16px;background:#281d43;color:#f7ecff;font-family:inherit}
+#v448Monitor h2{font-size:17px;margin:0 0 10px;color:#f4d17c}
+#v448Monitor .v448-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#v448Monitor .v448-metric{background:#392851;border-radius:10px;padding:10px;text-align:center;font-size:12px}
+#v448Monitor .v448-metric strong{display:block;font-size:21px;margin:5px 0}
+#v448Monitor .v448-note{font-size:12px;line-height:1.6;color:#d9c9e8;margin:10px 0 0}
+#v448Monitor button{border:1px solid #ab8cc8;background:#49305f;color:white;border-radius:9px;padding:9px 14px;margin-top:10px}
+</style>
+<script id="v448-monitor-script">
+(()=>{'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const root=document.createElement('section');root.id='v448Monitor';
+root.innerHTML='<h2>自動予想・結果照合モニター <small>v4.4.8</small></h2><div class="v448-grid"><div class="v448-metric">直近の予想保存<strong id="v448Saved">--</strong></div><div class="v448-metric">直近の精算成功<strong id="v448Settled">--</strong></div><div class="v448-metric">再試行待ち<strong id="v448Pending">--</strong></div></div><p class="v448-note" id="v448Info">照合状況を取得しています…</p><button type="button" id="v448Refresh">最新情報を取得</button>';
+const mount=document.querySelector('main')||document.body;
+mount.insertBefore(root,mount.firstChild);
+const el=id=>document.getElementById(id);
+const fmt=iso=>{if(!iso)return '未取得';const d=new Date(iso);return Number.isNaN(d.getTime())?'未取得':new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(d)};
+let busy=false;
+async function refresh(){if(busy)return;busy=true;el('v448Info').textContent='最新情報を取得中…';try{
+const [a,b]=await Promise.all([fetch(API+'/cron-status',{cache:'no-store'}),fetch(API+'/retry-status',{cache:'no-store'})]);
+if(!a.ok||!b.ok)throw Error('API HTTP '+a.status+'/'+b.status);
+const [cron,retry]=await Promise.all([a.json(),b.json()]);
+const run=cron.last_run||{};el('v448Saved').textContent=run.save_created??'--';el('v448Settled').textContent=run.check_settled??'--';el('v448Pending').textContent=retry.pending_retry_records_shown??'--';
+const list=Array.isArray(retry.retries)?retry.retries:[];
+const next=list.map(x=>x.next_retry_at).filter(Boolean).sort()[0];
+const version=cron.build_id||'不明';
+el('v448Info').textContent='Cron最終実行 '+fmt(run.ran_at_utc)+' ／ 次の再照合予定 '+fmt(next)+' ／ Worker '+version+'。再試行待ちは履歴がある保留レコードのみ（最大100件）。非公式結果であり、公式確認済みではありません。';
+}catch(e){el('v448Info').textContent='照合状況を取得できません：'+e.message+'。結果未取得を不的中とは扱いません。';}finally{busy=false;}}
+el('v448Refresh').addEventListener('click',refresh);
+refresh();setInterval(()=>{if(!document.hidden)refresh()},60000);
 })();
 </script>
