@@ -2381,6 +2381,127 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
 })();
 </script>
+
+<style id="v441-polish">
+*,*::before,*::after{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+.panel,.v431-panel,.v434-purchase,.v430-panel{max-width:100%;min-width:0}
+.tabs{width:100%;max-width:100%;overflow-x:auto}
+.tabs button{white-space:nowrap}
+.v431-controls>label,.race-controls>div,.two>div{min-width:0}
+.v431-controls input,.v431-controls select,.race-controls select{max-width:100%;width:100%}
+#raceView .race-buttons button,#raceView .v39-race-grid button{min-width:0}
+#v441Deadline{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:7px 0}
+#v441Deadline strong{color:#f1cf7c;font-size:14px}
+#v441Deadline small{font-size:11px;color:#d1c0df}
+#v441OutcomeFinance{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:7px 0 10px}
+#v441OutcomeFinance>div{border:1px solid #70548e;border-radius:11px;background:#302344;padding:9px 6px;min-width:0}
+#v441OutcomeFinance small{display:block;font-size:10px;color:#d4c3e2}
+#v441OutcomeFinance strong{display:block;font-size:clamp(13px,4vw,19px);color:#f0cf83;overflow-wrap:anywhere}
+@media(max-width:650px){
+ .tabs{padding:4px!important}
+ .tabs button{padding:8px 10px!important}
+ .v431-controls{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .v431-controls>label{width:auto!important;min-width:0!important}
+ #raceView .panel{padding:10px!important}
+ #v424RecommendationsPanel .row h2{font-size:16px!important}
+ #outcomes .outcome-metrics{margin-bottom:5px!important}
+}
+</style>
+<script id="v441-functional-polish">
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const yen=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
+const localDay=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const dateTime=s=>{if(!s)return NaN;const t=String(s).trim().replace(' ','T');const n=Date.parse(t+(t.includes('Z')||/[+-]\d\d:\d\d$/.test(t)?'':'+09:00'));return n;};
+// Clearly distinguish scheduled closing time from actual race start time.
+const race=$('raceView'),venue=$('heroVenue'),raceNo=$('heroRace'),day=$('scheduleDate');
+if(race&&venue&&raceNo&&day){
+ const bar=document.createElement('div');bar.id='v441Deadline';
+ const label=document.createElement('strong');label.textContent='締切予定：確認中';
+ const note=document.createElement('small');note.textContent='非公式の日程・発走時刻ではありません';
+ bar.append(label,note);
+ const controls=race.querySelector('.race-controls')||race.querySelector('select')?.parentElement;
+ if(controls)controls.after(bar);else race.prepend(bar);
+ let cache=null,cacheDate='',loading=null;
+ async function update(){
+  const currentDate=day.value||localDay(),v=Number(venue.value),r=Number(raceNo.value);
+  if(cacheDate!==currentDate){
+   cache=null;cacheDate=currentDate;
+   loading=fetch(API+'/schedule?date='+encodeURIComponent(currentDate),{cache:'no-store'}).then(x=>x.ok?x.json():null).then(j=>{if(cacheDate===currentDate)cache=j;}).catch(()=>{cache=null;});
+  }
+  if(loading)await loading;
+  const place=(cache?.venues||[]).find(x=>Number(x.number)===v);
+  const entry=(place?.race_closing_times||[]).find(x=>Number(x.race||x.race_number||x.rno)===r);
+  const raw=entry?.closing_at;
+  if(!raw){label.textContent='締切予定：未取得';note.textContent='開始までの残り時間は計算できません';return;}
+  const ms=dateTime(raw),remaining=ms-Date.now();
+  const hhmm=String(raw).match(/(\d\d:\d\d)/)?.[1]||'--:--';
+  label.textContent='締切予定 '+hhmm+(Number.isFinite(remaining)?remaining>0?' ／ あと'+Math.floor(remaining/60000)+'分':' ／ 予定時刻を経過':'');
+  note.textContent='非公式の日程・実際の発走時刻とは異なります';
+ }
+ [venue,raceNo,day].forEach(x=>x.addEventListener('change',update));
+ document.querySelector('[data-tab="raceView"]')?.addEventListener('click',update);
+ update();
+}
+// Watchlist: automatically load, retain all-grade filter, and show loading/empty/error states.
+const watch=$('v424RecommendationsPanel');
+if(watch){
+ const title=watch.querySelector('h2');if(title)title.textContent='✦ 本日の注目レース';
+ const intro=watch.querySelector('.row + p');if(intro)intro.textContent='締切前の候補を自動表示。評価はルールベースの参考値で、的中確率ではありません。';
+ const filter=$('v425Filter');if(filter)filter.value='all';
+ const refresh=$('v424RecommendRefresh');
+ const status=$('v424RecommendStatus');
+ if(refresh){
+  let didLoad=false;
+  const load=()=>{if(didLoad)return;didLoad=true;refresh.click();};
+  document.querySelector('[data-tab="watchlistView"]')?.addEventListener('click',load);
+  if(status)status.textContent='候補を自動取得しています…';
+  setTimeout(load,0);
+ }
+ const stamp=$('v428WatchUpdated');if(stamp)stamp.textContent='候補の取得を準備中';
+}
+// Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
+const outcomes=$('outcomes'),metrics=outcomes?.querySelector('.outcome-metrics');
+if(outcomes&&metrics){
+ const summary=document.createElement('div');summary.id='v441OutcomeFinance';
+ for(const [id,label] of [['v441Stake','仮想投資'],['v441Returned','仮想払戻'],['v441Profit','仮想収支']]){
+  const cell=document.createElement('div'),small=document.createElement('small'),strong=document.createElement('strong');
+  small.textContent=label;strong.id=id;strong.textContent='—';cell.append(small,strong);summary.append(cell);
+ }
+ metrics.after(summary);
+ let busy=false;
+ async function load(){
+  if(busy)return;busy=true;
+  try{
+   const response=await fetch(API+'/snapshot-checks',{cache:'no-store'});
+   if(!response.ok)throw Error('HTTP '+response.status);
+   const payload=await response.json(),d=$('outcomeDate')?.value;
+   if(!Array.isArray(payload.results))throw Error('不正なデータ形式');
+   const rows=payload.results.filter(x=>String(x.date)===d&&x.result_status==='settled_unofficial');
+   const stake=rows.reduce((n,x)=>n+(Number(x.stake_yen)||0),0);
+   const returned=rows.reduce((n,x)=>n+(Number(x.returned_yen)||0),0);
+   $('v441Stake').textContent=yen(stake);$('v441Returned').textContent=yen(returned);
+   $('v441Profit').textContent=(returned-stake>=0?'+':'−')+yen(Math.abs(returned-stake));
+  }catch{
+   ['v441Stake','v441Returned','v441Profit'].forEach(id=>$(id).textContent='未取得');
+  }finally{busy=false;}
+ }
+ $('outcomeRefresh')?.addEventListener('click',load);
+ $('outcomeDate')?.addEventListener('change',load);
+ document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',load);
+ load();
+ const note=document.createElement('p');note.className='muted';note.style.fontSize='10px';
+ note.textContent='仮想収支は事前保存予想の結果照合済み分のみ。実際の購入収支ではありません。';
+ summary.after(note);
+}
+// Replace old footer version text without changing legacy model labels.
+document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.1';
+})();
+</script>
 </body>
 </html>
 
