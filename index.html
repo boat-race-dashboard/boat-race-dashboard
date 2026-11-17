@@ -3643,3 +3643,93 @@ const core=document.getElementById('v422AnalyticsPanel');if(core)intro.insertAdj
 const footer=document.querySelector('.footer');if(footer&&footer.textContent.includes('v4.8.1'))footer.innerHTML=footer.innerHTML.replace('v4.8.1','v4.9.4');
 })();</script>
 
+
+
+
+<!-- Professional UI layer v4.9.11-enterprise-ui: existing API, handlers and data remain unchanged -->
+<style id="enterprise-ui-style">
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif!important;color:#e8eff9!important;background:#0a1220!important}
+body{background:linear-gradient(180deg,#0a1220 0%,#0e192b 55%,#0a1220 100%);color:#e8eff9}
+header{background:#0d192b!important;border-bottom:1px solid #25364b!important;padding:23px max(18px,calc((100vw - 1080px)/2)) 20px!important}
+header h1{font-size:clamp(23px,4vw,30px);letter-spacing:-.7px}
+header .eyebrow{color:#89a8cc!important;letter-spacing:1.5px}
+header small{color:#a7b8ce}
+main{max-width:1080px!important;padding:22px 18px 110px!important}
+.panel,.metric{background:#121f31!important;border:1px solid #2a3c53!important;border-radius:16px!important;box-shadow:0 5px 22px rgba(0,0,0,.09)}
+.panel{padding:clamp(15px,2.5vw,22px)!important}
+.panel h2{font-size:17px!important;letter-spacing:-.25px;color:#f0f5fc!important}
+.metric{padding:18px 12px!important}
+.metric b{font-size:clamp(20px,3vw,27px)!important;letter-spacing:-.5px}
+.muted,.panel p.muted{color:#a9bad0!important}
+button{transition:background .14s ease,border-color .14s ease,transform .14s ease}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #74c6e8!important;outline-offset:3px}
+button:active{transform:translateY(1px)}
+.primary{background:#2d9a90!important;color:#fff!important;box-shadow:none!important;border-radius:10px!important}
+.secondary{background:#1d3047!important;border:1px solid #405a75!important;border-radius:10px!important}
+input,select,textarea{background:#0c192b!important;border:1px solid #405670!important;color:#eaf1fb!important}
+.notice{background:#152d3c!important;border-left:3px solid #65bdb0!important}
+#enterpriseBar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:#142237;border:1px solid #2e425a;border-radius:16px;padding:16px 18px;margin:0 0 18px}
+#enterpriseBar .e-title{font-weight:800;font-size:16px;letter-spacing:-.2px}
+#enterpriseBar .e-sub{font-size:12px;color:#aabdd1;margin-top:5px;line-height:1.55}
+#enterpriseBar .e-switch{display:flex;background:#0b182a;border:1px solid #334a64;border-radius:11px;padding:4px;gap:4px}
+#enterpriseBar .e-switch button{background:transparent;border:0;border-radius:8px;color:#a9bad0;padding:10px 16px;font-size:13px;font-weight:700}
+#enterpriseBar .e-switch button[aria-pressed=true]{background:#315d68;color:#fff}
+#enterpriseBar .e-note{font-size:11px;color:#94aac3;width:100%}
+nav,.tabs{scrollbar-width:thin}
+nav button,.tabs button{font-weight:650!important}
+body.enterprise-simple #home>#autoPredictionPanel,
+body.enterprise-simple #home>#snapshotPanel,
+body.enterprise-simple #home>#snapshotResultsPanel,
+body.enterprise-simple #home>#predictionDemoPanel{display:none!important}
+#enterpriseDetailsHint{margin-top:14px;padding:13px 15px;border:1px solid #34546a;border-radius:12px;background:#142a39;color:#b9d1de;font-size:12px;line-height:1.65}
+body.enterprise-detail #enterpriseDetailsHint{display:none}
+body.enterprise-simple #home>.panel:not(#v424RecommendationsPanel):not(#raceDetailPanel):not(:first-child){scroll-margin-top:80px}
+@media(max-width:600px){
+ #enterpriseBar{align-items:stretch;padding:14px;gap:12px}
+ #enterpriseBar .e-switch{width:100%}
+ #enterpriseBar .e-switch button{flex:1}
+ main{padding:14px 12px 110px!important}
+ .panel{margin-top:12px!important}
+ .grid{gap:7px}
+ .metric{padding:12px 7px!important}
+ .metric b{font-size:19px!important}
+ header{padding:20px 15px!important}
+}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+</style>
+<script id="enterprise-ui-script">
+(function(){
+ 'use strict';
+ if(document.getElementById('enterpriseBar'))return;
+ const main=document.querySelector('main');if(!main)return;
+ document.title='BOAT RACE AI | 予想ダッシュボード';
+ const bar=document.createElement('div');bar.id='enterpriseBar';
+ const intro=document.createElement('div');
+ const heading=document.createElement('div');heading.className='e-title';heading.textContent='レース判断ワークスペース';
+ const sub=document.createElement('div');sub.className='e-sub';sub.textContent='シンプル表示で素早く確認。詳細表示ですべてのデータを確認できます。';
+ intro.append(heading,sub);
+ const controls=document.createElement('div');controls.className='e-switch';controls.setAttribute('role','group');controls.setAttribute('aria-label','表示モード');
+ const simple=document.createElement('button'),detail=document.createElement('button');
+ simple.type=detail.type='button';simple.textContent='シンプル';detail.textContent='詳細';
+ controls.append(simple,detail);
+ const note=document.createElement('div');note.className='e-note';
+ note.textContent='表示モードは画面構成のみを変更します。予想計算・保存・API通信には影響しません。非公式データは公式情報で確認してください。';
+ bar.append(intro,controls,note);
+ main.insertBefore(bar,main.firstChild);
+ const hint=document.createElement('div');hint.id='enterpriseDetailsHint';
+ hint.textContent='保存履歴・詳細分析・手動保存は「詳細」に切り替えると表示されます。購入前には展示の取得時刻、買い目、公式オッズ、締切を確認してください。';
+ const home=document.getElementById('home');if(home)home.append(hint);
+ function apply(mode){
+  const isSimple=mode==='simple';
+  document.body.classList.toggle('enterprise-simple',isSimple);
+  document.body.classList.toggle('enterprise-detail',!isSimple);
+  simple.setAttribute('aria-pressed',String(isSimple));
+  detail.setAttribute('aria-pressed',String(!isSimple));
+  try{localStorage.setItem('boat-race-enterprise-view',mode)}catch(e){}
+ }
+ let stored='simple';try{if(localStorage.getItem('boat-race-enterprise-view')==='detail')stored='detail'}catch(e){}
+ simple.addEventListener('click',()=>apply('simple'));
+ detail.addEventListener('click',()=>apply('detail'));
+ apply(stored);
+})();
+</script>
