@@ -3974,3 +3974,92 @@ body.enterprise-simple #enterpriseDecision .ed-deep{display:none}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
+
+
+<!-- Enterprise Consolidation v1: UI-only. No Worker/D1 or prediction logic modifications. -->
+<style id="enterprise-consolidated-style">
+:root{--brand-bg:#091626;--brand-panel:#122338;--brand-border:#30465e;--brand-accent:#43a99f;--brand-text:#f0f5fb;--brand-muted:#b0c3d6;--brand-alert:#e8bd69;color-scheme:dark}
+html,body{background:var(--brand-bg)!important;color:var(--brand-text)!important}
+body{background-image:none!important}
+header{background:#0c1b2e!important;border-bottom:1px solid var(--brand-border)!important;box-shadow:none!important}
+header h1,header h1 span{letter-spacing:-.5px!important;color:var(--brand-text)!important}
+header .eyebrow{color:#87b9c5!important}
+main{max-width:1080px!important}
+.panel,.metric,.race-hero,.venue-board,.outcome-card,#enterpriseBar,#enterpriseDecision,#enterpriseSnapshotAudit,#raceDecisionHub{background:var(--brand-panel)!important;background-image:none!important;border:1px solid var(--brand-border)!important;border-radius:15px!important;box-shadow:none!important}
+.tabs{border:1px solid var(--brand-border)!important;background:#0d1d30!important;border-radius:13px!important;box-shadow:none!important;gap:5px!important}
+.tabs button{border-radius:9px!important;background:transparent!important;color:#bdccdb!important}
+.tabs button.active{background:#285b65!important;color:white!important;box-shadow:none!important}
+.primary,.ed-button{background:#27887e!important;color:white!important;box-shadow:none!important}
+.secondary,.ed-open{background:#1b344d!important;color:#eaf4fc!important;border:1px solid #466079!important;box-shadow:none!important}
+.venue-grid,.venue-board .venue-tiles{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.venue-grid button,.venue-tile{min-height:61px!important;text-align:left!important;padding:12px!important;border-radius:11px!important;background:#172c43!important;border:1px solid #405670!important;color:#e8f0fa!important}
+.venue-grid button.has-data,.venue-tile.active{background:#163d40!important;border-color:#42968a!important}
+.venue-grid button.selected,.venue-tile.selected{outline:2px solid #56b9a9!important}
+.venue-grid button small,.venue-tile small{font-size:11px!important;opacity:.88!important}
+.metric b{color:#f0f5fb!important}
+#enterpriseDecision .ed-card{background:#0d1d30!important;border:1px solid #314a63!important}
+#enterpriseDecision .ed-chip{background:#22575b!important}
+#enterpriseDecision .ed-chip.wait{background:#5b482b!important;color:#ffe5b3!important}
+#enterpriseDecision .ed-disclaimer,#enterpriseDecision .ed-sub{color:#bed0e0!important}
+#enterpriseBar .e-switch button[aria-pressed=true]{background:#2a6669!important}
+#enterpriseConsolidatedActions{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;margin:10px 0 0}
+#enterpriseConsolidatedActions button{background:#1a324a;border:1px solid #47627a;color:#e5f1f9;padding:10px 13px;border-radius:10px;font-size:12px;font-weight:700}
+#enterpriseConsolidatedActions .eca-label{font-size:12px;color:#bed1e1}
+#enterpriseConsolidatedActions .eca-active{background:#27675f!important;border-color:#54b5a5!important;color:white!important}
+#enterpriseInfoDisclosure{border:1px solid #38546d;border-radius:12px;margin:13px 0;background:#102239;overflow:hidden}
+#enterpriseInfoDisclosure>summary{padding:13px 14px;cursor:pointer;color:#d5e6f3;font-weight:700;font-size:13px}
+#enterpriseInfoDisclosure .eca-body{padding:0 14px 14px;color:#bed0df;font-size:12px;line-height:1.8}
+#enterpriseInfoDisclosure .eca-body a{color:#9ee0d5}
+#enterpriseViewNotice{margin:12px 0;padding:11px 13px;background:#142c3c;border-left:3px solid #50b8a5;border-radius:7px;color:#d2e3ef;font-size:12px;line-height:1.7}
+body.enterprise-simple #home>#autoPredictionPanel,body.enterprise-simple #home>#snapshotPanel,body.enterprise-simple #home>#snapshotResultsPanel,body.enterprise-simple #home>#predictionDemoPanel{display:none!important}
+@media(max-width:600px){main{padding:12px 12px 100px!important}.panel{padding:14px!important}.tabs{border-radius:12px!important}.tabs button{min-width:80px!important;padding:11px 8px!important}.metric{padding:12px 5px!important}.metric b{font-size:18px!important}.venue-grid button,.venue-tile{font-size:14px!important}}
+@media(min-width:700px){.venue-grid,.venue-board .venue-tiles{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+</style>
+<script id="enterprise-consolidated-script">
+(function(){'use strict';
+function boot(){
+ if(document.getElementById('enterpriseConsolidatedActions'))return;
+ const bar=document.getElementById('enterpriseBar');if(!bar)return;
+ const actions=document.createElement('div');actions.id='enterpriseConsolidatedActions';
+ const label=document.createElement('span');label.className='eca-label';label.textContent='開催場の表示';
+ const all=document.createElement('button');all.type='button';all.textContent='すべて';
+ const active=document.createElement('button');active.type='button';active.textContent='開催データあり';
+ actions.append(label,all,active);
+ const host=document.getElementById('home');const venueGrid=document.getElementById('venues');
+ if(host&&venueGrid){const panel=venueGrid.closest('.panel');if(panel)panel.insertBefore(actions,venueGrid);}
+ let filter='all';
+ function apply(){
+  all.classList.toggle('eca-active',filter==='all');active.classList.toggle('eca-active',filter==='active');
+  for(const grid of [document.getElementById('venues'),document.querySelector('.venue-tiles')]){
+   if(!grid)continue;
+   for(const button of grid.querySelectorAll('button')){
+    const status=(button.textContent||'');
+    const hasData=button.classList.contains('has-data')||button.classList.contains('active')||(/本日終了|開催中|締切/.test(status)&&!/開催情報なし|開催情報がない/.test(status));
+    button.hidden=filter==='active'&&!hasData;
+    if(button.hidden)button.style.setProperty('display','none');else button.style.removeProperty('display');
+   }
+  }
+ }
+ all.addEventListener('click',()=>{filter='all';apply();});active.addEventListener('click',()=>{filter='active';apply();});
+ // Keep filtering in sync with async updates; observe only the venue containers.
+ for(const grid of [document.getElementById('venues'),document.querySelector('.venue-tiles')]){
+  if(!grid)continue;
+  let pending=false;new MutationObserver(()=>{if(pending)return;pending=true;queueMicrotask(()=>{pending=false;apply();});}).observe(grid,{childList:true,subtree:false});
+ }
+ apply();
+ const notice=document.createElement('div');notice.id='enterpriseViewNotice';
+ notice.textContent='購入前チェック：締切・展示データの更新時刻・買い目・公式オッズを確認してください。画面の更新時刻は予想の保存時刻を保証しません。';
+ bar.insertAdjacentElement('afterend',notice);
+ const details=document.createElement('details');details.id='enterpriseInfoDisclosure';
+ const summary=document.createElement('summary');summary.textContent='データの見方・更新状態・利用上の注意';
+ const body=document.createElement('div');body.className='eca-body';
+ body.textContent='「実購入」の成績と「仮想予想」の成績は別集計です。展示反映・D1保存・画面上の買い目の一致は自動検証されていません。AI評価点は的中確率ではありません。非公式データは遅延する可能性があります。';
+ const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
+ body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
+ // Version label describes dashboard UI, not Worker deployment.
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · UI Enterprise Consolidated v1';}
+ document.title='BOAT RACE AI | Dashboard';
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
