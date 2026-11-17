@@ -2502,6 +2502,82 @@ document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace
 const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.1';
 })();
 </script>
+
+<style id="v442-auto-style">
+#v442AutoStatus{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0 10px;font-size:11px;color:#d9c8e6}
+#v442AutoStatus strong{color:#f0d18a}
+#v442AutoStatus .v442-live{color:#79e0bf}
+#v442ResultDiagnostic{font-size:11px;line-height:1.55;border:1px solid #65507f;border-radius:9px;padding:8px 10px;margin:8px 0;color:#dfd1e9}
+</style>
+<script id="v442-auto-updates">
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id), API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const labelTime=iso=>{if(!iso)return '未取得';const d=new Date(iso);return Number.isNaN(d.getTime())?'不明':d.toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',second:'2-digit'});};
+const stamp=()=>labelTime(new Date().toISOString());
+const status=document.createElement('div');status.id='v442AutoStatus';
+status.innerHTML='<span class="v442-live">● 自動更新ON</span><span>画面取得：<strong id="v442Last">未取得</strong></span><span id="v442AutoError"></span>';
+const nav=document.querySelector('.tabs');if(nav)nav.after(status);
+let running=false,lastRefresh=0;
+function active(){return document.querySelector('.tabs [data-tab].active')?.dataset.tab||'';}
+function refresh(force=false){
+ if(document.visibilityState==='hidden'||running)return;
+ if(!force&&Date.now()-lastRefresh<45000)return;
+ running=true;lastRefresh=Date.now();
+ const current=active();
+ const actions={
+  v431OddsMain:'v431Refresh',
+  outcomes:'outcomeRefresh',
+  watchlistView:'v424RecommendRefresh',
+  v431ScheduleMain:'v430Refresh'
+ };
+ const id=actions[current];
+ if(id&&$(id)&&!$(id).disabled)$(id).click();
+ else if(current==='raceView'){
+  // Refresh the visible race sub-tab without changing the selected race.
+  const sub=document.querySelector('[data-cockpit-tab].active');
+  if(sub)sub.click();
+  else if(typeof loadSchedule==='function')loadSchedule();
+ }else if(current==='venuesView'||current==='scheduleView'){
+  if(typeof loadSchedule==='function')loadSchedule();
+ }
+ $('v442Last').textContent=stamp();
+ running=false;
+}
+// Existing odds code exposes the actual upstream timestamp (fetched_at_utc).
+// Display a refresh indicator without pretending that the official odds were updated at the browser refresh time.
+const oddsStamp=$('v431Stamp');if(oddsStamp)oddsStamp.title='公式オッズ取得時刻はWorkerが返した fetched_at_utc。画面の自動更新時刻とは異なります。';
+setInterval(()=>refresh(false),60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh(true);});
+window.addEventListener('focus',()=>refresh(false));
+nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
+setTimeout(()=>refresh(true),900);
+// Diagnose pending vs absent snapshot; neither is automatically a losing bet.
+const outcome=$('outcomes');if(outcome){
+ const diagnostic=document.createElement('div');diagnostic.id='v442ResultDiagnostic';
+ const matrix=$('v433ResultMatrix');if(matrix)matrix.after(diagnostic);
+ let lastRequest=0;
+ async function inspect(){
+  if(Date.now()-lastRequest<20000)return;lastRequest=Date.now();
+  try{
+   const [a,b]=await Promise.all([fetch(API+'/snapshot-checks',{cache:'no-store'}),fetch(API+'/cron-status',{cache:'no-store'})]);
+   if(!a.ok)throw Error('照合API HTTP '+a.status);
+   const j=await a.json(),rows=Array.isArray(j.results)?j.results:[],d=$('outcomeDate')?.value;
+   const current=rows.filter(x=>x.date===d),pending=current.filter(x=>x.result_status!=='settled_unofficial');
+   const cron=b.ok?await b.json():null;
+   const last=cron?.last_run,when=last?.ran_at_utc?labelTime(last.ran_at_utc):'未確認';
+   diagnostic.textContent='照合状況：'+current.length+'件中、結果待ち '+pending.length+'件。Cron最終実行 '+when+'（日本時間）。「記録なし」は事前予想が保存されていないか、取得上限外の可能性があります。結果待ちはレース終了後でも未照合のことがあります。';
+  }catch(e){diagnostic.textContent='結果照合状況を確認できません：'+e.message+'。未取得を不的中として扱いません。';}
+ }
+ $('outcomeRefresh')?.addEventListener('click',inspect);
+ $('outcomeDate')?.addEventListener('change',()=>{lastRequest=0;inspect();});
+ document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
+ setTimeout(inspect,1600);
+}
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.2';
+document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.2');});
+})();
+</script>
 </body>
 </html>
 
