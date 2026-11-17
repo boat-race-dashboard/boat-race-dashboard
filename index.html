@@ -2104,7 +2104,7 @@ loadSchedule();
  const API='https://boat-race-api.7phr5nzkbt.workers.dev';
  const nav=document.querySelector('.tabs');if(!nav)return;
  const section=document.createElement('section');section.id='v431OddsMain';section.className='hidden';
- section.innerHTML=`<div class="v431-panel"><h2>◆ 3連単オッズ・払戻見込み</h2><p class="v431-help">全国24場から選択。非公式データは約30分更新で、最新の確定オッズではありません。AI買い目は同じレースの予想APIを参照します。</p>
+ section.innerHTML=`<div class="v431-panel"><h2>◆ 3連単オッズ・払戻見込み</h2><p class="v431-help">全国24場から選択。公式サイトから取得した時点のオッズです。確定オッズとは限りません。AI買い目は同じレースの予想APIを参照します。</p>
  <div class="v431-controls"><label>対象日<input type="date" id="v431Date"></label><label>競艇場<select id="v431Venue"></select></label><label>レース<select id="v431Race"></select></label><label>1着固定<select id="v431First"></select></label></div>
  <div class="v431-toolbar"><span id="v431Stamp" class="v431-status">未取得</span><button type="button" id="v431Refresh">更新</button></div>
  <p class="v431-status" id="v431Status">レースを選んで更新してください。</p><div id="v431AIPayout" class="v431-summary">AI予想12点の払戻見込みはオッズ取得後に表示します。</div>
@@ -2142,15 +2142,47 @@ loadSchedule();
   for(const ticket of pred.tickets){const key=ticket.combination,v=validOdds(map[key]),row=document.createElement('div');row.className='v431-toolbar';
    const left=document.createElement('span'),right=document.createElement('strong');left.textContent=key;right.textContent=v===null?'--':`${v.toFixed(1)}倍 / ${money(v*100)}（差引 ${money(v*100-(pred.total_stake_yen||pred.tickets.reduce((s,t)=>s+(Number(t.stake_yen)||0),0)))}）`;row.append(left,right);panel.append(row);}
  }
- async function load(){const id=++requestId;loaded=true;odds=null;pred=null;draw();$('v431Status').textContent='オッズとAI予想を取得中…';$('v431Stamp').textContent='取得中';
+ async function load(){
+  const id=++requestId;loaded=true;odds=null;pred=null;
   const qs=new URLSearchParams({date:date.value,venue:venue.value,race:race.value});
-  const [o,p]=await Promise.allSettled([fetch(API+'/odds?'+qs,{cache:'no-store'}),fetch(API+'/predict?'+qs,{cache:'no-store'})]);if(id!==requestId)return;
-  const messages=[];
-  if(o.status==='fulfilled'){try{const j=await o.value.json();if(o.value.ok){odds=j;messages.push('オッズ '+(j.count||0)+'/120通り');}else messages.push('オッズ未取得：HTTP '+o.value.status);}catch{messages.push('オッズの応答形式が不正');}}else messages.push('オッズ通信失敗');
-  if(p.status==='fulfilled'){try{const j=await p.value.json();if(p.value.ok){pred=j;messages.push('AI予想取得');}else messages.push('AI予想 HTTP '+p.value.status);}catch{messages.push('AI予想の応答形式が不正');}}else messages.push('AI予想通信失敗');
-  if(id!==requestId)return;
-  $('v431Status').textContent=messages.join(' ／ ')+(odds?.count?' ／ 出典更新時刻 '+(odds.source_updated_at||'不明'):' ／ 架空の数値は表示しません');
-  $('v431Stamp').textContent='画面取得 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});draw();
+  $('v431Status').textContent='公式オッズを取得中…';
+  $('v431Stamp').textContent='取得中';
+  // Fetch odds and predictions independently. A slow or failed prediction must never block odds.
+  const oddsJob=(async()=>{
+   try{
+    const response=await fetch(API+'/odds?'+qs,{cache:'no-store'});
+    const json=await response.json();
+    if(id!==requestId)return;
+    if(!response.ok)throw Error('HTTP '+response.status);
+    if(json.available!==true||!json.odds||Object.keys(json.odds).length===0){
+     $('v431Status').textContent='公式オッズ未取得：'+(json.error||'データなし');
+     draw();return;
+    }
+    odds=json;
+    const count=Object.keys(json.odds).length;
+    const stamp=json.fetched_at_utc?new Date(json.fetched_at_utc).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'}):'不明';
+    $('v431Status').textContent='公式3連単オッズ '+count+'/120通り ／ 取得 '+stamp+'（日本時間・確定値ではありません）';
+    $('v431Stamp').textContent='取得 '+stamp;
+    draw();
+   }catch(error){
+    if(id!==requestId)return;
+    $('v431Status').textContent='オッズ通信エラー：'+String(error.message||error);
+    $('v431Stamp').textContent='取得失敗';draw();
+   }
+  })();
+  const predictionJob=(async()=>{
+   try{
+    const response=await fetch(API+'/predict?'+qs,{cache:'no-store'});
+    if(!response.ok)throw Error('HTTP '+response.status);
+    const json=await response.json();
+    if(id!==requestId)return;
+    pred=json;draw();
+   }catch(error){
+    if(id!==requestId)return;
+    pred=null;draw();
+   }
+  })();
+  await Promise.allSettled([oddsJob,predictionJob]);
  }
  [date,venue,race].forEach(x=>x.addEventListener('change',load));first.addEventListener('change',draw);$('v431Refresh').addEventListener('click',load);
 })();
@@ -2255,7 +2287,7 @@ if(oddsRoot){
       cell.append(pair,price);col.append(cell);
     }grid.append(col);
    }
-   oddsRoot.replaceChildren(note,grid);note.textContent='6艇×20通り。各金額は100円購入時の払戻見込み（非公式）。タップで拡大確認。';
+   oddsRoot.replaceChildren(note,grid);note.textContent='6艇×20通り。各金額は取得時点の100円払戻見込み（確定値ではありません）。タップで確認。';
   }).catch(e=>{if(oddsRoot.dataset.v434Token!==token)return;note.textContent='オッズ取得不可：'+e.message+'。架空の数値は表示しません。';
    const grid=document.createElement('div');grid.className='v434-odds-grid';for(let h=1;h<=6;h++){
     const col=document.createElement('div');col.className='v434-odds-col';const head=document.createElement('div');head.className='v434-odds-head';head.textContent=h+'号艇';head.style.background=colors[h];head.style.color=ink(h);col.append(head);
