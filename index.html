@@ -3079,3 +3079,54 @@ finally{busy=false;$('v451Reload').disabled=false}}
 $('v451Reload').addEventListener('click',refresh);$('v451Date').addEventListener('change',refresh);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});setInterval(()=>{if(!document.hidden)refresh()},60000);refresh();
 })();
 </script>
+
+
+<!-- v4.7.1: read-only analytics suite and layout lab. Original UI and functions retained. -->
+<style id="v471-style">
+#v471Panel{margin:14px 0;padding:15px;border:1px solid #8569aa;border-radius:15px;background:linear-gradient(130deg,#261a41,#222b49);color:#f4edff}
+#v471Panel *{box-sizing:border-box}#v471Panel h2{color:#f5d485;font-size:18px;margin:0 0 6px}#v471Panel h3{color:#f0d9ff;font-size:14px;margin:18px 0 8px}#v471Panel .v471-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}#v471Panel input{background:#fff;color:#221632;border-radius:8px;padding:8px;border:1px solid #bba7d1;min-height:38px}#v471Panel button{background:#705397;color:#fff;border:1px solid #ac91c7;border-radius:8px;padding:9px 12px}#v471Panel .v471-muted{color:#d9cce9;font-size:12px;line-height:1.55}#v471Panel .v471-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#v471Panel .v471-card{border:1px solid #6d5b87;background:#34274e;border-radius:10px;padding:10px}#v471Panel .v471-card strong{display:block;font-size:22px;color:#ffe2a0;margin:3px 0}#v471Panel .v471-scroll{overflow-x:auto}#v471Panel table{width:100%;border-collapse:collapse;font-size:12px;min-width:390px}#v471Panel th,#v471Panel td{border-bottom:1px solid #5f4d7a;padding:8px 6px;text-align:right;white-space:nowrap}#v471Panel th:first-child,#v471Panel td:first-child{text-align:left}#v471Panel th{color:#e8d0ff}#v471Panel .v471-good{color:#a4f0cb}#v471Panel .v471-warn{color:#ffcf9d}#v471Panel .v471-chart{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:12px}#v471Panel .v471-chart label{width:72px;color:#eee}#v471Panel .v471-track{flex:1;height:11px;background:#514066;border-radius:8px;overflow:hidden}#v471Panel .v471-track i{display:block;height:100%;background:#e8c478}#v471Panel .v471-chart b{width:55px;text-align:right}#v471Panel .v471-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}#v471Panel .v471-note{border-left:3px solid #d8b96c;padding-left:10px;margin-top:10px}
+@media(max-width:450px){#v471Panel{padding:11px}#v471Panel .v471-card strong{font-size:19px}#v471Panel table{font-size:11px}}
+</style>
+<script id="v471-script">
+(()=>{'use strict';
+const host=document.getElementById('stats');if(!host||document.getElementById('v471Panel'))return;
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const panel=document.createElement('div');panel.id='v471Panel';panel.innerHTML=`<div class="v471-top"><div><h2>📈 統合分析・買い目研究 <small style="font-size:11px">v4.7.1</small></h2><div class="v471-muted">Worker v4.7.0対応・閲覧専用／買い目は変更しません</div></div></div><div class="v471-controls"><label for="v471Date">分析日</label><input id="v471Date" type="date"><button id="v471Reload" type="button">分析を更新</button></div><p class="v471-muted" id="v471Status">分析タブを開くと取得します。</p><div id="v471Body"></div><p class="v471-muted v471-note">注意：保存済みの事前予想と非公式の結果・払戻情報による仮想検証です。旧12点保存データと新6点運用実績は区別してください。予想精度・将来収益を保証するものではありません。</p>`;
+const existing=document.getElementById('v451Panel');if(existing)existing.insertAdjacentElement('afterend',panel);else host.insertBefore(panel,host.firstChild);
+const $=id=>panel.querySelector('#'+id);
+const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());$('v471Date').value=day;
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=x=>Number(x||0).toLocaleString('ja-JP');const pct=x=>x==null?'--':Number(x).toFixed(2)+'%';
+const table=(head,rows)=>`<div class="v471-scroll"><table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const names={saved_first_6:'保存済み先頭6点',rank1_fixed_balanced:'1位固定・バランス',rank1_fixed_second_heavy:'1位固定・2着重視',rank1_and_rank3:'1位＋3位の2頭型',rank1_and_rank2:'1位＋2位の2頭型'};
+const venues={'1':'桐生','2':'戸田','3':'江戸川','4':'平和島','5':'多摩川','6':'浜名湖','7':'蒲郡','8':'常滑','9':'津','10':'三国','11':'びわこ','12':'住之江','13':'尼崎','14':'鳴門','15':'丸亀','16':'児島','17':'宮島','18':'徳山','19':'下関','20':'若松','21':'芦屋','22':'福岡','23':'唐津','24':'大村'};
+const fetchJson=async(path)=>{const res=await fetch(API+path,{cache:'no-store'});if(!res.ok)throw Error(path+' HTTP '+res.status);return res.json()};
+let busy=false,loaded='';
+async function refresh(){if(busy)return;const date=$('v471Date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ $('v471Status').textContent='日付を選択してください。';return;}
+busy=true;$('v471Reload').disabled=true;$('v471Status').textContent='統合分析と買い目比較を取得中…';
+try{const [a,l]=await Promise.all([fetchJson('/analytics-suite?date='+encodeURIComponent(date)),fetchJson('/ticket-layout-lab?date='+encodeURIComponent(date))]);
+if(!a.overall||!l.overall)throw Error('APIの応答形式が想定と異なります');
+const o=a.overall,rank=o.rank_first||{},n=Number(o.races||0),races=Number(l.eligible_settled_races||0);
+let html=`<div class="v471-cards"><div class="v471-card"><span class="v471-muted">照合済みレース（保存時の方式）</span><strong>${num(n)}</strong><span class="v471-muted">未照合 ${num(a.excluded?.pending)} 件</span></div><div class="v471-card"><span class="v471-muted">保存時の方式・仮想回収率</span><strong>${pct(o.roi_percent)}</strong><span class="v471-muted">収支 ${num(o.profit_yen)}円</span></div><div class="v471-card"><span class="v471-muted">保存時の方式・3連単的中</span><strong>${pct(o.exact_hit_rate_percent)}</strong><span class="v471-muted">${num(o.exact_hit)} / ${num(n)} レース</span></div><div class="v471-card"><span class="v471-muted">1着候補のカバー</span><strong>${pct(o.first_head_hit_rate_percent)}</strong><span class="v471-muted">旧2頭方式の結果を含む</span></div></div>`;
+html+='<h3>🎯 買い目5方式・各600円の仮想比較</h3>';
+const layouts=Object.entries(l.overall).sort((a,b)=>Number(b[1]?.roi_percent||0)-Number(a[1]?.roi_percent||0));
+html+=table(['方式','対象','的中','的中率','回収率','仮想収支'],layouts.map(([key,v])=>[esc(names[key]||key),num(v.races),num(v.hits),pct(v.hit_rate_percent),`<b class="${Number(v.roi_percent)>=100?'v471-good':''}">${pct(v.roi_percent)}</b>`,`${num(v.profit_yen)}円`]));
+html+=`<p class="v471-muted">${num(races)}レース・各方式600円／レース。保存済み先頭6点は旧12点の先頭6点を含み、新6点運用実績そのものではありません。</p>`;
+html+='<h3>📊 1着艇の事前AI評価順位</h3>';
+for(let i=1;i<=6;i++){const count=Number(rank[i]||0);html+=`<div class="v471-chart"><label>評価${i}位</label><span class="v471-track"><i style="width:${n?Math.min(100,100*count/n):0}%"></i></span><b>${num(count)}回</b></div>`}
+html+='<h3>🔍 外れ方の内訳（保存時の方式）</h3>';
+html+=table(['分類','レース数'],[['1着候補が外れ',num(o.miss_first)],['2着組み合わせが外れ',num(o.miss_second)],['3着組み合わせが外れ',num(o.miss_third)],['3連単的中',num(o.exact_hit)]]);
+html+='<h3>🏟️ 競艇場別・保存時の方式</h3>';
+html+=table(['競艇場','レース','3連単的中','回収率'],Object.entries(a.by_venue||{}).sort((x,y)=>Number(x[0])-Number(y[0])).map(([v,d])=>[esc((venues[v]||'場'+v)+' ('+v+')'),num(d.races),num(d.exact_hit),pct(d.roi_percent)]));
+html+='<h3>🧪 保存方式・採点世代の区別</h3>';
+html+=table(['方式／世代','レース','的中','回収率'],Object.entries(a.by_revision||{}).map(([k,v])=>[esc(k),num(v.races),num(v.exact_hit),pct(v.roi_percent)]));
+html+='<h3>📅 日別比較について</h3><p class="v471-muted">日付を切り替えて個別に検証できます。複数日をまとめた時系列集計APIは現行Worker v4.7.0にはないため、この画面では日別推移を合算表示していません。</p>';
+$('v471Body').innerHTML=html;
+$('v471Status').textContent=`${date}｜統合分析 ${num(n)}レース｜買い目比較 ${num(races)}レース｜Worker ${a.build_id||'不明'} / ${l.build_id||'不明'}`;loaded=date;
+}catch(e){$('v471Status').textContent='取得できませんでした：'+e.message+'。Worker v4.7.0の公開状態と通信を確認してください。';$('v471Body').innerHTML='';}
+finally{busy=false;$('v471Reload').disabled=false;}}
+$('v471Reload').addEventListener('click',refresh);$('v471Date').addEventListener('change',refresh);
+const nav=document.querySelector('nav');if(nav)nav.addEventListener('click',e=>{if(e.target.closest('[data-tab="stats"]')&&(!loaded||loaded!==$('v471Date').value))refresh()});
+if(!host.classList.contains('hidden'))refresh();
+})();
+</script>
