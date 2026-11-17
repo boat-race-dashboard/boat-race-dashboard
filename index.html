@@ -2710,7 +2710,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.9.3';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.9.4';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -3390,3 +3390,40 @@ const nav=document.querySelector('nav');if(nav)nav.addEventListener('click',e=>{
 if(!host.classList.contains('hidden'))refresh();
 })();
 </script>
+
+<style id="v494-style">
+#v494Intro{margin:12px 0;padding:16px;border:1px solid #8e70b0;border-radius:16px;background:linear-gradient(125deg,#302047,#1c2641)}
+#v494Intro h2{margin:0 0 6px;color:#f5d485;font-size:20px}#v494Intro p{color:#d9cce9;font-size:12px;line-height:1.6;margin:5px 0}
+.v494-group{margin:12px 0;border:1px solid #7c609d;border-radius:15px;background:#271d40;overflow:hidden}
+.v494-group>summary{cursor:pointer;list-style:none;padding:17px 15px;color:#f4d68c;font-weight:750;font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.v494-group>summary::-webkit-details-marker{display:none}.v494-group>summary::after{content:'＋';font-size:20px;color:#e9d7f9}.v494-group[open]>summary::after{content:'−'}
+.v494-group>summary small{display:block;color:#cfc2e0;font-weight:400;font-size:12px;margin-top:5px;line-height:1.5}
+.v494-group>.v494-content{padding:0 12px 12px}.v494-group .panel{margin:10px 0}.v494-group #v451Panel,.v494-group #v471Panel,.v494-group #v480Panel{margin:10px 0}
+#v494Intro .v494-tip{border-left:3px solid #e8c878;padding-left:10px}
+</style>
+<script id="v494-script">(()=>{'use strict';
+const stats=document.getElementById('stats'),manage=document.getElementById('manageView');if(!stats||!manage||document.getElementById('v494Intro'))return;
+const intro=document.createElement('div');intro.id='v494Intro';intro.innerHTML='<h2>📊 AI予想・成績分析</h2><p>最初に6点方式の運用成績を確認し、詳しい比較は下の項目から開けます。</p><p class="v494-tip">集計対象と方式が異なる数値は直接比較できません。表示する回収率は実購入ではなく、保存済み予想の仮想成績です。</p>';
+stats.prepend(intro);
+function group(parent,title,description,open){const d=document.createElement('details');d.className='v494-group';d.open=!!open;const sm=document.createElement('summary');const label=document.createElement('span');label.textContent=title;const small=document.createElement('small');small.textContent=description;label.append(small);sm.append(label);const content=document.createElement('div');content.className='v494-content';d.append(sm,content);parent.append(d);return content;}
+const strategy=group(stats,'🎯 買い目方式・採点比較','6点・8点・12点、5方式、AI評価順位などの比較');
+const history=group(stats,'📚 長期ログ・予想改善検証','日別・世代別・過去データによる時系列検証');
+const legacy=group(stats,'🗂️ 過去の詳細分析','旧形式の集計・詳細ツールを必要なときだけ表示');
+const ops=group(manage,'🛠️ 自動運用・データ品質','Cron、結果照合、保存漏れを確認');
+const backup=group(manage,'💾 バックアップ・端末内データ','JSONの書き出し・復元・端末内記録の削除');
+function move(id,target){const node=document.getElementById(id);if(node)target.append(node);return !!node;}
+move('v451Panel',strategy);move('v471Panel',strategy);move('v480Panel',history);
+move('v423CronPanel',ops);move('v490Panel',ops);move('v448Panel',ops);
+// Some versions use a different ID for the monitor; move only its known card if present.
+for(const node of [...stats.children]){if(node.id==='v494Intro'||node.classList.contains('v494-group')||node.id==='v422AnalyticsPanel')continue;
+ const title=node.querySelector?.('h2')?.textContent||'';
+ if(title.includes('自動予想・結果照合')||title.includes('自動保存・Cron')||title.includes('データ品質'))ops.append(node);
+ else if(title.includes('データの管理'))backup.append(node);
+ else legacy.append(node);
+}
+// Ensure core summary remains directly under the intro.
+const core=document.getElementById('v422AnalyticsPanel');if(core)intro.insertAdjacentElement('afterend',core);
+// Preserve the original DOM nodes, IDs, handlers, input values and calculation logic.
+const footer=document.querySelector('.footer');if(footer&&footer.textContent.includes('v4.8.1'))footer.innerHTML=footer.innerHTML.replace('v4.8.1','v4.9.4');
+})();</script>
+
