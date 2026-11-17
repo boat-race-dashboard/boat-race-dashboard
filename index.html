@@ -576,7 +576,7 @@ button.secondary,.secondary{padding:7px 9px!important;font-size:12px!important}
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v4.3.5<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v4.4.5<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -2574,7 +2574,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.3';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.5';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -2829,5 +2829,76 @@ $('v434Refresh').onclick=async()=>{const target=$('v434History');if(!$('v434Key'
  }catch(e){target.textContent='履歴取得失敗：'+e.message;}};
 $('v434Export').onclick=()=>{const data=JSON.stringify({date:date.value,venue:Number(venue.value),race:Number(race.value),tickets},null,2);const blob=new Blob([data],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='boat-purchase-'+date.value+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
 renderChoices();renderTickets();
+})();
+</script>
+
+
+<style id="v445-countdown-style">
+#heroRaceStatus.v445-clock{display:flex!important;flex-direction:column;justify-content:center;align-items:center;text-align:center;font-size:clamp(11px,3vw,14px)!important;line-height:1.15;white-space:nowrap;font-variant-numeric:tabular-nums;padding:3px;gap:3px}
+#heroRaceStatus.v445-clock strong{font-size:clamp(13px,3.5vw,17px);font-weight:800}
+#heroRaceStatus.v445-clock small{font-size:9px;font-weight:600}
+#heroRaceStatus.v445-clock.past{color:#e7bd82!important;border-color:#e7bd82!important}
+</style>
+<script id="v445-race-countdown">
+(()=>{
+ 'use strict';
+ const status=document.getElementById('heroRaceStatus');
+ const venue=document.getElementById('heroVenue'),race=document.getElementById('heroRace'),date=document.getElementById('scheduleDate');
+ if(!status||!venue||!race||!date)return;
+ const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+ let schedule=null,scheduleDay='',lastFetch=0,inflight=null,selectedDeadline=NaN;
+ const jstToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const epoch=value=>{
+  if(!value)return NaN;
+  const s=String(value).trim().replace(' ','T');
+  return Date.parse(s+(/(?:Z|[+-]\d{2}:?\d{2})$/.test(s)?'':'+09:00'));
+ };
+ const pad=n=>String(n).padStart(2,'0');
+ function render(){
+  status.classList.add('v445-clock');
+  const ms=selectedDeadline-Date.now();
+  if(!Number.isFinite(selectedDeadline)){
+   status.classList.remove('past');status.innerHTML='<small>締切予定</small><strong>未取得</strong>';return;
+  }
+  if(ms<=0){status.classList.add('past');status.innerHTML='<small>締切予定</small><strong>経過</strong>';return;}
+  status.classList.remove('past');
+  const seconds=Math.ceil(ms/1000);
+  const time=seconds>=3600?pad(Math.floor(seconds/3600))+':'+pad(Math.floor(seconds%3600/60))+':'+pad(seconds%60):pad(Math.floor(seconds/60))+':'+pad(seconds%60);
+  status.replaceChildren();
+  const small=document.createElement('small');small.textContent='締切まで';
+  const strong=document.createElement('strong');strong.textContent=time;
+  status.append(small,strong);
+ }
+ function select(){
+  const v=Number(venue.value),r=Number(race.value);
+  const place=(schedule?.venues||[]).find(x=>Number(x.number)===v);
+  const entry=(place?.race_closing_times||[]).find(x=>Number(x.race??x.race_number??x.rno)===r);
+  selectedDeadline=epoch(entry?.closing_at);
+  render();
+ }
+ async function refresh(force=false){
+  const day=date.value||jstToday();
+  if(day!==scheduleDay){scheduleDay=day;schedule=null;lastFetch=0;}
+  if(!force&&schedule&&Date.now()-lastFetch<60000){select();return;}
+  if(inflight){await inflight;select();return;}
+  const requestedDay=day;
+  inflight=(async()=>{
+   try{
+    const res=await fetch(API+'/schedule?date='+encodeURIComponent(day),{cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const payload=await res.json();
+    if(scheduleDay===requestedDay){schedule=payload;lastFetch=Date.now();}
+   }catch(e){if(!schedule)selectedDeadline=NaN;}
+  })();
+  try{await inflight;}finally{inflight=null;select();}
+ }
+ [venue,race,date].forEach(x=>x.addEventListener('change',()=>refresh()));
+ // Race number buttons update a hidden select; listen to those clicks too.
+ document.getElementById('heroRaceDots')?.addEventListener('click',()=>setTimeout(select,0));
+ document.querySelector('[data-tab="raceView"]')?.addEventListener('click',()=>refresh());
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+ setInterval(()=>{if(!document.hidden)render();},1000);
+ setInterval(()=>{if(!document.hidden)refresh();},60000);
+ refresh();
 })();
 </script>
