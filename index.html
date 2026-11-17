@@ -2566,7 +2566,11 @@ const outcome=$('outcomes');if(outcome){
    const current=rows.filter(x=>x.date===d),pending=current.filter(x=>x.result_status!=='settled_unofficial');
    const cron=b.ok?await b.json():null;
    const last=cron?.last_run,when=last?.ran_at_utc?labelTime(last.ran_at_utc):'未確認';
-   diagnostic.textContent='照合状況：'+current.length+'件中、結果待ち '+pending.length+'件。Cron最終実行 '+when+'（日本時間）。「記録なし」は事前予想が保存されていないか、取得上限外の可能性があります。結果待ちはレース終了後でも未照合のことがあります。';
+   const categories={waiting_for_result:'結果公開待ち',source_unavailable:'外部APIエラー',result_incomplete_or_special:'特殊結果・払戻未取得',snapshot_invalid:'保存データ要確認',check_error:'照合エラー',not_checked_yet:'初回照合待ち'};
+   const counts={};for(const x of pending){const key=x.pending_category||'not_checked_yet';counts[key]=(counts[key]||0)+1;}
+   const detail=Object.entries(counts).map(([k,v])=>(categories[k]||k)+' '+v+'件').join('／');
+   const next=pending.filter(x=>x.next_retry_at).sort((a,b)=>String(a.next_retry_at).localeCompare(String(b.next_retry_at)))[0];
+   diagnostic.textContent='照合状況：'+current.length+'件中、未照合 '+pending.length+'件（'+(detail||'なし')+'）。'+(next?'次の再照合予定 '+labelTime(next.next_retry_at)+'。':'')+'Cron最終実行 '+when+'（日本時間）。未照合は不的中に含めません。非公式結果のため公式確認が必要です。';
   }catch(e){diagnostic.textContent='結果照合状況を確認できません：'+e.message+'。未取得を不的中として扱いません。';}
  }
  $('outcomeRefresh')?.addEventListener('click',inspect);
