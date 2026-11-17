@@ -2578,7 +2578,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.8';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.5.2';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -3009,8 +3009,9 @@ renderChoices();renderTickets();
 (()=>{'use strict';
 const API='https://boat-race-api.7phr5nzkbt.workers.dev';
 const root=document.createElement('section');root.id='v448Monitor';
-root.innerHTML='<h2>自動予想・結果照合モニター <small>v4.4.8</small></h2><div class="v448-grid"><div class="v448-metric">直近の予想保存<strong id="v448Saved">--</strong></div><div class="v448-metric">直近の精算成功<strong id="v448Settled">--</strong></div><div class="v448-metric">再試行待ち<strong id="v448Pending">--</strong></div></div><p class="v448-note" id="v448Info">照合状況を取得しています…</p><button type="button" id="v448Refresh">最新情報を取得</button>';
-const mount=document.querySelector('main')||document.body;
+root.innerHTML='<h2>自動予想・結果照合モニター <small>v4.5.2 UI</small></h2><div class="v448-grid"><div class="v448-metric">直近の予想保存<strong id="v448Saved">--</strong></div><div class="v448-metric">直近の精算成功<strong id="v448Settled">--</strong></div><div class="v448-metric">再試行待ち<strong id="v448Pending">--</strong></div></div><p class="v448-note" id="v448Info">照合状況を取得しています…</p><button type="button" id="v448Refresh">最新情報を取得</button>';
+const mount=document.getElementById('stats');
+if(!mount)return;
 mount.insertBefore(root,mount.firstChild);
 const el=id=>document.getElementById(id);
 const fmt=iso=>{if(!iso)return '未取得';const d=new Date(iso);return Number.isNaN(d.getTime())?'未取得':new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(d)};
@@ -3041,7 +3042,8 @@ refresh();setInterval(()=>{if(!document.hidden)refresh()},60000);
 const API='https://boat-race-api.7phr5nzkbt.workers.dev';
 const root=document.createElement('section');root.id='v451Panel';root.setAttribute('aria-label','6点方式と12点方式の検証');
 root.innerHTML=`<div class="v451-top"><div><h2>6点方式・12点比較 <span class="v451-pill">v4.5.1 対応</span></h2><div class="v451-small">仮想予想の検証｜実際の舟券購入ではありません</div></div><div class="v451-controls"><label for="v451Date">検証日</label><input id="v451Date" type="date"><button type="button" id="v451Reload">再取得</button></div></div><p id="v451Status" class="v451-muted">データ取得中…</p><div id="v451Content" hidden><h3>保存済み予想の比較検証</h3><div class="v451-grid" id="v451Summary"></div><div class="v451-scroll"><table class="v451-table"><thead><tr><th>方式</th><th>件数</th><th>的中</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead><tbody id="v451Rows"></tbody></table></div><h3>方式・採点改訂別の成績</h3><div id="v451Revisions"></div><h3>最新の保存予想</h3><div id="v451Latest"></div><p class="v451-muted" id="v451Disclaimer"></p></div>`;
-const mount=document.querySelector('main')||document.body;
+const mount=document.getElementById('stats');
+if(!mount)return;
 mount.insertBefore(root,mount.firstChild);
 const $=id=>root.querySelector('#'+id);
 const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
