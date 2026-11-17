@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v4.9.5</title>
+  <title>BOAT RACE AI Dashboard v4.9.6</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -1640,21 +1640,50 @@ loadAutoPredictions();
       section.append(grid);container.append(section);
     }
   }
+  // v4.9.6: visible-race-only odds refresh; no D1 writes and no cached odds.
+  let payoutSession=0;
+  function oddsRefreshDelay(){
+    const closing=document.querySelector('#v441Deadline strong')?.textContent||'';
+    const minutes=closing.match(/あと(\d+)分/);
+    if(!minutes)return 60000;
+    const n=Number(minutes[1]);return n<=3?15000:n<=10?30000:60000;
+  }
   async function renderTicketPayouts(tickets,date,venue,race,container){
-    const note=el('p','オッズ確認中…（各買い目の100円単位の払戻見込み）','v433-odds-note');container.append(note);
-    try{
-      const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
-      if(!res.ok)throw Error('HTTP '+res.status);const data=await res.json();
-      if(scheduleDate.value!==date||hv.value!==venue||hr.value!==race||!container.isConnected)return;
-      let count=0;
-      for(const payout of container.querySelectorAll('.v433-bet-payout')){
-        const v=Number(data.odds?.[payout.dataset.combination]);
-        if(Number.isFinite(v)&&v>0){payout.textContent=yen(Math.floor(v*Number(payout.dataset.stake)));payout.title=v.toFixed(1)+'倍（非公式・変動あり）';count++;}
-        else payout.textContent='--円';
-      }
-      const updated=data.source_updated_at||data.updated_at||'時刻不明';
-      note.textContent='払戻見込み '+count+'/'+tickets.length+'点 ／ オッズ更新 '+updated+' ／ 非公式・約30分更新。差引収支は払戻額から全点の購入額を引いて計算。';
-    }catch(e){note.textContent='オッズ未取得（'+e.message+'）。払戻金は表示できません。';}
+    const session=++payoutSession;
+    const note=el('p','オッズを取得中…','v433-odds-note');container.append(note);
+    const button=el('button','↻ オッズを更新','v496-odds-refresh');button.type='button';
+    button.style.cssText='margin:8px 0;padding:8px 13px;border-radius:9px;border:1px solid #aa8bce;background:#372950;color:#f8e5aa;cursor:pointer';
+    container.append(button);
+    let busy=false,last=0,failures=0;
+    const valid=()=>session===payoutSession&&container.isConnected&&scheduleDate.value===date&&hv.value===venue&&hr.value===race;
+    async function update(manual=false){
+      if(!valid()||busy)return;
+      if(!manual&&document.hidden)return;
+      busy=true;button.disabled=true;note.textContent='オッズ取得中…（表示中のレースのみ）';
+      try{
+        const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
+        if(!res.ok)throw Error('HTTP '+res.status);
+        const data=await res.json();if(!valid())return;
+        let count=0;
+        for(const payout of container.querySelectorAll('.v433-bet-payout')){
+          const v=Number(data.odds?.[payout.dataset.combination]);
+          if(Number.isFinite(v)&&v>0){payout.textContent=yen(Math.floor(v*Number(payout.dataset.stake)));payout.title=v.toFixed(1)+'倍（取得時点・変動あり）';count++;}
+          else payout.textContent='--円';
+        }
+        const time=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        note.textContent='オッズ '+count+'/'+tickets.length+'点 ／ 取得 '+time+' ／ '+(data.source||'取得元未確認')+(data.count?'':' ／ 未公開・解析不可の可能性')+' ／ 確定払戻ではありません';
+        failures=data.count?0:Math.min(failures+1,5);
+      }catch(e){if(valid()){failures=Math.min(failures+1,5);note.textContent='オッズ取得失敗：'+e.message+' ／ 再試行します（数値は捏造しません）';}}
+      finally{busy=false;button.disabled=false;last=Date.now();}
+    }
+    button.addEventListener('click',()=>update(true));
+    await update(true);
+    const timer=setInterval(()=>{
+      if(!valid()){clearInterval(timer);return;}
+      if(document.hidden||document.querySelector('#cockpitPrediction')?.hidden)return;
+      const base=oddsRefreshDelay(),wait=Math.max(base,failures?Math.min(120000,base*2):0);
+      if(Date.now()-last>=wait)update();
+    },5000);
   }
   async function loadCockpitPrediction(){
     const id=++predictionRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
@@ -2588,7 +2617,7 @@ const $=id=>document.getElementById(id);
 const API='https://boat-race-api.7phr5nzkbt.workers.dev';
 const yen=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
 const localDay=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-const dateTime=s=>{if(!s)return NaN;const t=String(s).trim().replace(' ','T');const n=Date.parse(t+(t.includes('Z')||/[+-]\d\d:\d\d$/.test(t)?'':'+09:00'));return n;};
+const dateTime=s=>{if(!s)return NaN;const t=String(s).trim().replace(' ','T');if(/^\d{1,2}:\d{2}(?::\d{2})?$/.test(t))return NaN;return Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/.test(t)?t:t+'+09:00');};
 // Clearly distinguish scheduled closing time from actual race start time.
 const race=$('raceView'),venue=$('heroVenue'),raceNo=$('heroRace'),day=$('scheduleDate');
 if(race&&venue&&raceNo&&day){
@@ -2751,7 +2780,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.9.4';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.9.6';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
