@@ -302,7 +302,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .v433-matrix-label{font-size:clamp(8px,2.3vw,11px);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:clip;color:#f6efff}
 .v433-matrix-col{font-size:9px;text-align:center;color:#d6c4e7}
 .v433-matrix-cell{min-width:0;aspect-ratio:1;border:0;border-radius:4px;padding:0;font-size:clamp(8px,2.2vw,11px);font-weight:750;color:#eee8f5;background:#463c59;display:grid;place-items:center}
-.v433-matrix-cell.hit{background:#e8c56f;color:#251b31}.v433-matrix-cell.miss{background:#60445b;color:#eee1ed}.v433-matrix-cell.pending{background:#6445a3;color:#fff}.v433-matrix-cell.none{background:#30273e;color:#80758d}.v433-matrix-cell:disabled{opacity:1}
+.v433-matrix-cell.hit{background:#f0cb69;color:#241809}.v433-matrix-cell.miss{background:#d24b58;color:#fff}.v433-matrix-cell.pending{background:#684eac;color:#fff}.v433-matrix-cell.none{background:#30273e;color:#80758d}.v433-matrix-cell:disabled{opacity:1}
 .v433-matrix-legend,.v433-coverage{font-size:10px;color:#d2c0e4;line-height:1.6}.v433-result-details{margin-top:15px}.v433-result-details summary{padding:12px;border:1px solid #685385;border-radius:10px;color:#f0d187;cursor:pointer}
 @media(min-width:600px){.v433-matrix{gap:5px}.v433-matrix-cell{border-radius:6px;font-size:12px}.v433-matrix-label{font-size:12px}}
 </style>
@@ -530,7 +530,7 @@ button,select,input{touch-action:manipulation}button:focus-visible,select:focus-
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v4.3.4<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v4.3.5<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -1679,7 +1679,7 @@ loadAutoPredictions();
     const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)>0)||(filter==='miss'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)===0)||(filter==='pending'&&r.result_status!=='settled_unofficial'));
     // v4.3.3: 24 venues x 12 races in one width-fitted matrix. Missing snapshots are NOT losses.
     const matrix=document.getElementById('v433ResultMatrix');matrix.replaceChildren();
-    const legend=el('div',undefined,'v433-matrix-legend');legend.textContent='● 的中　● 不的中　● 結果待ち　· 記録なし';matrix.append(legend);
+    const legend=el('div',undefined,'v433-matrix-legend');legend.innerHTML='<span class="v435-key hit">■</span> 的中　<span class="v435-key miss">■</span> 不的中　<span class="v435-key pending">■</span> 結果待ち　<span class="v435-key none">■</span> 記録なし';matrix.append(legend);
     const board=el('div',undefined,'v433-matrix');
     const corner=el('span','場','v433-matrix-label');board.append(corner);
     for(let n=1;n<=12;n++)board.append(el('span',String(n),'v433-matrix-col'));
@@ -2207,6 +2207,15 @@ loadSchedule();
 .v434-ticket button{background:none;color:#f0c3c3;border:0;padding:2px}.v434-totals{font-weight:800;color:#efd18a;margin:9px 0}
 .v434-history{font-size:12px;margin:6px 0;padding:7px;background:#342747;border-radius:7px}
 </style>
+<style>
+/* v4.3.5: high-contrast outcome colors and readable legend */
+.v433-matrix-cell.hit{background:#f0cb69!important;color:#241809!important}
+.v433-matrix-cell.miss{background:#d24b58!important;color:#fff!important}
+.v433-matrix-cell.pending{background:#684eac!important;color:#fff!important}
+.v433-matrix-cell.none{background:#30273e!important;color:#80758d!important}
+.v435-key{font-size:15px;font-weight:900;vertical-align:middle}
+.v435-key.hit{color:#f0cb69}.v435-key.miss{color:#d24b58}.v435-key.pending{color:#8c6cda}.v435-key.none{color:#756687}
+</style>
 <script>
 // v4.3.4: six-column odds and real-purchase records. No imaginary odds.
 (()=>{
@@ -2262,10 +2271,16 @@ const matrix=$('v433ResultMatrix');if(matrix){
   board.dataset.v434='1';const date=$('outcomeDate')?.value||today(),id=++seq;
   fetch(API+'/schedule?date='+encodeURIComponent(date),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(Error('schedule'))).then(j=>{
    if(id!==seq||!board.isConnected)return;
-   const active=new Set((j.venues||[]).filter(v=>(v.race_closing_times||[]).length>0).map(v=>Number(v.number)));
-   if(!active.size)return;const nodes=[...board.children];
-   for(let i=23;i>=0;i--)if(!active.has(i+1)){const offset=13+i*13;nodes.slice(offset,offset+13).forEach(n=>n.remove());}
-   const cap=matrix.querySelector('.v433-coverage');if(cap)cap.textContent+=' ／ 開催 '+active.size+'場のみ表示（非公式日程）';
+   const venues=(j.venues||[]).filter(v=>(v.race_closing_times||[]).length>0);
+   if(!venues.length)return;
+   const nodes=[...board.children], header=nodes.slice(0,13), venueRows=new Map();
+   for(let i=0;i<24;i++)venueRows.set(i+1,nodes.slice(13+i*13,13+(i+1)*13));
+   const toMinutes=(value)=>{if(!value)return Infinity;const str=String(value);const m=str.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);return m?Number(m[1])*60+Number(m[2]):Infinity;};
+   const startTime=(v)=>Math.min(...v.race_closing_times.map(x=>toMinutes(x.closing_at)));
+   venues.sort((a,b)=>startTime(a)-startTime(b)||Number(a.number)-Number(b.number));
+   const ordered=[...header];for(const v of venues){const cells=venueRows.get(Number(v.number));if(cells)ordered.push(...cells);}
+   board.replaceChildren(...ordered);
+   const cap=matrix.querySelector('.v433-coverage');if(cap)cap.textContent+=' ／ 開催 '+venues.length+'場・最初の締切予定が早い順（非公式日程）';
   }).catch(()=>{const cap=matrix.querySelector('.v433-coverage');if(cap)cap.textContent+=' ／ 開催場を判定できないため全場表示';});
  });obs.observe(matrix,{childList:true,subtree:false});
 }
