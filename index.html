@@ -511,7 +511,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)memo.clear(
 #outcomes .v498-tier-list span{display:flex;align-items:center;gap:7px;padding:7px;background:#3b2d52;border-radius:8px;font-size:10px}
 </style></head>
 <body>
-<header><div class="eyebrow">BOAT RACE / 24 VENUES · v4.9.9</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
+<header><div class="eyebrow">BOAT RACE / 24 VENUES · v4.9.10</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
 <main>
   <div class="grid">
     <div class="metric"><span>実購入 的中率</span><b id="hit">--%</b><span id="hitSub">キー入力後に集計</span></div>
@@ -1936,7 +1936,7 @@ loadAutoPredictions();
   paint();
   const date=document.getElementById('outcomeDate');date.value=document.getElementById('scheduleDate').value;
   let rows=[],filter='all',busy=false,offset=0,hasMore=false,dayRaces=[];
-  // v4.9.9: Read-only result review. No post-race prediction recalculation.
+  // v4.9.10: Read-only result review. No post-race prediction recalculation.
   const reviewStyle=document.createElement('style');reviewStyle.textContent=`
   .v499-overlay{position:fixed;inset:0;z-index:10000;background:rgba(9,5,21,.82);display:flex;align-items:flex-end;justify-content:center;padding:12px;box-sizing:border-box}
   .v499-dialog{background:#261a3b;color:#f7edff;border:1px solid #9876b5;border-radius:20px 20px 14px 14px;width:min(100%,540px);max-height:88dvh;overflow:auto;padding:18px;box-sizing:border-box;box-shadow:0 12px 45px #0009}
@@ -3064,6 +3064,52 @@ const draw=()=>{const s=window.__br495NetworkStats?.();if(!s)return;panel.queryS
 panel.querySelector('#v495Refresh').addEventListener('click',draw);draw();
 })();</script>
 
+<style id="v4910-style">
+#v4910Panel{margin:16px 0;padding:17px;border:1px solid #80639d;border-radius:19px;background:#281d40;color:#eee3f5}
+#v4910Panel h2{color:#f0cf7e;margin:0 0 9px;font-size:20px}
+#v4910Panel .v4910-note{font-size:12px;color:#c9b8d8;line-height:1.7}
+#v4910Panel .v4910-row{display:flex;gap:9px;align-items:end;flex-wrap:wrap;margin:13px 0}
+#v4910Panel input{width:auto;min-width:140px;max-width:190px;background:#1b1430;color:#fff;border:1px solid #9272ad;border-radius:10px;padding:10px}
+#v4910Panel button{background:#eac679;color:#24172c;border:0;border-radius:11px;padding:11px 15px;font-weight:700}
+#v4910Panel button:disabled{opacity:.5}
+#v4910Panel .v4910-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#v4910Panel .v4910-card{background:#3b2a50;border:1px solid #745c89;border-radius:12px;padding:12px;min-width:0}
+#v4910Panel .v4910-card small{display:block;color:#cbbbd8}#v4910Panel .v4910-card strong{display:block;color:#f4d27f;font-size:21px;margin-top:6px}
+#v4910Panel .v4910-table{overflow:auto;margin:12px 0}#v4910Panel table{width:100%;border-collapse:collapse;font-size:12px;min-width:460px}#v4910Panel td,#v4910Panel th{padding:9px;border-bottom:1px solid #66517d;text-align:left;white-space:nowrap}
+#v4910Panel .v4910-chip{display:inline-block;padding:4px 9px;border-radius:15px;background:#5a476c;font-size:12px}
+</style>
+<script id="v4910-script">(()=>{'use strict';
+const host=document.getElementById('stats');if(!host||document.getElementById('v4910Panel'))return;
+const p=document.createElement('div');p.id='v4910Panel';p.innerHTML=`<h2>🧭 日次振り返り・レース選別研究 <small>v4.9.10</small></h2>
+<p class="v4910-note">事前保存された予想と非公式結果から、翌日以降に活かすための検証を行います。確率の校正が未完了のため「購入推奨」や将来の期待回収率は表示しません。</p>
+<div class="v4910-row"><label>振り返る日<br><input type="date" id="v4910Date"></label><button id="v4910Run" type="button">振り返りを集計</button></div>
+<p id="v4910Status" class="v4910-note">日付を選んで集計してください。</p><div id="v4910Body"></div>
+<p class="v4910-note">分析専用・D1への追加書き込みなし。購入・見送りの実判断はオッズ、展示、公式締切、予算を別途確認してください。過去の成績は将来の的中率や利益を保証しません。</p>`;
+const anchor=document.getElementById('v422AnalyticsPanel');if(anchor)anchor.insertAdjacentElement('afterend',p);else host.prepend(p);
+const el=id=>p.querySelector('#'+id);const jst=d=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+el('v4910Date').value=jst(new Date());const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const num=x=>Number(x||0).toLocaleString('ja-JP');const pct=x=>x==null?'算出不可':Number(x).toFixed(1)+'%';const yen=x=>x==null?'—':(x>0?'+':'')+num(x)+'円';let busy=false;
+const summary=(name,v)=>`<div class="v4910-card"><small>${esc(name)}</small><strong>${esc(v)}</strong></div>`;
+async function load(){if(busy)return;const day=el('v4910Date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(day))return;
+busy=true;el('v4910Run').disabled=true;el('v4910Status').textContent='保存済み予想の検証データを取得中…';
+try{const start=new Date(day+'T12:00:00Z');start.setUTCDate(start.getUTCDate()-29);const from=jst(start);const url='https://boat-race-api.7phr5nzkbt.workers.dev/learning-history?from='+from+'&to='+day;
+const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);const data=await response.json();if(!data.overall||!data.daily)throw Error('集計データ形式が不正');
+const d=data.daily[day],prior=Object.entries(data.daily).filter(([k])=>k<day).sort((a,b)=>a[0].localeCompare(b[0]));
+let html='';if(!d){html+='<p class="v4910-note">選択日の事前予想保存ログがありません。レースがなかったとは限りません。</p>';}else{
+const a=d.active||{};html+='<h3>📅 選択日の成績（保存時方式）</h3><div class="v4910-grid">'+summary('保存ログ',num(d.snapshots)+'件')+summary('照合済み',num(d.settled)+'件')+summary('的中率',pct(a.hit_rate_percent))+summary('回収率',pct(a.roi_percent))+summary('仮想収支',yen(a.profit_yen))+summary('未照合／無効',num(d.pending)+'／'+num(d.invalid))+'</div>';
+const keys=[['saved_first_6','保存済み先頭6点'],['rank1_fixed_balanced','1位固定バランス'],['rank1_fixed_second_heavy','1位固定2着重視'],['rank1_and_rank3','1位＋3位'],['rank1_and_rank2','1位＋2位']];
+html+='<h3>🎯 買い目方式の当日比較（各6点・仮想）</h3><div class="v4910-table"><table><thead><tr><th>方式</th><th>的中</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead><tbody>';
+for(const [key,label] of keys){const v=d.layouts?.[key];if(!v)continue;html+='<tr><td>'+esc(label)+'</td><td>'+num(v.hits)+'/'+num(v.races)+'</td><td>'+pct(v.hit_rate_percent)+'</td><td>'+pct(v.roi_percent)+'</td><td>'+yen(v.profit_yen)+'</td></tr>';}
+html+='</tbody></table></div><p class="v4910-note">当日の結果を見て選んだ「最良方式」は翌日の予測精度を示しません。旧12点の実績と6点の仮想比較は分けて判断してください。</p>';
+}
+const count=prior.reduce((n,[,v])=>n+(v.settled||0),0);const enough=count>=100&&prior.length>=5;
+html+='<h3>🔎 翌日以降のレース見極め</h3><div class="v4910-card"><span class="v4910-chip">'+(enough?'過去データの比較が可能':'検証データ不足・様子見')+'</span><p class="v4910-note">選択日より前の照合済み '+num(count)+' レース／'+prior.length+'日。'+(enough?'履歴比較の最低件数には達していますが、予測確率の校正・オッズとの期待値比較が未実装のため、購入推奨は出しません。':'レース選別ルールの有効性を判断するには不足しています。予想と結果を継続して蓄積してください。')+'</p></div>';
+html+='<h3>🛡️ レース判定の基準</h3><div class="v4910-grid">'+summary('検討対象','データ・オッズ・公式時刻を確認済み')+summary('様子見','情報不足／優位性未検証')+summary('見送り','結果不整合／締切経過／予算超過')+summary('推定的中確率','未校正・表示しない')+'</div>';
+html+='<p class="v4910-note">この画面は条件を研究するためのもので、各レースを自動で「買い」と断定しません。過去データだけで買い目や購入判断を自動変更する処理もありません。</p>';
+if(data.truncated)html+='<p class="v4910-note">注意：取得件数上限に到達したため一部集計です。</p>';
+el('v4910Body').innerHTML=html;el('v4910Status').textContent=from+'〜'+day+' の保存済み履歴を参照 ／ Worker '+(data.build_id||'不明');
+}catch(e){el('v4910Status').textContent='取得失敗：'+e.message;el('v4910Body').textContent='';}finally{busy=false;el('v4910Run').disabled=false;}}
+el('v4910Run').addEventListener('click',load);
+})();</script>
 </body>
 </html>
 
