@@ -492,9 +492,26 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)memo.clear(
 .v433-matrix-cell.v497-no-prediction{background:#4b405c;color:#e8d9fa;border:1px solid #8b75a3}
 .v433-matrix-cell.v497-tier1{background:#c9ddec!important;color:#163451!important}.v433-matrix-cell.v497-tier2{background:#8fd5b7!important;color:#153e30!important}.v433-matrix-cell.v497-tier3{background:#f0ca77!important;color:#44300c!important}.v433-matrix-cell.v497-tier4{background:#eaa064!important;color:#4e230b!important}.v433-matrix-cell.v497-tier5{background:#c18aeb!important;color:#2d1549!important}
 .v497-legend{display:flex;flex-wrap:wrap;gap:7px;font-size:11px;margin:8px 0;color:#e4d8f3}.v497-legend span{padding:4px 7px;border-radius:6px;border:1px solid #75618a}
+</style><style id="v498-style">
+/* Higher specificity than legacy outcome color rules. */
+#outcomes .v433-matrix-cell.hit.v497-tier1{background:#c9ddec!important;color:#163451!important}
+#outcomes .v433-matrix-cell.hit.v497-tier2{background:#8fd5b7!important;color:#153e30!important}
+#outcomes .v433-matrix-cell.hit.v497-tier3{background:#f0ca77!important;color:#44300c!important}
+#outcomes .v433-matrix-cell.hit.v497-tier4{background:#eaa064!important;color:#4e230b!important}
+#outcomes .v433-matrix-cell.hit.v497-tier5{background:#c18aeb!important;color:#2d1549!important}
+#outcomes .v433-matrix-cell.hit.v498-hit-unknown{background:#f0cb69!important;color:#241809!important}
+#outcomes .v498-legend{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:10px 0 12px;font-size:11px;color:#e9def5}
+#outcomes .v498-legend-title{font-size:10px;opacity:.75;margin-right:2px}
+#outcomes .v498-pill{display:inline-flex;align-items:center;gap:5px;background:#332547;border:1px solid #5f4b77;border-radius:999px;padding:6px 8px;white-space:nowrap}
+#outcomes .v498-dot,#outcomes .v498-tier-list i{display:inline-block;flex:none;width:9px;height:9px;background:var(--dot);border-radius:3px}
+#outcomes .v498-payout-key{width:100%;background:#2b2041;border:1px solid #66517e;border-radius:12px;padding:0 10px}
+#outcomes .v498-payout-key summary{cursor:pointer;list-style:none;padding:9px 0;font-weight:700;color:#efce83;display:flex;justify-content:space-between;align-items:center}
+#outcomes .v498-payout-key summary::-webkit-details-marker{display:none}
+#outcomes .v498-tier-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:7px;padding:0 0 11px}
+#outcomes .v498-tier-list span{display:flex;align-items:center;gap:7px;padding:7px;background:#3b2d52;border-radius:8px;font-size:10px}
 </style></head>
 <body>
-<header><div class="eyebrow">BOAT RACE / 24 VENUES · v3.9</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
+<header><div class="eyebrow">BOAT RACE / 24 VENUES · v4.9.8</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
 <main>
   <div class="grid">
     <div class="metric"><span>実購入 的中率</span><b id="hit">--%</b><span id="hitSub">キー入力後に集計</span></div>
@@ -1932,7 +1949,7 @@ loadAutoPredictions();
     const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)>0)||(filter==='miss'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)===0)||(filter==='pending'&&r.result_status!=='settled_unofficial'));
     // v4.3.3: 24 venues x 12 races in one width-fitted matrix. Missing snapshots are NOT losses.
     const matrix=document.getElementById('v433ResultMatrix');matrix.replaceChildren();
-    const legend=el('div',undefined,'v433-matrix-legend');legend.innerHTML='<span class="v435-key hit">■</span> 的中　<span class="v435-key miss">■</span> 不的中　<span class="v435-key pending">■</span> 結果待ち　<span class="v435-key none">■</span> 記録なし';matrix.append(legend);const tierLegend=el('div',undefined,'v497-legend');tierLegend.innerHTML='<span>的中配当：青 〜999円</span><span>緑 1,000〜2,999円</span><span>金 3,000〜9,999円</span><span>橙 10,000〜29,999円</span><span>紫 30,000円〜</span><span>灰：予想なし</span>';matrix.append(tierLegend);
+    const legend=el('div',undefined,'v498-legend');legend.innerHTML='<span class="v498-legend-title">結果の見方</span><span class="v498-pill"><i class="v498-dot" style="--dot:#d96364"></i>ハズレ</span><span class="v498-pill"><i class="v498-dot" style="--dot:#44cdb1"></i>未照合</span><span class="v498-pill"><i class="v498-dot" style="--dot:#81748f"></i>予想なし</span><details class="v498-payout-key"><summary>的中配当の色 <span aria-hidden="true">⌄</span></summary><div class="v498-tier-list"><span><i style="--dot:#c9ddec"></i>〜999円</span><span><i style="--dot:#8fd5b7"></i>1,000〜2,999円</span><span><i style="--dot:#f0ca77"></i>3,000〜9,999円</span><span><i style="--dot:#eaa064"></i>10,000〜29,999円</span><span><i style="--dot:#c18aeb"></i>30,000円〜</span></div></details>';matrix.append(legend);
     const board=el('div',undefined,'v433-matrix');
     const corner=el('span','場','v433-matrix-label');board.append(corner);
     for(let n=1;n<=12;n++)board.append(el('span',String(n),'v433-matrix-col'));
@@ -1947,7 +1964,7 @@ loadAutoPredictions();
         const validPayout=Number.isFinite(payout)&&payout>0;
         const state=!daily&&!r?'none':!r?'v497-no-prediction':settled?(hit?'hit':'miss'):'pending';
         const b=el('button',String(n),'v433-matrix-cell '+state);b.type='button';
-        if(hit&&validPayout)b.classList.add(payout<1000?'v497-tier1':payout<3000?'v497-tier2':payout<10000?'v497-tier3':payout<30000?'v497-tier4':'v497-tier5');
+        if(hit&&validPayout){b.classList.add(payout<1000?'v497-tier1':payout<3000?'v497-tier2':payout<10000?'v497-tier3':payout<30000?'v497-tier4':'v497-tier5');b.dataset.payout=String(payout);}else if(hit){b.classList.add('v498-hit-unknown');}
         b.title=name+' '+n+'R：'+(daily?.status==='settled'?'確定出目 '+daily.winning+'／3連単100円払戻 '+Number(daily.payout_per_100).toLocaleString('ja-JP')+'円。':'結果未確定または未取得。')+(!r?' AI事前予想なし':settled?(hit?' AI的中':' AI不的中'):' AI結果照合待ち');
         b.setAttribute('aria-label',b.title);b.disabled=!daily&&!r;
         if(daily||r)b.onclick=()=>{tab('raceView');document.getElementById('scheduleDate').value=date.value;document.getElementById('heroVenue').value=String(i+1);document.getElementById('heroRace').value=String(n);document.getElementById('heroVenue').dispatchEvent(new Event('change'));document.getElementById('heroRace').dispatchEvent(new Event('change'));loadSchedule();document.getElementById('raceCockpit').scrollIntoView({behavior:'smooth',block:'start'});};
@@ -3457,28 +3474,4 @@ const existing=document.getElementById('v451Panel');if(existing)existing.insertA
 const $=id=>panel.querySelector('#'+id);
 const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());$('v471Date').value=day;
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num=x=>Number(x||0).toLocaleString('ja-JP');const pct=x=>x==null?'--':Number(x).toFixed(2)+'%';
-const table=(head,rows)=>`<div class="v471-scroll"><table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-const names={saved_first_6:'保存済み先頭6点',rank1_fixed_balanced:'1位固定・バランス',rank1_fixed_second_heavy:'1位固定・2着重視',rank1_and_rank3:'1位＋3位の2頭型',rank1_and_rank2:'1位＋2位の2頭型'};
-const venues={'1':'桐生','2':'戸田','3':'江戸川','4':'平和島','5':'多摩川','6':'浜名湖','7':'蒲郡','8':'常滑','9':'津','10':'三国','11':'びわこ','12':'住之江','13':'尼崎','14':'鳴門','15':'丸亀','16':'児島','17':'宮島','18':'徳山','19':'下関','20':'若松','21':'芦屋','22':'福岡','23':'唐津','24':'大村'};
-const fetchJson=async(path)=>{const res=await fetch(API+path,{cache:'no-store'});if(!res.ok)throw Error(path+' HTTP '+res.status);return res.json()};
-let busy=false,loaded='';
-async function refresh(){if(busy)return;const date=$('v471Date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ $('v471Status').textContent='日付を選択してください。';return;}
-busy=true;$('v471Reload').disabled=true;$('v471Status').textContent='統合分析と買い目比較を取得中…';
-try{const [a,l]=await Promise.all([fetchJson('/analytics-suite?date='+encodeURIComponent(date)),fetchJson('/ticket-layout-lab?date='+encodeURIComponent(date))]);
-if(!a.overall||!l.overall)throw Error('APIの応答形式が想定と異なります');
-const o=a.overall,rank=o.rank_first||{},n=Number(o.races||0),races=Number(l.eligible_settled_races||0);
-let html=`<div class="v471-cards"><div class="v471-card"><span class="v471-muted">照合済みレース（保存時の方式）</span><strong>${num(n)}</strong><span class="v471-muted">未照合 ${num(a.excluded?.pending)} 件</span></div><div class="v471-card"><span class="v471-muted">保存時の方式・仮想回収率</span><strong>${pct(o.roi_percent)}</strong><span class="v471-muted">収支 ${num(o.profit_yen)}円</span></div><div class="v471-card"><span class="v471-muted">保存時の方式・3連単的中</span><strong>${pct(o.exact_hit_rate_percent)}</strong><span class="v471-muted">${num(o.exact_hit)} / ${num(n)} レース</span></div><div class="v471-card"><span class="v471-muted">1着候補のカバー</span><strong>${pct(o.first_head_hit_rate_percent)}</strong><span class="v471-muted">旧2頭方式の結果を含む</span></div></div>`;
-html+='<h3>🎯 買い目5方式・各600円の仮想比較</h3>';
-const layouts=Object.entries(l.overall).sort((a,b)=>Number(b[1]?.roi_percent||0)-Number(a[1]?.roi_percent||0));
-html+=table(['方式','対象','的中','的中率','回収率','仮想収支'],layouts.map(([key,v])=>[esc(names[key]||key),num(v.races),num(v.hits),pct(v.hit_rate_percent),`<b class="${Number(v.roi_percent)>=100?'v471-good':''}">${pct(v.roi_percent)}</b>`,`${num(v.profit_yen)}円`]));
-html+=`<p class="v471-muted">${num(races)}レース・各方式600円／レース。保存済み先頭6点は旧12点の先頭6点を含み、新6点運用実績そのものではありません。</p>`;
-html+='<h3>📊 1着艇の事前AI評価順位</h3>';
-for(let i=1;i<=6;i++){const count=Number(rank[i]||0);html+=`<div class="v471-chart"><label>評価${i}位</label><span class="v471-track"><i style="width:${n?Math.min(100,100*count/n):0}%"></i></span><b>${num(count)}回</b></div>`}
-html+='<h3>🔍 外れ方の内訳（保存時の方式）</h3>';
-html+=table(['分類','レース数'],[['1着候補が外れ',num(o.miss_first)],['2着組み合わせが外れ',num(o.miss_second)],['3着組み合わせが外れ',num(o.miss_third)],['3連単的中',num(o.exact_hit)]]);
-html+='<h3>🏟️ 競艇場別・保存時の方式</h3>';
-html+=table(['競艇場','レース','3連単的中','回収率'],Object.entries(a.by_venue||{}).sort((x,y)=>Number(x[0])-Number(y[0])).map(([v,d])=>[esc((venues[v]||'場'+v)+' ('+v+')'),num(d.races),num(d.exact_hit),pct(d.roi_percent)]));
-html+='<h3>🧪 保存方式・採点世代の区別</h3>';
-html+=table(['方式／世代','レース','的中','回収率'],Object.entries(a.by_revision||{}).map(([k,v])=>[esc(k),num(v.races),num(v.exact_hit),pct(v.roi_percent)]));
-html+='<h3>📅 日別比較について</h3><p class="v471-muted">日付を切り替えて個別に検証できます。複数日をまとめた時系列集計APIは現行Worker v4.7.0にはないため、
+const num=x=>Number(x||0).toLocaleSt
