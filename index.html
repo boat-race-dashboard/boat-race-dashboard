@@ -349,31 +349,50 @@ button,select,input{touch-action:manipulation}button:focus-visible,select:focus-
 @media(min-width:651px){.v428-mobile-list{display:none}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style>
-<style>
-/* v4.3.9: 1MARK-inspired compact results, original purple/gold theme */
-#outcomes{max-width:100%;overflow:hidden}
-#outcomes .outcomes-head{margin-bottom:8px}
-#outcomes .outcome-toolbar{margin:6px 0 8px}
-#outcomes .outcome-filters{margin:5px 0 8px}
-#outcomes .outcome-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 10px}
-#outcomes .outcome-metrics>div{min-width:0;padding:10px 7px;border-radius:11px}
-#outcomes .outcome-metrics span{font-size:10px;line-height:1.3;display:block}
-#outcomes .outcome-metrics strong{font-size:clamp(15px,4vw,23px);white-space:nowrap}
-.v439-sort{display:flex;gap:7px;margin:9px 0}
-.v439-sort button{padding:7px 13px;font-size:12px;border-radius:20px;background:#312641;border:1px solid #76618d;color:#d9cbe6}
-.v439-sort button.active{border-color:#e8c77a;color:#24172d;background:#e8c77a;font-weight:800}
-#v433ResultMatrix{padding:10px 7px;border:1px solid #6b5783;border-radius:16px;background:linear-gradient(155deg,#302641,#221a32);overflow:hidden}
-#v433ResultMatrix .v433-matrix{grid-template-columns:minmax(38px,1.6fr) repeat(12,minmax(0,1fr))!important;gap:2px!important;margin:0!important}
-#v433ResultMatrix .v433-matrix-label{font-size:clamp(8px,2.4vw,11px);letter-spacing:-.35px}
-#v433ResultMatrix .v433-matrix-cell{border-radius:4px;min-height:0;aspect-ratio:1;background:#40354f;color:#9689a7;font-size:clamp(7px,2.05vw,10px);box-shadow:none}
-#v433ResultMatrix .v433-matrix-cell.hit{background:#f0cb69!important;color:#25192d!important}
-#v433ResultMatrix .v433-matrix-cell.miss{background:#50445f!important;color:#aaa0b7!important}
-#v433ResultMatrix .v433-matrix-cell.pending{background:#30263e!important;color:#c6f5de!important;border:1.5px solid #45d7a8!important}
-#v433ResultMatrix .v433-matrix-cell.none{background:#342a42!important;color:#776c85!important}
-#v433ResultMatrix .v433-matrix-legend{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font-size:10px;margin:0 0 9px}
-.v439-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-left:4px}.v439-dot.hit{background:#f0cb69}.v439-dot.miss{background:#50445f}.v439-dot.pending{border:1.5px solid #45d7a8}.v439-dot.none{background:#342a42}
-#v433ResultMatrix .v433-coverage{margin:8px 0 0;font-size:10px}
-@media(max-width:380px){#v433ResultMatrix{padding:8px 4px}#v433ResultMatrix .v433-matrix{gap:1.5px!important}}
+
+<style id="v440-compact-style">
+/* v4.4.0: compact, consistent mobile layout; preserve existing APIs */
+:root{--v440-gap:8px}
+html,body{max-width:100%;overflow-x:hidden}
+main{width:100%;max-width:760px;padding:9px 10px 65px!important}
+header{padding:13px 14px 11px!important}
+header h1{font-size:21px!important;margin:2px 0!important}
+header .eyebrow{font-size:9px!important;letter-spacing:1.3px!important}
+header small{font-size:11px}
+.panel,.v431-panel,.v434-purchase,.race-hero{margin-top:9px!important;padding:11px!important;border-radius:14px!important;min-width:0}
+h2{font-size:16px!important;margin:0 0 8px!important}
+p{line-height:1.5;margin:7px 0}
+.metric{min-height:0!important;padding:8px 4px!important;border-radius:11px!important}
+.metric b{font-size:19px!important;margin:3px 0!important}
+.metric span{font-size:9px!important;line-height:1.25;display:block}
+.grid,.two,.race-controls,.v431-controls{gap:7px!important}
+.tabs{margin:8px 0!important;padding:4px!important;gap:3px!important;border-radius:12px!important;top:0!important}
+.tabs button{min-height:36px!important;padding:7px 9px!important;min-width:0!important;font-size:11px!important;border-radius:9px!important}
+input:not([type=checkbox]),select,textarea{min-width:0;max-width:100%;height:38px;padding:7px 9px!important;font-size:14px!important;border-radius:9px!important}
+textarea{height:auto!important}
+label{font-size:11px!important;margin:7px 0 3px!important}
+button.primary,.primary{padding:9px 11px!important;margin-top:8px!important;font-size:13px!important}
+button.secondary,.secondary{padding:7px 9px!important;font-size:12px!important}
+.row{gap:6px!important;min-width:0}.row>*{min-width:0}
+.v431-controls{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.v431-controls>*,.two>*,.race-controls>*{min-width:0!important}
+.v434-choices{gap:3px!important}.v434-choices button,.v434-choices .boat{min-height:30px!important}
+.v434-flex{gap:5px!important}.v434-flex button{padding:7px 8px!important;font-size:11px!important}
+.v434-tickets{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.v434-ticket{font-size:11px!important;padding:4px!important}
+.v434-odds-col{grid-template-rows:24px repeat(20,34px)!important}
+.v434-odds-cell{padding:1px!important}
+.v434-odds-grid{gap:2px!important}
+.v431-summary{font-size:12px!important;line-height:1.45}
+.v440-fold>summary{cursor:pointer;padding:9px 11px;border:1px solid #80669d;border-radius:10px;color:#eed08a;font-size:12px;font-weight:700}
+.v440-fold[open]>summary{margin-bottom:8px}
+#v423CronPanel{margin-top:9px!important}
+#raceView .race-dots{gap:4px!important}
+#raceView .race-dots button{min-width:0!important;min-height:36px!important;padding:6px 1px!important;border-radius:9px!important}
+.v439-view-switch button,.outcome-filters button{padding:6px 10px!important;font-size:11px!important}
+.v433-result-details:not([open]){margin-bottom:8px}
+.v440-inline-status{font-size:11px;color:#d7c5e6;margin:5px 0}
+@media(max-width:400px){.tabs button{font-size:10px!important;padding:7px 7px!important}.metric b{font-size:17px!important}.v434-ticket{font-size:10px!important}}
 </style>
 </head>
 <body>
@@ -482,9 +501,9 @@ button,select,input{touch-action:manipulation}button:focus-visible,select:focus-
   <section id="outcomes" class="hidden">
     <div class="outcomes-head"><div class="eyebrow">RESULTS / SNAPSHOT HISTORY</div><h2>結果一覧</h2><p>自動保存された事前予想と非公式の照合結果</p></div>
     <div class="outcome-toolbar"><label for="outcomeDate">日付</label><input type="date" id="outcomeDate"><button type="button" id="outcomeRefresh" class="secondary">更新</button></div>
-    <div class="v439-sort"><button type="button" id="v439Recent">新しい順</button><button type="button" id="v439ByVenue" class="active">場ごと</button></div>
+    <div class="v439-view-switch" role="group" aria-label="結果一覧の並び順"><button type="button" id="v439Newest">新しい順</button><button type="button" id="v439ByVenue" class="active">場ごと</button></div>
     <div class="outcome-filters" id="outcomeFilters"><button data-filter="all" class="active">すべて</button><button data-filter="hit">的中</button><button data-filter="miss">ハズレ</button><button data-filter="pending">結果待ち</button></div>
-    <div class="outcome-metrics"><div><span>的中（結果確定）</span><strong id="outcomeSettled">—</strong></div><div><span>最高配当（100円）</span><strong id="outcomeHits">—</strong></div><div><span>万舟的中</span><strong id="outcomeRoi">—</strong></div></div>
+    <div class="outcome-metrics"><div><span>照合済み</span><strong id="outcomeSettled">—</strong></div><div><span>的中</span><strong id="outcomeHits">—</strong></div><div><span>回収率</span><strong id="outcomeRoi">—</strong></div></div>
     <p id="outcomeStatus" class="muted" aria-live="polite">結果を読み込み中…</p><div id="v433ResultMatrix"></div><details class="v433-result-details"><summary>記録の詳細を表示</summary><div id="outcomeList"></div></details>
     <p class="outcome-disclaimer">マスは事前に保存された予想だけを判定します。記録なしは未検証（不的中ではありません）。非公式データ・直近最大100件の範囲のみ。実購入履歴ではありません。</p>
   </section>
@@ -1692,9 +1711,7 @@ loadAutoPredictions();
   document.getElementById('heroVenue').addEventListener('change',paint);
   paint();
   const date=document.getElementById('outcomeDate');date.value=document.getElementById('scheduleDate').value;
-  let rows=[],filter='all',busy=false,sortMode='venue';
-  const sortButtons=[document.getElementById('v439Recent'),document.getElementById('v439ByVenue')];
-  sortButtons.forEach((b,i)=>b.addEventListener('click',()=>{sortMode=i===0?'recent':'venue';sortButtons.forEach((x,j)=>x.classList.toggle('active',i===j));paintResults();}));
+  let rows=[],filter='all',busy=false;
   function paintResults(){
     const selectedDate=date.value;
     const dated=rows.filter(r=>String(r.date)===selectedDate);
@@ -1705,15 +1722,10 @@ loadAutoPredictions();
     document.getElementById('outcomeSettled').textContent=settled.length+'R';
     document.getElementById('outcomeHits').textContent=hits.length+'R';
     document.getElementById('outcomeRoi').textContent=spent?(100*returned/spent).toFixed(1)+'%':'—';
-    const maxPayout=hits.reduce((m,r)=>Math.max(m,Number(r.payout_per_100)||0),0);
-    const manHits=hits.filter(r=>Number(r.payout_per_100)>=10000).length;
-    document.getElementById('outcomeSettled').textContent=hits.length+' / '+settled.length+'R';
-    document.getElementById('outcomeHits').textContent=maxPayout?yen(maxPayout):'—';
-    document.getElementById('outcomeRoi').textContent=String(manHits);
     const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)>0)||(filter==='miss'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)===0)||(filter==='pending'&&r.result_status!=='settled_unofficial'));
     // v4.3.3: 24 venues x 12 races in one width-fitted matrix. Missing snapshots are NOT losses.
     const matrix=document.getElementById('v433ResultMatrix');matrix.replaceChildren();
-    const legend=el('div',undefined,'v433-matrix-legend');legend.innerHTML='<span class="v439-dot hit"></span> 的中　<span class="v439-dot miss"></span> ハズレ　<span class="v439-dot pending"></span> 結果待ち　<span class="v439-dot none"></span> 記録なし';matrix.append(legend);
+    const legend=el('div',undefined,'v433-matrix-legend');legend.innerHTML='<span class="v435-key hit">■</span> 的中　<span class="v435-key miss">■</span> 不的中　<span class="v435-key pending">■</span> 結果待ち　<span class="v435-key none">■</span> 記録なし';matrix.append(legend);
     const board=el('div',undefined,'v433-matrix');
     const corner=el('span','場','v433-matrix-label');board.append(corner);
     for(let n=1;n<=12;n++)board.append(el('span',String(n),'v433-matrix-col'));
@@ -2309,6 +2321,66 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
  refresh(true);
 })();
 </script>
+
+<script id="v440-consolidation">
+(()=>{
+ const $=id=>document.getElementById(id);
+ const nav=document.querySelector('.tabs');if(!nav)return;
+ const hiddenTabIds=['home','add','results','v431ScheduleMain'];
+ for(const id of hiddenTabIds){const b=nav.querySelector('[data-tab="'+id+'"]');if(b)b.remove();}
+ const race=nav.querySelector('[data-tab="raceView"]');if(race)race.textContent='レース・締切';
+ const manage=nav.querySelector('[data-tab="manageView"]');if(manage){manage.textContent='管理';nav.append(manage);}
+ const order=['raceView','v431OddsMain','outcomes','watchlistView','v434Purchase','stats','manageView'];
+ for(const id of order){const b=nav.querySelector('[data-tab="'+id+'"]');if(b)nav.append(b);}
+ // Keep original legacy screens accessible from management, without duplicate top-level tabs.
+ const manageSection=$('manageView');
+ if(manageSection){
+   const tools=document.createElement('details');tools.className='v440-fold';
+   tools.innerHTML='<summary>旧画面・全国24場一覧・手動操作</summary>';
+   const box=document.createElement('div');box.className='v434-flex';
+   for(const [name,id] of [['全国24場を開く','home'],['予想を手動登録','add'],['結果を手動入力','results'],['全国締切順を開く','v431ScheduleMain']]){
+     const btn=document.createElement('button');btn.type='button';btn.className='secondary';btn.textContent=name;
+     btn.addEventListener('click',()=>{const target=document.querySelector('[data-tab="'+id+'"]');if(target)target.click();else if(typeof tab==='function')tab(id);});box.append(btn);
+   }
+   tools.append(box);manageSection.append(tools);
+   const cron=$('v423CronPanel');if(cron)manageSection.append(cron);
+ }
+ // Move old home statistics and historical tools under existing archive in Analysis.
+ const archive=document.querySelector('.v39-archive');
+ if(archive&&!archive.hasAttribute('open'))archive.open=false;
+ // Reduce long results detail by default; it remains available on demand.
+ const resultDetails=document.querySelector('.v433-result-details');if(resultDetails)resultDetails.open=false;
+ // Reduce the 12-ticket AI block without deleting any betting/odds data.
+ const ai=$('v431AIPayout');
+ if(ai){const fold=document.createElement('details');fold.className='v440-fold';
+   const summary=document.createElement('summary');summary.textContent='AI予想12点・払戻見込みを表示';
+   ai.parentNode.insertBefore(fold,ai);fold.append(summary,ai);
+   // Preserve the original node and its update handlers; the collapsed content still updates.
+ }
+ // Share the same selected date, venue and race between race, odds and purchase tabs.
+ const bindings=[['heroVenue','v431Venue','v434Venue'],['heroRace','v431Race','v434Race'],['scheduleDate','v431Date','v434Date']];
+ let syncing=false;
+ for(const ids of bindings){
+   const inputs=ids.map($).filter(Boolean);
+   for(const source of inputs)source.addEventListener('change',()=>{
+     if(syncing)return;syncing=true;
+     for(const dest of inputs){if(dest===source)continue;
+       const option=[...dest.options||[]].find(o=>o.value===source.value);
+       if(dest.tagName==='SELECT'&&!option)continue;
+       dest.value=source.value;
+       // Notify only dependent controls that need option regeneration.
+       if(dest.id==='heroVenue'||dest.id==='v431Venue')dest.dispatchEvent(new Event('change'));
+     }
+     syncing=false;
+   });
+ }
+ // Ensure top-level header does not misrepresent an older release.
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.0';
+ const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
+ // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
+ const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
+})();
+</script>
 </body>
 </html>
 
@@ -2358,6 +2430,28 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
 .v433-matrix-cell.none{background:#30273e!important;color:#80758d!important}
 .v435-key{font-size:15px;font-weight:900;vertical-align:middle}
 .v435-key.hit{color:#f0cb69}.v435-key.miss{color:#d24b58}.v435-key.pending{color:#8c6cda}.v435-key.none{color:#756687}
+
+/* v4.3.9 results: compact venue-by-race matrix inspired by supplied reference */
+#outcomes{max-width:100%;overflow-x:hidden}
+#outcomes .outcomes-head{margin-bottom:8px}
+#outcomes .outcomes-head p{font-size:11px}
+#outcomes .outcome-toolbar{margin:6px 0 10px}
+#outcomes .outcome-metrics{gap:6px;margin:8px 0 10px}
+#outcomes .outcome-metrics>div{padding:10px 8px;min-width:0}
+#outcomes .outcome-metrics strong{font-size:clamp(16px,5vw,23px)}
+.v439-view-switch{display:flex;gap:6px;margin:8px 0}
+.v439-view-switch button{border:1px solid #77608d;background:#241a39;color:#d9c8e9;padding:7px 12px;border-radius:20px;font-size:12px;font-weight:700}
+.v439-view-switch button.active{border-color:#e9c46a;color:#22152d;background:#e9c46a}
+#outcomes .v433-matrix{grid-template-columns:minmax(38px,1.6fr) repeat(12,minmax(0,1fr))!important;gap:3px!important;margin-top:8px}
+#outcomes .v433-matrix-label{font-size:clamp(9px,2.7vw,12px);white-space:nowrap}
+#outcomes .v433-matrix-col{font-size:9px}
+#outcomes .v433-matrix-cell{border-radius:5px;aspect-ratio:1;min-height:0;font-size:clamp(9px,2.5vw,12px);box-sizing:border-box}
+#outcomes .v433-matrix-cell.hit{background:#efc66b!important;color:#23172a!important}
+#outcomes .v433-matrix-cell.miss{background:#d96364!important;color:white!important}
+#outcomes .v433-matrix-cell.pending{background:#302841!important;border:2px solid #44cdb1!important;color:#7de5cf!important}
+#outcomes .v433-matrix-cell.none{background:#30283e!important;color:#81748f!important}
+#outcomes .v433-matrix-legend{margin:8px 0;font-size:10px}
+@media(max-width:390px){#outcomes .v433-matrix{gap:2px!important;grid-template-columns:minmax(35px,1.55fr) repeat(12,minmax(0,1fr))!important}}
 </style>
 <script>
 // v4.3.4: six-column odds and real-purchase records. No imaginary odds.
@@ -2407,25 +2501,35 @@ if(oddsRoot){
   }).finally(()=>{oddsRoot.dataset.v434Busy='0';});
  });observer.observe(oddsRoot,{childList:true});
 }
-// Hide non-host venues in results matrix based on the SAME dated schedule API.
+// v4.3.9: compact 1MARK-inspired results board. Only saved snapshots count.
 const matrix=$('v433ResultMatrix');if(matrix){
- let seq=0;
- const obs=new MutationObserver(()=>{const board=matrix.querySelector('.v433-matrix');if(!board||board.dataset.v434==='1')return;
-  board.dataset.v434='1';const date=$('outcomeDate')?.value||today(),id=++seq;
-  fetch(API+'/schedule?date='+encodeURIComponent(date),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(Error('schedule'))).then(j=>{
-   if(id!==seq||!board.isConnected)return;
-   const venues=(j.venues||[]).filter(v=>(v.race_closing_times||[]).length>0);
-   if(!venues.length)return;
-   const nodes=[...board.children], header=nodes.slice(0,13), venueRows=new Map();
-   for(let i=0;i<24;i++)venueRows.set(i+1,nodes.slice(13+i*13,13+(i+1)*13));
-   const toMinutes=(value)=>{if(!value)return Infinity;const str=String(value);const m=str.match(/(?:T|\s|^)(\d{1,2}):(\d{2})(?::\d{2})?/);return m?Number(m[1])*60+Number(m[2]):Infinity;};
-   const startTime=(v)=>Math.min(...v.race_closing_times.map(x=>toMinutes(x.closing_at)));
-   venues.sort((a,b)=>startTime(a)-startTime(b)||Number(a.number)-Number(b.number));
-   if(document.getElementById('v439Recent')?.classList.contains('active'))venues.reverse();
-   const ordered=[...header];for(const v of venues){const cells=venueRows.get(Number(v.number));if(cells)ordered.push(...cells);}
+ const newest=$('v439Newest'),grouped=$('v439ByVenue');let mode='venue',seq=0;
+ const obs=new MutationObserver(()=>{
+  const board=matrix.querySelector('.v433-matrix');if(!board||board.dataset.v439==='1')return;
+  board.dataset.v439='1';const day=$('outcomeDate')?.value||today(),id=++seq;
+  const all=[...board.children];if(all.length<325)return;
+  const header=all.slice(0,13),rows=new Map();
+  for(let v=1;v<=24;v++)rows.set(v,all.slice(13+(v-1)*13,13+v*13));
+  const cap=matrix.querySelector('.v433-coverage');
+  const orderRows=(venues)=>{
+   if(!board.isConnected||id!==seq)return;
+   const ordered=[...header];for(const v of venues){const r=rows.get(v);if(r)ordered.push(...r);}
    board.replaceChildren(...ordered);
-   const cap=matrix.querySelector('.v433-coverage');if(cap)cap.textContent+=' ／ 開催 '+venues.length+'場・最初の締切予定が早い順（非公式日程）';
-  }).catch(()=>{const cap=matrix.querySelector('.v433-coverage');if(cap)cap.textContent+=' ／ 開催場を判定できないため全場表示';});
+   if(cap)cap.textContent='事前予想の記録あり '+all.slice(13).filter((x,i)=>i%13!==0&&!x.classList.contains('none')).length+'マス ／ 開催 '+venues.length+'場（非公式日程）';
+  };
+  const time=(value)=>{const m=String(value||'').match(/(?:T|\s|^)(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):Infinity;};
+  const sortVenues=(vs)=>vs.sort((a,b)=>{
+   if(mode==='newest')return b.start-a.start||a.number-b.number;
+   return a.start-b.start||a.number-b.number;
+  }).map(v=>v.number);
+  const refreshOrder=(entries)=>{const list=sortVenues(entries.slice());orderRows(list);};
+  fetch(API+'/schedule?date='+encodeURIComponent(day),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject(Error('schedule'))).then(j=>{
+   if(id!==seq||!board.isConnected)return;
+   const entries=(j.venues||[]).filter(v=>Array.isArray(v.race_closing_times)&&v.race_closing_times.length).map(v=>({number:Number(v.number),start:Math.min(...v.race_closing_times.map(t=>time(t.closing_at)))})).filter(v=>rows.has(v.number));
+   if(!entries.length){if(cap)cap.textContent+=' ／ 開催場を確認できません';return;}
+   const change=(next)=>{mode=next;newest.classList.toggle('active',next==='newest');grouped.classList.toggle('active',next==='venue');refreshOrder(entries);};
+   newest.onclick=()=>change('newest');grouped.onclick=()=>change('venue');change(mode);
+  }).catch(()=>{if(cap)cap.textContent+=' ／ 開催場の判定に失敗（全場表示）';});
  });obs.observe(matrix,{childList:true,subtree:false});
 }
 // Purchase recording: local-first; optional authenticated D1 save. No credentials embedded.
