@@ -576,7 +576,7 @@ button.secondary,.secondary{padding:7px 9px!important;font-size:12px!important}
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v4.4.5<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v4.4.6<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -2574,7 +2574,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.5';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.6';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -2635,6 +2635,94 @@ setInterval(tick,5000);
 document.querySelector('.tabs')?.addEventListener('click',()=>setTimeout(tick,350));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){lastAuto=Date.now();setTimeout(tick,300);}});
 setTimeout(tick,1200);
+})();
+</script>
+
+<style id="v446-official-navigation-style">
+#raceView .race-hero{overflow:hidden!important}
+#raceView .hero-top{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(105px,34%);align-items:center;gap:10px}
+#raceView .hero-top>div:first-child{min-width:0}
+#raceView .hero-title{font-size:clamp(21px,6vw,28px)!important;overflow-wrap:anywhere}
+#heroRaceStatus.v446-clock{width:100%!important;height:auto!important;min-height:66px!important;max-width:100%!important;min-width:0!important;border-radius:12px!important;display:flex!important;flex-direction:column;justify-content:center;gap:4px;padding:8px 4px!important;box-sizing:border-box!important;white-space:nowrap!important;font-variant-numeric:tabular-nums;overflow:hidden!important}
+#heroRaceStatus.v446-clock small{font-size:10px!important;line-height:1.2}
+#heroRaceStatus.v446-clock strong{font-size:clamp(15px,4.5vw,22px)!important;letter-spacing:-.04em;line-height:1.1;max-width:100%}
+#v446Nav{margin:0 0 12px;border:1px solid #70558f;border-radius:15px;padding:10px;background:#23183d;color:#fff}
+#v446Nav .v446-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px}
+#v446Nav button{font:inherit;cursor:pointer}
+#v446Nav .v446-switch button{border:1px solid #7d619f;border-radius:9px;padding:10px 4px;background:#34234e;color:#e7d9fa;font-weight:700}
+#v446Nav .v446-switch button.active{background:#f0d080;color:#251839;border-color:#f0d080}
+#v446Nav .v446-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+#v446Nav .v446-venue{border:1px solid #8267a3;background:#392b53;color:#fff;border-radius:8px;min-width:0;padding:9px 2px;min-height:63px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+#v446Nav .v446-venue b{font-size:clamp(12px,3.5vw,15px)}
+#v446Nav .v446-venue small{font-size:10px;color:#decce8;font-variant-numeric:tabular-nums}
+#v446Nav .v446-venue.off{opacity:.38;background:#29223a}
+#v446Nav .v446-venue.selected{border:2px solid #f4d17c;background:#5b4275}
+#v446Nav .v446-upcoming{display:grid;gap:6px}
+#v446Nav .v446-next{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;border:1px solid #8066a4;border-radius:9px;padding:10px;background:#35274e;color:#fff}
+#v446Nav .v446-next b{font-size:14px}#v446Nav .v446-next span{color:#f4d17c;font-variant-numeric:tabular-nums;font-weight:750}
+#v446Nav .v446-note{font-size:11px;color:#c5b4d8;line-height:1.45;margin:8px 0 0}
+#v446Nav .v446-head{font-size:12px;color:#f2d38c;margin-bottom:8px}
+</style>
+<script id="v446-official-navigation">
+(()=>{
+'use strict';
+const hero=document.getElementById('raceCockpit'),status=document.getElementById('heroRaceStatus'),venue=document.getElementById('heroVenue'),race=document.getElementById('heroRace'),date=document.getElementById('scheduleDate');
+if(!hero||!status||!venue||!race||!date)return;
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const names=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
+const nav=document.createElement('section');nav.id='v446Nav';nav.innerHTML='<div class="v446-head">開催場・締切順からワンタップで選択</div><div class="v446-switch"><button type="button" class="active" data-mode="venues">開催一覧</button><button type="button" data-mode="closing">締切順</button></div><div id="v446Content">日程取得中…</div><p class="v446-note" id="v446Note">予定時刻は参考値です。投票締切は公式サイトで確認してください。</p>';
+hero.parentNode.insertBefore(nav,hero);
+let mode='venues',rows=[],loaded=false,fetchTime=0,fetchDay='',inflight=null,deadline=NaN;
+const now=()=>Date.now();
+const parse=s=>{if(!s)return NaN;const t=String(s).trim().replace(' ','T');return Date.parse(t+(/(?:Z|[+-]\d{2}:?\d{2})$/.test(t)?'':'+09:00'));};
+const hhmm=s=>String(s||'').slice(11,16);
+const pad=n=>String(n).padStart(2,'0');
+function current(){return rows.find(x=>x.v===Number(venue.value)&&x.r===Number(race.value));}
+function drawClock(){
+ status.classList.add('v446-clock');const item=current();deadline=item?item.time:NaN;
+ const ms=deadline-now();status.classList.toggle('past',Number.isFinite(ms)&&ms<=0);
+ status.replaceChildren();const small=document.createElement('small'),strong=document.createElement('strong');
+ if(!Number.isFinite(ms)){small.textContent='締切予定';strong.textContent=loaded?'未取得':'確認中';}
+ else if(ms<=0){small.textContent='締切予定 '+hhmm(item.raw);strong.textContent='時刻経過';}
+ else{const sec=Math.ceil(ms/1000);small.textContent='締切まで · '+hhmm(item.raw);strong.textContent=sec>=3600?pad(Math.floor(sec/3600))+':'+pad(Math.floor(sec%3600/60))+':'+pad(sec%60):pad(Math.floor(sec/60))+':'+pad(sec%60);}
+ status.append(small,strong);
+}
+function choose(v,r){venue.value=String(v);race.value=String(r);venue.dispatchEvent(new Event('change',{bubbles:true}));race.dispatchEvent(new Event('change',{bubbles:true}));document.getElementById('heroRaceDots')?.children?.[r-1]?.click();drawClock();}
+function render(){
+ const box=document.getElementById('v446Content');box.replaceChildren();
+ nav.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+ if(!loaded){box.textContent='日程を取得できませんでした。会場は下の選択欄から選べます。';drawClock();return;}
+ if(mode==='venues'){
+  const grid=document.createElement('div');grid.className='v446-grid';
+  names.forEach((name,i)=>{const v=i+1,up=rows.filter(x=>x.v===v&&x.time>now()).sort((a,b)=>a.time-b.time)[0],has=rows.some(x=>x.v===v),selected=Number(venue.value)===v;
+   const b=document.createElement('button');b.type='button';b.className='v446-venue'+(!has?' off':'')+(selected?' selected':'');b.disabled=!has;
+   const title=document.createElement('b');title.textContent=name;const sub=document.createElement('small');sub.textContent=up?up.r+'R '+hhmm(up.raw):has?'本日終了':'開催情報なし';b.append(title,sub);
+   b.onclick=()=>{const first=up||rows.find(x=>x.v===v);if(first){choose(v,first.r);render();}};grid.append(b);
+  });box.append(grid);
+ }else{
+  const list=document.createElement('div');list.className='v446-upcoming';const next=rows.filter(x=>x.time>now()).sort((a,b)=>a.time-b.time).slice(0,16);
+  if(!next.length){box.textContent='今後の締切予定が見つかりません。';}else next.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='v446-next';const title=document.createElement('b');title.textContent=names[x.v-1]+' '+x.r+'R';const t=document.createElement('span');t.textContent=hhmm(x.raw);b.append(title,t);b.onclick=()=>{choose(x.v,x.r);hero.scrollIntoView({behavior:'smooth',block:'start'});};list.append(b);});box.append(list);
+ }
+ drawClock();
+}
+async function refresh(force=false){
+ const day=date.value;if(!day)return;
+ if(!force&&loaded&&day===fetchDay&&now()-fetchTime<120000){drawClock();return;}
+ if(inflight)return inflight;
+ inflight=(async()=>{try{
+ const response=await fetch(API+'/schedule?date='+encodeURIComponent(day),{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);
+ const json=await response.json();if(!Array.isArray(json.venues))throw Error('invalid schedule');
+ const next=[];for(const v of json.venues){for(const x of v.race_closing_times||[]){const n=Number(v.number),r=Number(x.race??x.race_number??x.rno),time=parse(x.closing_at);if(n>=1&&n<=24&&r>=1&&r<=12&&Number.isFinite(time))next.push({v:n,r,time,raw:x.closing_at});}}
+ rows=next;loaded=true;fetchDay=day;fetchTime=now();document.getElementById('v446Note').textContent='開催 '+new Set(rows.map(x=>x.v)).size+'場／取得 '+new Date().toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'})+'。非公式日程のため締切変更・中止は公式で確認してください。';render();
+ }catch(e){loaded=false;rows=[];render();document.getElementById('v446Note').textContent='日程取得失敗：'+e.message+'。締切時刻を推測表示しません。';}finally{inflight=null;}})();return inflight;
+}
+nav.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;render();}));
+venue.addEventListener('change',()=>{drawClock();if(mode==='venues')render();});race.addEventListener('change',drawClock);
+document.getElementById('heroRaceDots')?.addEventListener('click',()=>setTimeout(drawClock,0));date.addEventListener('change',()=>refresh(true));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh(true);});
+setInterval(()=>{if(!document.hidden){drawClock();if(mode==='closing')render();}},1000);
+setInterval(()=>{if(!document.hidden)refresh(true);},120000);
+refresh(true);
 })();
 </script>
 </body>
@@ -2839,7 +2927,7 @@ renderChoices();renderTickets();
 #heroRaceStatus.v445-clock small{font-size:9px;font-weight:600}
 #heroRaceStatus.v445-clock.past{color:#e7bd82!important;border-color:#e7bd82!important}
 </style>
-<script id="v445-race-countdown">
+<script type="text/plain" id="v445-race-countdown">
 (()=>{
  'use strict';
  const status=document.getElementById('heroRaceStatus');
