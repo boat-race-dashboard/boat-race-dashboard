@@ -3845,7 +3845,7 @@ body.enterprise-simple #enterpriseDecision .ed-deep{display:none}
     card.append(deep);
     const btn=document.createElement('button');btn.type='button';btn.className='ed-open';btn.textContent='レース詳細・買い目を確認';btn.addEventListener('click',()=>openRace(x,data.date));card.append(btn);grid.append(card);
    }
-  }catch(e){status.textContent='取得できませんでした：'+e.message;const err=label('既存の「注目レース」画面や公式情報から確認してください。');err.className='ed-empty';grid.append(err);}
+  }catch(e){status.textContent='候補を取得できませんでした（'+e.message+'）。Workerまたは参照先の非公式データでエラーが発生した可能性があります。';const err=label('このエラーを「候補0件」とは扱いません。開催状況は既存の「注目レース」画面や公式情報で確認してください。');err.className='ed-empty';grid.append(err);}
   finally{busy=false;reload.disabled=false;}
  }
  reload.addEventListener('click',load);
@@ -4202,44 +4202,4 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 #enterpriseOverview .overview-details summary{cursor:pointer;color:#c2d8e8;font-weight:650}
 #enterpriseOverview .overview-details{border:1px solid #334d64;border-radius:12px;padding:12px;margin-top:12px}
 #enterpriseOverview .overview-details #enterpriseRelease{margin-top:10px}
-#enterpriseOverview .overview-details #enterpriseRelease .er-grid{display:grid}
-.tabs [data-tab="enterpriseOverview"]{background:#153b47;color:#dff7f6}
-.tabs [data-tab="enterpriseOverview"].active{background:#257b7d;color:white}
-@media(max-width:600px){#enterpriseOverview{padding:0 0 12px}#enterpriseOverview .ed-grid{grid-template-columns:1fr}}
-</style>
-<script id="enterprise-tab-scope-js">
-(function(){'use strict';
- function init(){
-  if(document.getElementById('enterpriseOverview'))return;
-  const main=document.querySelector('main'),tabs=main?.querySelector('.tabs');if(!main||!tabs)return;
-  const overview=document.createElement('section');overview.id='enterpriseOverview';overview.className='hidden';overview.setAttribute('aria-label','レース判断');
-  const intro=document.createElement('p');intro.className='overview-intro';intro.textContent='本日の候補とデータ確認をまとめています。各レースの詳細は「レース・締切」から確認できます。';
-  overview.append(intro);tabs.insertAdjacentElement('afterend',overview);
-  const btn=document.createElement('button');btn.type='button';btn.dataset.tab='enterpriseOverview';btn.textContent='判断';
-  tabs.insertBefore(btn,tabs.firstChild);
-  // Earlier versions appended these components outside every tab. Move the actual nodes,
-  // preserving their event listeners and API handlers; do not clone or recreate them.
-  for(const id of ['enterpriseBar','enterpriseDecision']){const node=document.getElementById(id);if(node)overview.append(node)}
-  const advanced=document.createElement('details');advanced.className='overview-details';const summary=document.createElement('summary');summary.textContent='運用確認・チェックリスト';advanced.append(summary);
-  const release=document.getElementById('enterpriseRelease');if(release)advanced.append(release);
-  overview.append(advanced);
-  // Remove repeated global navigation/help panels; their links remain in the existing race tabs.
-  for(const id of ['enterpriseQuickNav','enterpriseSafety']){const node=document.getElementById(id);if(node)node.remove()}
-  // Existing real-purchase metrics remain available in Analysis instead of appearing on all tabs.
-  const metrics=main.querySelector(':scope > .grid');const stats=document.getElementById('stats');
-  if(metrics&&stats){stats.insertBefore(metrics,stats.firstChild)}
-  let active=false;
-  function sync(){overview.classList.toggle('hidden',!active);btn.classList.toggle('active',active);btn.setAttribute('aria-selected',String(active))}
-  btn.addEventListener('click',()=>{
-   // Activate the native tab first so every other tab and its content is hidden.
-   const homeButton=tabs.querySelector('[data-tab="home"]');if(homeButton)homeButton.click();
-   const home=document.getElementById('home');if(home)home.classList.add('hidden');
-   active=true;sync();overview.scrollIntoView({block:'start'});
-  });
-  // Other navigation controls keep their existing click handlers.
-  tabs.addEventListener('click',event=>{const target=event.target.closest('[data-tab]');if(!target||target===btn)return;active=false;sync()});
-  sync();
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();
-</script>
+#enterpriseOverview .overview-details #enterpriseRelease .e
