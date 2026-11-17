@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v4.5.1</title>
+  <title>BOAT RACE AI Dashboard v4.9.5</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -446,6 +446,47 @@ button.secondary,.secondary{padding:7px 9px!important;font-size:12px!important}
 #v434Purchase .v481-retry{font-size:11px;padding:5px 10px;margin:0 0 5px}
 @media(max-width:380px){#v434Purchase .v434-purchase{padding:9px!important}#v434Purchase .v434-choices{gap:3px}}
 </style>
+<script id="v495-network-optimizer">
+/* v4.9.5: read-only GET request coalescing + brief response reuse.
+   No auth, POST, DELETE, predictions, odds, race or purchase data is cached. */
+(()=>{'use strict';
+const nativeFetch=window.fetch.bind(window),api='https://boat-race-api.7phr5nzkbt.workers.dev';
+const inflight=new Map(),memo=new Map();
+const stats={network:0,coalesced:0,reused:0};
+const policy={'/schedule':15000,'/learning-history':45000,'/analytics-suite':30000,'/ticket-layout-lab':30000,'/ticket-backtest':30000,'/data-quality':15000,'/analytics':30000,'/prediction-audit':30000,'/rank-diagnostics':30000,'/miss-diagnostics':30000};
+function eligible(input,init){
+ try{
+  const request=input instanceof Request?input:null;
+  const url=new URL(request?request.url:String(input),location.href);
+  if(url.origin!==new URL(api).origin)return null;
+  const method=String(init?.method||request?.method||'GET').toUpperCase();
+  if(method!=='GET'||init?.signal||request?.signal?.aborted)return null;
+  if(init?.headers||request?.headers?.has('Authorization'))return null;
+  const ttl=policy[url.pathname];if(!ttl)return null;
+  return {key:url.href,ttl};
+ }catch{return null;}
+}
+window.fetch=function(input,init){
+ const match=eligible(input,init);
+ if(!match)return nativeFetch(input,init);
+ const {key,ttl}=match,now=Date.now();
+ const hit=memo.get(key);
+ if(hit&&hit.expires>now){stats.reused++;return Promise.resolve(hit.response.clone());}
+ const pending=inflight.get(key);
+ if(pending){stats.coalesced++;return pending.then(response=>response.clone());}
+ stats.network++;
+ const work=nativeFetch(input,init).then(response=>{
+  if(response.ok){memo.set(key,{response:response.clone(),expires:Date.now()+ttl});
+   if(memo.size>80){for(const [k,v] of memo)if(v.expires<Date.now())memo.delete(k);if(memo.size>80)memo.delete(memo.keys().next().value);}}
+  return response;
+ }).finally(()=>inflight.delete(key));
+ inflight.set(key,work);
+ return work.then(response=>response.clone());
+};
+window.__br495NetworkStats=()=>({...stats,cached: memo.size,active:inflight.size});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)memo.clear();});
+})();
+</script>
 </head>
 <body>
 <header><div class="eyebrow">BOAT RACE / 24 VENUES · v3.9</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
@@ -2918,6 +2959,16 @@ setInterval(()=>{if(!document.hidden)load(false)},60000);setTimeout(()=>load(tru
 
 <style id="v490-style">#v490Panel{margin:18px 0;padding:16px;border:1px solid #8765a3;border-radius:16px;background:#2b203c;color:#f2e7fa}#v490Panel h2{color:#e9c877;margin:0 0 12px}#v490Panel .v490row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0}#v490Panel input,#v490Panel button{font:inherit;padding:10px;border:1px solid #886ba3;border-radius:10px;background:#1b1530;color:#fff;max-width:100%}#v490Panel button{background:#e9c877;color:#24172f;font-weight:700}#v490Panel .v490cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#v490Panel .v490cards>div{border:1px solid #74588e;border-radius:10px;padding:10px;min-width:0}#v490Panel strong{display:block;color:#e9c877;font-size:1.25em}#v490Panel small{color:#cbbbd6}#v490Panel .v490table{overflow-x:auto}#v490Panel table{width:100%;border-collapse:collapse;font-size:.9em}#v490Panel th,#v490Panel td{padding:8px;border-bottom:1px solid #665179;text-align:left;white-space:nowrap}@media(max-width:420px){#v490Panel{padding:12px}#v490Panel .v490cards{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
 <script id="v490-script">(()=>{'use strict';const API='https://boat-race-api.7phr5nzkbt.workers.dev';const host=document.getElementById('stats');if(!host||document.getElementById('v490Panel'))return;const p=document.createElement('section');p.id='v490Panel';p.innerHTML='<h2>🛡 データ品質・保存漏れ確認 <small>v4.9.0</small></h2><p>開催レースとAI事前予想ログの保存状況を比較します。結果データは非公式です。</p><div class="v490row"><label>確認日 <input type="date" id="v490Date"></label><button type="button" id="v490Load">データ品質を確認</button></div><p id="v490Msg">日付を選んで確認してください。</p><div id="v490Body"></div>';host.prepend(p);const el=id=>p.querySelector('#'+id);el('v490Date').value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));el('v490Load').onclick=async()=>{const date=el('v490Date').value;if(!date)return;el('v490Msg').textContent='取得中…';el('v490Body').innerHTML='';try{const r=await fetch(API+'/data-quality?date='+encodeURIComponent(date),{cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'HTTP '+r.status);if(!d.source_available){el('v490Msg').textContent='開催データ取得失敗：'+(d.source_error||'不明')+'。D1保存済み '+d.saved_races+' レース。';return;}el('v490Msg').textContent='確認日時 '+new Date(d.refreshed_at_utc).toLocaleString('ja-JP')+' ／ 非公式開催データ';const cells=[['開催データ',d.races_in_feed+' R'],['事前予想保存',d.saved_races+' R'],['結果取得',d.settled_in_feed+' R'],['未保存候補',d.missing_prediction_count+' R'],['未照合スナップ',d.unmatched_snapshot_count+' R'],['結果待ち等',d.pending_in_feed+' R']];let html='<div class="v490cards">'+cells.map(x=>'<div><small>'+esc(x[0])+'</small><strong>'+esc(x[1])+'</strong></div>').join('')+'</div>';if(d.missing_predictions?.length)html+='<h3>予想未保存の候補（最大100件）</h3><div class="v490table"><table><thead><tr><th>場コード</th><th>レース</th><th>結果状況</th></tr></thead><tbody>'+d.missing_predictions.map(x=>'<tr><td>'+x.venue+'</td><td>'+x.race+'R</td><td>'+esc(x.result_status)+'</td></tr>').join('')+'</tbody></table></div>';html+='<p><small>予想未保存は必ずしも障害ではありません。締切直前やCron対象外のレースも含まれます。公式結果との一致は保証されません。</small></p>';el('v490Body').innerHTML=html;}catch(e){el('v490Msg').textContent='確認失敗：'+e.message+'。Worker v4.9.0の公開状態を確認してください。';}};})();</script>
+<style id="v495-monitor-style">#v495Monitor{border:1px solid #8268a2;border-radius:15px;padding:15px;margin:14px 0;background:#261e3f;color:#e8ddf2}#v495Monitor h3{color:#f4d58a;margin:0 0 8px}#v495Monitor p{font-size:13px;line-height:1.6;margin:6px 0}#v495Monitor button{padding:8px 12px;border:1px solid #a58abd;background:#3e2b59;color:#fff;border-radius:9px}</style>
+<script id="v495-monitor-script">(()=>{'use strict';
+const manage=document.getElementById('manageView');if(!manage||document.getElementById('v495Monitor'))return;
+const panel=document.createElement('section');panel.id='v495Monitor';
+panel.innerHTML='<h3>⚡ 通信最適化 v4.9.5</h3><p>分析・開催情報の重複GETをまとめ、短時間だけ再利用します。予想・オッズ・購入・結果のリアルタイム照合・認証付き通信は対象外です。</p><p id="v495Stats">画面内の通信を計測中</p><button type="button" id="v495Refresh">通信状況を確認</button><p>この数値はこの画面内だけの参考値です。Cloudflare全体の使用量ではありません。</p>';
+manage.prepend(panel);
+const draw=()=>{const s=window.__br495NetworkStats?.();if(!s)return;panel.querySelector('#v495Stats').textContent='実通信 '+s.network+'件 ／ 重複統合 '+s.coalesced+'件 ／ キャッシュ再利用 '+s.reused+'件 ／ キャッシュ中 '+s.cached+'件';};
+panel.querySelector('#v495Refresh').addEventListener('click',draw);draw();
+})();</script>
+
 </body>
 </html>
 
