@@ -2591,7 +2591,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.8.2';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.8.3';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -2745,6 +2745,57 @@ refresh(true);
 
 <style id="v480-style">#v480Panel{border:1px solid #9474b6;border-radius:15px;background:linear-gradient(125deg,#241b3e,#222c49);color:#f6edff;padding:15px;margin:15px 0}#v480Panel h2{color:#f5d485;font-size:18px;margin:0 0 7px}#v480Panel h3{font-size:14px;color:#f3d9ff;margin:18px 0 7px}#v480Panel .v480-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}#v480Panel input{background:white;color:#222;padding:8px;border-radius:7px;border:1px solid #b9a3cc}#v480Panel button{padding:9px 14px;border-radius:8px;background:#725499;color:white;border:1px solid #b5a0d0}#v480Panel .v480-muted{font-size:12px;color:#dacdea;line-height:1.5}#v480Panel .v480-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#v480Panel .v480-box{border:1px solid #6b5986;background:#35284e;border-radius:10px;padding:11px}#v480Panel .v480-box b{display:block;font-size:21px;color:#f9dc98}#v480Panel .v480-scroll{overflow-x:auto}#v480Panel table{width:100%;border-collapse:collapse;font-size:12px;min-width:450px}#v480Panel th,#v480Panel td{padding:8px;border-bottom:1px solid #66547f;text-align:right;white-space:nowrap}#v480Panel th:first-child,#v480Panel td:first-child{text-align:left}#v480Panel th{color:#f5dcff}#v480Panel .v480-note{border-left:3px solid #e4c27d;padding-left:10px;margin-top:12px}</style>
 <script id="v480-script">(()=>{'use strict';const host=document.getElementById('stats');if(!host||document.getElementById('v480Panel'))return;const API='https://boat-race-api.7phr5nzkbt.workers.dev';const panel=document.createElement('div');panel.id='v480Panel';panel.innerHTML='<h2>📚 長期ログ・予想改善検証 <small>v4.8.0</small></h2><p class="v480-muted">日別成績・世代別・5方式比較・過去の日だけで選ぶ検証。閲覧専用です。</p><div class="v480-row"><label>開始日 <input id="v480From" type="date"></label><label>終了日 <input id="v480To" type="date"></label><button id="v480Reload" type="button">長期ログを集計</button></div><p id="v480Status" class="v480-muted">集計ボタンで取得します。</p><div id="v480Body"></div><p class="v480-muted v480-note">非公式データを用いた仮想検証です。自動学習・本番買い目変更は行いません。旧12点の運用収支と仮想6点の収支は混同しないでください。</p>';const anchor=document.getElementById('v471Panel');if(anchor)anchor.insertAdjacentElement('afterend',panel);else host.prepend(panel);const $=id=>panel.querySelector('#'+id);const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());const past=new Date(Date.now()-29*86400000);$('v480To').value=today;$('v480From').value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(past);const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const n=x=>Number(x||0).toLocaleString('ja-JP');const pc=x=>x==null?'—':Number(x).toFixed(2)+'%';const labels={saved_active:'保存時の実運用方式',saved_first_6:'保存済み先頭6点',rank1_fixed_balanced:'1位固定バランス',rank1_fixed_second_heavy:'1位固定2着重視',rank1_and_rank3:'1位＋3位',rank1_and_rank2:'1位＋2位'};const tbl=(heads,rows)=>'<div class="v480-scroll"><table><thead><tr>'+heads.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';let busy=false;async function load(){if(busy)return;const from=$('v480From').value,to=$('v480To').value;if(!from||!to||from>to){$('v480Status').textContent='日付範囲を確認してください。';return;}busy=true;$('v480Reload').disabled=true;$('v480Status').textContent='長期ログを集計中…';try{const r=await fetch(API+'/learning-history?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to),{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();if(!d.overall)throw Error(d.error||'応答形式エラー');const o=d.overall;let h='<div class="v480-grid"><div class="v480-box">保存ログ<b>'+n(o.snapshots)+'</b><span class="v480-muted">未照合 '+n(o.pending)+' ／ 無効 '+n(o.invalid)+'</span></div><div class="v480-box">照合済み<b>'+n(o.settled)+'</b><span class="v480-muted">結果照合率 '+pc(d.quality?.settled_fraction_percent)+'</span></div><div class="v480-box">保存時方式の回収率<b>'+pc(o.active.roi_percent)+'</b><span class="v480-muted">旧12点方式を含む</span></div><div class="v480-box">時系列の仮想検証<b>'+pc(d.walk_forward?.overall?.roi_percent)+'</b><span class="v480-muted">評価日 '+n(d.walk_forward?.evaluated_days)+' 日</span></div></div>';h+='<h3>📅 日別ログ</h3>';h+=tbl(['日付','保存','照合','未照合','実運用的中','実運用回収率','1位＋3位仮想'],Object.entries(d.daily||{}).sort((a,b)=>b[0].localeCompare(a[0])).map(([day,v])=>[esc(day),n(v.snapshots),n(v.settled),n(v.pending),n(v.active.hits)+'/'+n(v.active.races),pc(v.active.roi_percent),pc(v.layouts.rank1_and_rank3.roi_percent)]));h+='<h3>🎯 長期・買い目方式比較（仮想6点）</h3>';h+=tbl(['方式','レース','的中','的中率','回収率','収支'],Object.entries(o.layouts||{}).filter(([k])=>k!=='saved_active').map(([k,v])=>[esc(labels[k]||k),n(v.races),n(v.hits),pc(v.hit_rate_percent),pc(v.roi_percent),n(v.profit_yen)+'円']));h+='<h3>🧬 予想世代別</h3>';h+=tbl(['世代','レース','的中','回収率'],Object.entries(d.by_revision||{}).map(([k,v])=>[esc(k),n(v.active.races),n(v.active.hits),pc(v.active.roi_percent)]));h+='<h3>🔬 過去の日だけで方式選択する検証</h3><p class="v480-muted">各日の買い目方式は前日までの記録だけで選択。最低学習対象 '+n(d.walk_forward?.min_train_races)+' レース。方式自体は過去データを見て設計しているため、独立した将来検証にはなりません。</p>';h+=tbl(['評価日','選択方式','事前サンプル','的中','回収率'],(d.walk_forward?.daily||[]).map(v=>[esc(v.date),esc(labels[v.chosen_layout]||v.chosen_layout),n(v.prior_settled_races),n(v.day_result.hits)+'/'+n(v.day_result.races),pc(v.day_result.roi_percent)]));if(d.truncated)h+='<p class="v480-muted">警告：上限10,000件に到達。全件集計ではありません。</p>';$('v480Body').innerHTML=h;$('v480Status').textContent=from+' ～ '+to+' ／ '+n(o.snapshots)+' 件 ／ Worker '+(d.build_id||'不明');}catch(e){$('v480Status').textContent='取得失敗：'+e.message+'。Worker v4.8.0の公開状態を確認してください。';$('v480Body').innerHTML='';}finally{busy=false;$('v480Reload').disabled=false;}}$('v480Reload').addEventListener('click',load);})();</script>
+
+<!-- v4.8.3: All upstream daily race results, separate from prediction snapshots -->
+<style id="v483-style">
+#v483Panel{margin:16px 0;padding:12px;border:1px solid #795c9d;border-radius:14px;background:#281e40;color:#f4edff}
+#v483Panel h3{margin:0 0 8px;color:#f0d08a;font-size:17px}
+#v483Panel .v483-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+#v483Panel .v483-muted{font-size:12px;color:#d2c5e1;line-height:1.5}
+#v483Panel button{border:1px solid #a38abb;border-radius:9px;background:#58416f;color:white;padding:8px 12px}
+#v483Panel .v483-scroll{overflow-x:auto;margin-top:10px}
+#v483Panel table{border-collapse:separate;border-spacing:3px;width:100%;min-width:550px;font-size:11px}
+#v483Panel th,#v483Panel td{text-align:center;padding:7px 3px;border-radius:6px;background:#403151;white-space:nowrap}
+#v483Panel th:first-child{position:sticky;left:0;background:#38294d;z-index:1}
+#v483Panel td:first-child{position:sticky;left:0;background:#38294d;text-align:left;font-weight:700;z-index:1}
+#v483Panel .v483-done{background:#4b3962;color:#ffe2a2}#v483Panel .v483-wait{color:#bcaecb}#v483Panel .v483-issue{background:#654450;color:#ffe0d9}
+</style>
+<script id="v483-script">
+(()=>{'use strict';
+const host=document.getElementById('outcomes');if(!host)return;
+const panel=document.createElement('section');panel.id='v483Panel';
+panel.innerHTML='<div class="v483-row"><div><h3>当日全レース結果（非公式）</h3><div class="v483-muted">AI予想が保存されていないレースも表示します</div></div><button id="v483Refresh" type="button">結果を再取得</button></div><p class="v483-muted" id="v483Status">取得待ち</p><div class="v483-scroll" id="v483Table"></div>';
+const head=host.querySelector('.outcomes-head');if(head)head.after(panel);else host.prepend(panel);
+const $=id=>document.getElementById(id),API='https://boat-race-api.7phr5nzkbt.workers.dev';
+let busy=false,last=0,loadedDay='';
+async function load(force=false){
+ const date=$('outcomeDate')?.value;if(!date||busy||document.hidden)return;
+ if(!force&&date===loadedDay&&Date.now()-last<55000)return;
+ busy=true;last=Date.now();loadedDay=date;$('v483Status').textContent='全レース結果を取得中…';
+ try{
+  const res=await fetch(API+'/daily-results?date='+encodeURIComponent(date),{cache:'no-store'});
+  const j=await res.json();if(!res.ok)throw Error(j.error||'HTTP '+res.status);
+  const venues=[...new Set(j.races.map(x=>x.venue))].sort((a,b)=>a-b),map=new Map(j.races.map(x=>[x.venue+'|'+x.race,x]));
+  const table=document.createElement('table'),thead=document.createElement('thead'),tr=document.createElement('tr');
+  for(const label of ['場',...Array.from({length:12},(_,i)=>(i+1)+'R')]){const th=document.createElement('th');th.textContent=label;tr.append(th)}thead.append(tr);table.append(thead);
+  const body=document.createElement('tbody');
+  for(const v of venues){const row=document.createElement('tr'),name=document.createElement('td');name.textContent=j.races.find(x=>x.venue===v)?.venue_name||String(v);row.append(name);
+   for(let r=1;r<=12;r++){const cell=document.createElement('td'),x=map.get(v+'|'+r);
+    if(!x){cell.textContent='—';cell.className='v483-wait'}
+    else if(x.status==='settled'){cell.textContent=x.winning;cell.className='v483-done';cell.title='3連単100円払戻：'+x.payout_per_100+'円'}
+    else if(x.status==='nonstandard_or_incomplete'){cell.textContent='要確認';cell.className='v483-issue';cell.title=x.result_issue||''}
+    else{cell.textContent='待機';cell.className='v483-wait'}row.append(cell)}body.append(row)}
+  table.append(body);$('v483Table').replaceChildren(table);
+  $('v483Status').textContent=date+'｜掲載 '+j.races.length+'R／結果 '+j.settled+'R／未確定 '+j.pending+'R／要確認 '+j.nonstandard+'R｜取得 '+new Date(j.fetched_at_utc).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo'})+'（非公式・公式未照合）';
+ }catch(e){$('v483Status').textContent='結果取得失敗：'+e.message+'（前回の表は残しています）'}finally{busy=false}
+}
+$('v483Refresh').addEventListener('click',()=>load(true));$('outcomeDate')?.addEventListener('change',()=>load(true));
+document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',()=>setTimeout(()=>load(true),80));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load(true)});
+setInterval(()=>{if(!document.hidden)load(false)},60000);setTimeout(()=>load(true),1000);
+})();
+</script>
+
 </body>
 </html>
 
@@ -2961,7 +3012,7 @@ $('v434Import').onclick=async()=>{if(!venue.value||!race.value){msg.textContent=
  for(const t of j.tickets||[]){if(!/^([1-6]-){2}[1-6]$/.test(t.combination)||new Set(t.combination.split('-')).size!==3||tickets.some(x=>x.combination===t.combination))continue;tickets.push({combination:t.combination,amount:100});n++;}
  renderTickets();msg.textContent=n+'点取り込みました。実際に購入した場合だけ保存してください。';}catch(e){msg.textContent='AI予想の取得失敗：'+e.message;}};
 const auth=()=>({'Authorization':'Bearer '+$('v434Key').value,'Content-Type':'application/json'});
-// v4.8.2: Refresh top KPIs only with the entered key. Never persist the key.
+// v4.8.3: Refresh top KPIs only with the entered key. Never persist the key.
 let realSummaryRequest=0;
 async function refreshActualPurchaseSummary(){
  const seq=++realSummaryRequest,key=$('v434Key').value;
@@ -2980,6 +3031,19 @@ async function refreshActualPurchaseSummary(){
   $('realProfitSub').textContent=data.partial?'一部集計・上限到達':'確定購入分のみ';
  }catch(e){if(seq!==realSummaryRequest)return;hit.textContent='--%';roi.textContent='--%';profit.textContent='--';sub.textContent='実購入集計失敗：'+e.message;}
 }
+// Update actual-purchase KPIs at a predictable cadence, even when another tab is selected.
+let lastSummaryRefresh=0;
+const originalRefreshActualPurchaseSummary=refreshActualPurchaseSummary;
+async function timedPurchaseSummary(){
+ if(document.hidden||!$('v434Key').value)return;
+ if(Date.now()-lastSummaryRefresh<45000)return;
+ lastSummaryRefresh=Date.now();
+ await originalRefreshActualPurchaseSummary();
+}
+setInterval(timedPurchaseSummary,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){lastSummaryRefresh=0;timedPurchaseSummary();}});
+window.addEventListener('focus',()=>{lastSummaryRefresh=0;timedPurchaseSummary();});
+$('v434Key').addEventListener('change',()=>{lastSummaryRefresh=Date.now();});
 $('v434Key').addEventListener('change',refreshActualPurchaseSummary);
 $('v434Key').addEventListener('input',()=>{if(!$('v434Key').value)refreshActualPurchaseSummary();});
 
