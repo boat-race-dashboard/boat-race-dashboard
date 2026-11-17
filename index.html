@@ -2547,7 +2547,7 @@ function refresh(force=false){
 // Existing odds code exposes the actual upstream timestamp (fetched_at_utc).
 // Display a refresh indicator without pretending that the official odds were updated at the browser refresh time.
 const oddsStamp=$('v431Stamp');if(oddsStamp)oddsStamp.title='公式オッズ取得時刻はWorkerが返した fetched_at_utc。画面の自動更新時刻とは異なります。';
-setInterval(()=>refresh(false),60000);
+setInterval(()=>{if(active()!=='v431OddsMain')refresh(false);},60000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh(true);});
 window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
@@ -2574,8 +2574,67 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.2';
-document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.2');});
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.4.3';
+document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
+})();
+</script>
+<style id="v443-adaptive-odds-style">
+#v443OddsTiming{font-size:11px;color:#e8d8ed;margin:6px 0;line-height:1.5}
+#v443OddsTiming strong{color:#f2d58e}
+</style>
+<script id="v443-adaptive-odds">
+(()=>{
+'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const $=id=>document.getElementById(id);
+const date=$('v431Date'),venue=$('v431Venue'),race=$('v431Race'),refresh=$('v431Refresh');
+if(!date||!venue||!race||!refresh)return;
+const stamp=$('v431Stamp');
+const info=document.createElement('div');info.id='v443OddsTiming';
+info.textContent='自動更新：締切時刻を確認中';
+(stamp?.parentElement||refresh.parentElement).after(info);
+let schedule=null,scheduleDay='',scheduleAt=0,schedulePromise=null,lastAuto=0,loading=false,errors=0,signature='';
+const visible=()=>document.visibilityState==='visible'&&!!document.querySelector('.tabs [data-tab="v431OddsMain"].active');
+function timeMs(raw){if(!raw)return NaN;const str=String(raw);return Date.parse(/(?:Z|[+-]\d\d:?\d\d)$/.test(str)?str:str.replace(' ','T')+'+09:00');}
+async function getSchedule(){
+ const day=date.value;
+ if(scheduleDay===day&&schedule&&Date.now()-scheduleAt<300000)return schedule;
+ if(schedulePromise)return schedulePromise;
+ schedulePromise=fetch(API+'/schedule?date='+encodeURIComponent(day),{cache:'no-store'})
+ .then(async r=>{if(!r.ok)throw Error('日程 HTTP '+r.status);return r.json();})
+ .then(j=>{if(date.value===day){schedule=j;scheduleDay=day;scheduleAt=Date.now();}return j;})
+ .catch(()=>null).finally(()=>{schedulePromise=null;});
+ return schedulePromise;
+}
+function remaining(){
+ const v=(schedule?.venues||[]).find(x=>Number(x.number)===Number(venue.value));
+ const r=(v?.race_closing_times||[]).find(x=>Number(x.race||x.race_number||x.rno)===Number(race.value));
+ return timeMs(r?.closing_at)-Date.now();
+}
+function interval(ms){if(!Number.isFinite(ms))return 60000;if(ms<=0)return 0;if(ms<=300000)return 15000;if(ms<=900000)return 30000;return 60000;}
+async function tick(){
+ if(!visible()||loading)return;
+ const sig=[date.value,venue.value,race.value].join('/');
+ if(sig!==signature){signature=sig;lastAuto=Date.now();errors=0;schedule=null;scheduleAt=0;}
+ loading=true;
+ try{
+  await getSchedule();
+  if(!visible())return;
+  const ms=remaining(),base=interval(ms),wait=Math.max(base,errors?Math.min(300000,60000*2**(errors-1)):0);
+  if(base===0){info.innerHTML='締切予定時刻を経過：<strong>自動更新停止</strong>（公式の締切変更は別途確認）';return;}
+  const suffix=Number.isFinite(ms)?'締切まで約'+Math.ceil(ms/60000)+'分':'締切予定未取得';
+  info.innerHTML='自動更新：<strong>'+Math.round(wait/1000)+'秒間隔</strong> ／ '+suffix+' ／ 表示中の1レースのみ';
+  if(Date.now()-lastAuto>=wait){lastAuto=Date.now();refresh.click();}
+ }catch(e){errors++;info.textContent='更新確認エラー。次回再試行します。';}
+ finally{loading=false;}
+}
+// Reuse the existing refresh handler, so odds/prediction rendering and fetched_at_utc stay intact.
+// Never poll while the app is backgrounded or while another tab is selected.
+setInterval(tick,5000);
+[date,venue,race].forEach(el=>el.addEventListener('change',()=>{schedule=null;scheduleAt=0;lastAuto=Date.now();setTimeout(tick,150);}));
+document.querySelector('.tabs')?.addEventListener('click',()=>setTimeout(tick,350));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){lastAuto=Date.now();setTimeout(tick,300);}});
+setTimeout(tick,1200);
 })();
 </script>
 </body>
