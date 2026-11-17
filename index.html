@@ -3110,6 +3110,30 @@ el('v4910Body').innerHTML=html;el('v4910Status').textContent=from+'〜'+day+' �
 }catch(e){el('v4910Status').textContent='取得失敗：'+e.message;el('v4910Body').textContent='';}finally{busy=false;el('v4910Run').disabled=false;}}
 el('v4910Run').addEventListener('click',load);
 })();</script>
+<style id="v4911-style">
+#v4911Panel{margin:18px 0;padding:16px;border:1px solid #80618c;border-radius:15px;background:#2a1d3e;color:#f5eafa}
+#v4911Panel h2{margin:0 0 9px;font-size:19px}#v4911Panel .hint{font-size:12px;color:#d1bfdc;line-height:1.6}
+#v4911Panel .controls{display:flex;flex-wrap:wrap;gap:9px;align-items:end;margin:12px 0}
+#v4911Panel input{background:#1b1430;color:#fff;border:1px solid #9272ad;border-radius:9px;padding:10px;max-width:180px}
+#v4911Panel button{background:#eac679;color:#25192c;border:0;border-radius:10px;padding:11px 14px;font-weight:700}#v4911Panel button:disabled{opacity:.55}
+#v4911Panel .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#v4911Panel .cards>div{background:#3d2b51;padding:10px 6px;text-align:center;border-radius:10px}#v4911Panel .cards b{display:block;font-size:23px;color:#f5d389}#v4911Panel .cards small{font-size:11px;color:#e0d2e8}
+#v4911Panel .race{border:1px solid #735a83;border-radius:10px;padding:10px;margin:7px 0}#v4911Panel .race small{color:#d1bfdc}#v4911Panel .tag{display:inline-block;border-radius:15px;padding:3px 8px;font-size:11px;background:#63516f;margin-left:7px}#v4911Panel .tag.review{background:#226d59}#v4911Panel .tag.skip{background:#783e4e}
+#v4911Panel .filters{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}#v4911Panel .filters button{padding:7px 10px;font-size:12px;background:#5a476c;color:white}#v4911Panel .filters button.active{background:#eac679;color:#25192c}
+</style>
+<script id="v4911-script">(()=>{'use strict';
+const host=document.getElementById('stats');if(!host||document.getElementById('v4911Panel'))return;
+const p=document.createElement('section');p.id='v4911Panel';p.innerHTML=`<h2>🎯 レース選別・見送り検証 <small>v4.9.11</small></h2>
+<p class="hint">保存済みの出走前予想だけを使い、後から定義した仮の基準でレースを分類します。<b>「検討対象」は購入推奨ではありません。</b> オッズ・実際の期待値は未評価です。</p>
+<div class="controls"><label>検証日 <input type="date" id="v4911Date"></label><button id="v4911Run">見送りを検証</button></div><p class="hint" id="v4911Status">日付を選んで検証してください。</p><div id="v4911Body"></div>
+<p class="hint">基準：検討対象＝充足率75%以上・上位評価差8点以上・展示4艇以上。見送り＝充足率50%未満または評価差3点未満。その他は様子見。基準は暫定で、過去の結果で最適化していません。未保存レースは集計対象外。的中率・回収率は仮想6点×100円、非公式結果に基づきます。</p>`;
+const anchor=document.getElementById('v4910Panel');if(anchor)anchor.insertAdjacentElement('afterend',p);else host.prepend(p);
+const $=id=>p.querySelector('#'+id);const jst=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());$('v4911Date').value=jst;
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const n=x=>Number(x||0).toLocaleString('ja-JP');const pct=x=>x==null?'—':Number(x).toFixed(1)+'%';const yen=x=>n(x)+'円';
+let rows=[],filter='all';const labels={review:'検討対象',wait:'様子見',skip:'見送り',unassessable:'判定不可'};
+function renderRows(){const items=filter==='all'?rows:rows.filter(x=>x.classification===filter);const box=$('v4911List');if(!box)return;box.innerHTML=items.length?items.map(x=>`<div class="race"><b>${esc(x.venue)}場 ${esc(x.race)}R</b><span class="tag ${esc(x.classification)}">${labels[x.classification]||'判定不可'}</span><div class="hint">${esc(x.reason)} ／ 評価差 ${x.score_gap??'—'}点 ／ 充足率 ${pct(x.coverage_percent)} ／ 展示 ${n(x.exhibition_count)}艇</div><small>${x.settled?(x.hit?'仮想6点的中':'仮想6点不的中')+' ／ 払戻 '+yen(x.returned_yen):'未照合・検証対象外'} ／ 保存ID ${esc(x.snapshot_id)}</small></div>`).join(''):'<p class="hint">該当する保存済みレースはありません。</p>';}
+$('v4911Run').onclick=async()=>{const day=$('v4911Date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(day))return;$('v4911Run').disabled=true;$('v4911Status').textContent='保存済み予想を集計中…';$('v4911Body').innerHTML='';try{const res=await fetch('https://boat-race-api.7phr5nzkbt.workers.dev/race-selection-history?date='+encodeURIComponent(day),{cache:'no-store'});const d=await res.json();if(!res.ok)throw Error(d.error||'HTTP '+res.status);rows=d.rows||[];filter='all';const t=d.totals||{};const card=(label,value)=>`<div><small>${esc(label)}</small><b>${esc(value)}</b></div>`;let html='<div class="cards">'+card('検討対象',n(t.review)) +card('様子見',n(t.wait))+card('見送り',n(t.skip))+'</div>';html+=`<p class="hint">判定不可 ${n(t.unassessable)}件 ／ 保存済み ${n(rows.length)}件 ／ 結果照合 ${n(t.settled)}件 ／ 重複除外 ${n(d.pagination?.duplicates_excluded)}件</p>`;html+='<h3>仮想6点の検証</h3><div class="cards">'+card('全保存レース回収率',pct(t.all_settled_roi_percent))+card('検討対象の回収率',pct(t.review_settled_roi_percent))+card('検討対象の的中率',pct(t.review_hit_rate_percent))+'</div>';html+=`<p class="hint">検討対象の照合済み ${n(t.review_settled_races)}件 ／ 投資 ${yen(t.review_settled_stake_yen)} ／ 払戻 ${yen(t.review_settled_returned_yen)} ／ 収支 ${yen((t.review_settled_returned_yen||0)-(t.review_settled_stake_yen||0))}</p>`;html+='<h3>レース別の判定</h3><div class="filters" id="v4911Filters">'+Object.entries({all:'すべて',review:'検討対象',wait:'様子見',skip:'見送り',unassessable:'判定不可'}).map(([k,v])=>`<button data-filter="${k}" class="${k==='all'?'active':''}">${v}</button>`).join('')+'</div><div id="v4911List"></div>';$('v4911Body').innerHTML=html;$('v4911Filters').onclick=e=>{const b=e.target.closest('button[data-filter]');if(!b)return;filter=b.dataset.filter;p.querySelectorAll('#v4911Filters button').forEach(x=>x.classList.toggle('active',x===b));renderRows();};renderRows();$('v4911Status').textContent=day+' ／ Worker '+d.build_id+(d.pagination?.limited?' ／ 上限500件のため不完全':'')+' ／ 保存済み分のみ。結果後に設計した暫定ルールの後ろ向き検証です。';}catch(e){$('v4911Status').textContent='取得できません：'+e.message+'。Worker v4.9.11を先に公開してください。';}finally{$('v4911Run').disabled=false;}};
+})();</script>
 </body>
 </html>
 
@@ -3618,5 +3642,4 @@ const core=document.getElementById('v422AnalyticsPanel');if(core)intro.insertAdj
 // Preserve the original DOM nodes, IDs, handlers, input values and calculation logic.
 const footer=document.querySelector('.footer');if(footer&&footer.textContent.includes('v4.8.1'))footer.innerHTML=footer.innerHTML.replace('v4.8.1','v4.9.4');
 })();</script>
-
 
