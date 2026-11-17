@@ -4185,21 +4185,63 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 <!-- Enterprise navigation consolidation: UI-only scope, reversible. -->
-<style id="enterprise-tab-scope-css">
+<!-- v2.1: single-selection tab state and clearer upstream error handling -->
+
+
+<!-- v2.2: one native tab controller; judgement pane is a true standalone view -->
+<style id="enterprise-tabs-v22-css">
 #enterpriseOverview.hidden{display:none!important}
-#enterpriseOverview{max-width:1080px;margin:0 auto 18px}
-#enterpriseOverview .overview-intro{font-size:12px;color:#b9cde0;margin:0 0 12px;line-height:1.65}
+#enterpriseOverview{max-width:1080px;margin:0 auto 20px}
+#enterpriseOverview .overview-intro{color:#c4d4e4;font-size:13px;line-height:1.6}
+#enterpriseOverview .overview-details{border:1px solid #344c64;border-radius:12px;padding:12px;margin:12px 0}
+#enterpriseOverview .overview-details>summary{cursor:pointer;font-weight:700;color:#dce8f5}
 #enterpriseOverview #enterpriseRelease .er-grid{display:none}
-#enterpriseOverview #enterpriseRelease .er-row{margin-bottom:8px}
-#enterpriseOverview #enterpriseRelease{margin-top:12px}
-#enterpriseOverview #enterpriseQuickNav,#enterpriseOverview #enterpriseSafety{display:none!important}
-#enterpriseOverview #enterpriseRelease .er-muted{margin:8px 0}
-#enterpriseOverview #enterpriseRelease .er-actions{margin:10px 0}
-#enterpriseOverview #enterpriseRelease .er-status{margin:8px 0}
-#enterpriseOverview #enterpriseRelease .er-row .er-badge{font-size:10px}
-#enterpriseOverview #enterpriseDecision .ed-disclaimer{margin-top:8px}
-#enterpriseOverview #enterpriseDecision{margin:0}
-#enterpriseOverview .overview-details summary{cursor:pointer;color:#c2d8e8;font-weight:650}
-#enterpriseOverview .overview-details{border:1px solid #334d64;border-radius:12px;padding:12px;margin-top:12px}
-#enterpriseOverview .overview-details #enterpriseRelease{margin-top:10px}
-#enterpriseOverview .overview-details #enterpriseRelease .e
+#enterpriseOverview .overview-details[open] #enterpriseRelease .er-grid{display:grid}
+.tabs [data-tab="enterpriseOverview"]{background:#1d3047!important;color:#d6e5f1!important;border:1px solid #405a75!important;box-shadow:none!important}
+.tabs [data-tab="enterpriseOverview"].active{background:#315d68!important;color:#fff!important;border-color:#74b7b1!important}
+#enterpriseDecision .ed-empty{line-height:1.7}
+</style>
+<script id="enterprise-tabs-v22-js">
+(function(){'use strict';
+ function init(){
+  const main=document.querySelector('main'),tabs=main?.querySelector('.tabs');
+  if(!main||!tabs)return;
+  let pane=document.getElementById('enterpriseOverview');
+  if(!pane){pane=document.createElement('section');pane.id='enterpriseOverview';pane.className='hidden';pane.setAttribute('aria-label','本日のレース判断');
+   const intro=document.createElement('p');intro.className='overview-intro';intro.textContent='本日の候補と運用情報をまとめています。詳細なレース情報は「レース・締切」で確認できます。';pane.append(intro);tabs.insertAdjacentElement('afterend',pane);
+  }
+  let button=tabs.querySelector('[data-tab="enterpriseOverview"]');
+  if(!button){button=document.createElement('button');button.type='button';button.dataset.tab='enterpriseOverview';button.textContent='判断';tabs.insertBefore(button,tabs.firstChild)}
+  for(const id of ['enterpriseBar','enterpriseDecision']){const node=document.getElementById(id);if(node)pane.append(node)}
+  let details=pane.querySelector('.overview-details');
+  if(!details){details=document.createElement('details');details.className='overview-details';const summary=document.createElement('summary');summary.textContent='運用確認・チェックリスト';details.append(summary);pane.append(details)}
+  const release=document.getElementById('enterpriseRelease');if(release)details.append(release);
+  for(const id of ['enterpriseQuickNav','enterpriseSafety'])document.getElementById(id)?.remove();
+  const metrics=main.querySelector(':scope > .grid'),stats=document.getElementById('stats');if(metrics&&stats)stats.insertBefore(metrics,stats.firstChild);
+  // Preserve existing native tab handlers. A single capture-phase listener controls the custom pane.
+  function selectJudgement(){
+   for(const section of main.querySelectorAll(':scope > section[id]'))section.classList.add('hidden');
+   pane.classList.remove('hidden');
+   tabs.querySelectorAll('button[data-tab]').forEach(b=>{const selected=b===button;b.classList.toggle('active',selected);b.setAttribute('aria-selected',String(selected))});
+  }
+  button.addEventListener('click',selectJudgement);
+  tabs.addEventListener('click',e=>{
+   const b=e.target.closest('button[data-tab]');if(!b||b===button)return;
+   pane.classList.add('hidden');button.classList.remove('active');button.setAttribute('aria-selected','false');
+   // Existing tab handlers still select the clicked pane; do not replace or invoke them twice.
+  },true);
+  // On initial load, respect whichever native tab was selected.
+  pane.classList.add('hidden');button.classList.remove('active');button.setAttribute('aria-selected','false');
+  const status=document.querySelector('#enterpriseDecision .ed-status');
+  const existing=document.querySelector('[data-tab="watchlistView"]');
+  if(status){const obs=new MutationObserver(()=>{
+   if(/HTTP 404/.test(status.textContent||'')){
+    status.textContent='候補APIがHTTP 404を返しました。候補0件とは判定できません。既存の「注目レース」画面で確認してください。';
+   }
+  });obs.observe(status,{childList:true,characterData:true,subtree:true});}
+  // Mark the consolidated UI revision without claiming the Worker was updated.
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · UI tabs v2.2';
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
