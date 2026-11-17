@@ -305,6 +305,42 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .v433-matrix-cell.hit{background:#f0cb69;color:#241809}.v433-matrix-cell.miss{background:#d24b58;color:#fff}.v433-matrix-cell.pending{background:#684eac;color:#fff}.v433-matrix-cell.none{background:#30273e;color:#80758d}.v433-matrix-cell:disabled{opacity:1}
 .v433-matrix-legend,.v433-coverage{font-size:10px;color:#d2c0e4;line-height:1.6}.v433-result-details{margin-top:15px}.v433-result-details summary{padding:12px;border:1px solid #685385;border-radius:10px;color:#f0d187;cursor:pointer}
 @media(min-width:600px){.v433-matrix{gap:5px}.v433-matrix-cell{border-radius:6px;font-size:12px}.v433-matrix-label{font-size:12px}}
+
+
+/* v4.9.3: 3連単120通りの未校正・相対推定確率 */
+.v493-panel{margin:14px 0;padding:13px;border:1px solid #9476b0;border-radius:12px;background:rgba(34,22,58,.72)}
+.v493-panel h3{margin:0 0 7px;color:#f5d782;font-size:16px}
+.v493-panel p{font-size:11px;line-height:1.6;color:#d6c9e6;margin:6px 0}
+.v493-kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.v493-kpi{padding:9px;border:1px solid #67517d;border-radius:9px;font-size:11px;color:#e0d5ee}
+.v493-kpi strong{display:block;color:#ffe49b;font-size:21px;margin-top:3px}
+.v493-item{display:grid;grid-template-columns:58px minmax(0,1fr) 58px;align-items:center;gap:9px;margin:8px 0;font-size:12px}
+.v493-combo{font-weight:800;color:#fff}.v493-pct{text-align:right;font-weight:800;color:#f5d782;font-variant-numeric:tabular-nums}
+.v493-track{height:10px;background:#514167;border-radius:9px;overflow:hidden}
+.v493-fill{height:100%;border-radius:9px;background:linear-gradient(90deg,#9270c2,#f7d782)}
+.v493-item.v493-picked .v493-combo:after{content:' ★';color:#f5d782}
+.v493-panel details{margin-top:10px}.v493-panel summary{cursor:pointer;color:#f5d782;font-size:12px;font-weight:700}
+.v493-filter{display:flex;gap:7px;align-items:center;margin:9px 0;flex-wrap:wrap}.v493-filter label{font-size:12px}
+.v493-filter select{width:auto;min-width:100px;padding:6px;background:#302447;color:#fff;border:1px solid #78648b;border-radius:6px}
+
+/* v4.9.3: 6艇比較表（既存採点式を変更しない） */
+.v492-panel{margin:14px 0;padding:12px;border:1px solid #806b96;border-radius:12px;background:rgba(31,20,57,.52)}
+.v492-panel h3{margin:0 0 8px;color:#f5d782;font-size:15px}
+.v492-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+.v492-table{border-collapse:separate;border-spacing:0;width:100%;min-width:520px;font-size:12px;color:#f2eafb}
+.v492-table th,.v492-table td{padding:9px 6px;text-align:center;border-bottom:1px solid #554568;white-space:nowrap}
+.v492-table th:first-child,.v492-table td:first-child{position:sticky;left:0;z-index:1;background:#302447;text-align:left;min-width:105px;font-weight:700}
+.v492-table thead th{background:#403056;color:#fff}
+.v492-table thead th:first-child{z-index:2}
+.v492-table .v492-f{color:#ff8585;font-weight:800}
+.v492-table .v492-best{color:#f8dc89;font-weight:800}
+.v492-note{font-size:11px;line-height:1.65;color:#d3c6e2;margin:9px 0 0}
+.v492-panel details{margin-top:10px}
+.v492-panel summary{cursor:pointer;color:#f5d782;font-weight:700;font-size:12px}
+.v492-break{margin:8px 0 0;padding:9px;border:1px solid #554568;border-radius:8px;font-size:12px}
+.v492-break strong{color:#f5d782}
+.v492-bar{height:5px;border-radius:5px;background:#554568;overflow:hidden;margin:3px 0 8px}
+.v492-bar span{display:block;height:100%;background:linear-gradient(90deg,#9472c4,#f5d782)}
 </style>
 <style>
 .v425-controls{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
@@ -1600,6 +1636,89 @@ loadAutoPredictions();
       insight.append(el('div','展示タイム '+(data.exhibition_times_received||0)+'/6艇 ／ これは的中確率や信頼度の保証ではありません。','muted'));
       tickets.append(insight);
       renderTicketPayouts(data.tickets,date,venue,race,tickets);
+      // v4.9.3: Score-derived Plackett-Luce reference distribution, NOT calibrated hit probabilities.
+      // All 120 mutually exclusive trifecta outcomes sum to 100%. No model/Worker change.
+      const probPanel=el('section',undefined,'v493-panel');
+      probPanel.append(el('h3','🎯 3連単120通り｜出目別の参考推定確率'));
+      const validScores=data.ranking.filter(r=>Number.isInteger(Number(r.boat))&&Number(r.boat)>=1&&Number(r.boat)<=6&&Number.isFinite(Number(r.score)));
+      if(validScores.length===6&&new Set(validScores.map(r=>Number(r.boat))).size===6){
+        const scores=validScores.map(r=>({boat:Number(r.boat),score:Number(r.score)}));
+        // 15-point temperature limits excessive certainty from a heuristic score.
+        const maxScore=Math.max(...scores.map(r=>r.score));
+        const weights=new Map(scores.map(r=>[r.boat,Math.exp((r.score-maxScore)/15)]));
+        const total=[...weights.values()].reduce((a,b)=>a+b,0);
+        const outcomes=[];
+        for(let a=1;a<=6;a++)for(let b=1;b<=6;b++)for(let c=1;c<=6;c++){
+          if(a===b||a===c||b===c)continue;
+          const wa=weights.get(a),wb=weights.get(b),wc=weights.get(c);
+          const probability=wa/total*wb/(total-wa)*wc/(total-wa-wb)*100;
+          outcomes.push({combination:a+'-'+b+'-'+c,probability});
+        }
+        outcomes.sort((a,b)=>b.probability-a.probability);
+        const picked=new Set(data.tickets.map(t=>String(t.combination)));
+        const pickedProbability=outcomes.reduce((a,o)=>a+(picked.has(o.combination)?o.probability:0),0);
+        const topProbability=outcomes[0].probability;
+        const kpis=el('div',undefined,'v493-kpis');
+        for(const [label,value] of [['AI推奨 '+picked.size+'点の合計',pickedProbability.toFixed(1)+'%'],['最上位 '+outcomes[0].combination,topProbability.toFixed(1)+'%']]){
+          const card=el('div',undefined,'v493-kpi');card.append(el('span',label),el('strong',value));kpis.append(card);
+        }
+        probPanel.append(kpis);
+        probPanel.append(el('p','AI採点から計算した未校正の参考値です。過去の的中率や統計的に検証された的中確率ではありません。6艇の相対評価を重み付けし、着順を重複なしで選ぶ仮モデル（温度15点）です。'));
+        const list=el('div');probPanel.append(list);
+        const render=(head,limit)=>{
+          list.replaceChildren();
+          const shown=outcomes.filter(o=>head==='all'||o.combination.startsWith(head+'-')).slice(0,limit);
+          const scale=Math.max(...shown.map(o=>o.probability),0.001);
+          shown.forEach(o=>{
+            const row=el('div',undefined,'v493-item'+(picked.has(o.combination)?' v493-picked':''));
+            row.append(el('span',o.combination,'v493-combo'));
+            const track=el('div',undefined,'v493-track'),fill=el('div',undefined,'v493-fill');fill.style.width=(o.probability/scale*100).toFixed(2)+'%';track.append(fill);row.append(track);
+            row.append(el('span',o.probability.toFixed(2)+'%','v493-pct'));list.append(row);
+          });
+        };
+        render('all',10);
+        const all=el('details');all.append(el('summary','120通りをすべて見る・1着艇で絞る'));
+        const filters=el('div',undefined,'v493-filter'),label=el('label','1着艇 '),select=el('select');
+        [['all','全艇'],...Array.from({length:6},(_,i)=>[String(i+1),(i+1)+'号艇'])].forEach(([value,name])=>{const opt=el('option',name);opt.value=value;select.append(opt);});
+        filters.append(label,select);const allList=el('div');all.append(filters,allList);
+        const drawAll=()=>{allList.replaceChildren();const shown=outcomes.filter(o=>select.value==='all'||o.combination.startsWith(select.value+'-'));const scale=shown[0]?.probability||1;shown.forEach(o=>{const row=el('div',undefined,'v493-item'+(picked.has(o.combination)?' v493-picked':''));row.append(el('span',o.combination,'v493-combo'));const track=el('div',undefined,'v493-track'),fill=el('div',undefined,'v493-fill');fill.style.width=(o.probability/scale*100).toFixed(2)+'%';track.append(fill);row.append(track,el('span',o.probability.toFixed(2)+'%','v493-pct'));allList.append(row);});};
+        select.addEventListener('change',drawAll);all.addEventListener('toggle',()=>{if(all.open)drawAll();});probPanel.append(all);
+        probPanel.append(el('p','★はAI推奨買い目。棒の長さは表示中の最大値に対する相対値です。合計100%は計算上の配分であり、実際の的中率を保証しません。結果判明後の評価は事前予想として扱わないでください。'));
+      }else probPanel.append(el('p','6艇のAI評価点が揃っていないため推定値を表示できません。'));
+      ranking.append(probPanel);
+      // v4.9.3: 公式展示情報に近い6艇比較表。点数はWorkerから受け取った値をそのまま使用。
+      const comparison=el('section',undefined,'v492-panel');
+      comparison.append(el('h3','6艇比較｜展示情報・AI採点'));
+      const scroll=el('div',undefined,'v492-scroll'),tbl=el('table',undefined,'v492-table');
+      const thead=el('thead'),headrow=el('tr');headrow.append(el('th','項目'));
+      const boats=[1,2,3,4,5,6];
+      const ranked=new Map(data.ranking.map((r,i)=>[Number(r.boat),{...r,position:i+1}]));
+      boats.forEach(n=>{const th=el('th');th.append(el('span',String(n),'linked-boat-chip linked-boat-'+n));headrow.append(th);});
+      thead.append(headrow);tbl.append(thead);
+      const tbody=el('tbody');
+      function addComparisonRow(label,values,format,mark){const tr=el('tr');tr.append(el('td',label));boats.forEach(n=>{const td=el('td');const val=values.get(n);td.textContent=format?format(val,n):val==null?'未取得':String(val);if(mark)mark(td,val,n);tr.append(td);});tbody.append(tr);}
+      const rawByBoat=new Map();
+      const rawRows=[['選手名',r=>r.name],['展示タイム',r=>r.exhibition_time],['展示ST',r=>r.exhibition_start_timing],['展示進入',r=>r.exhibition_course],['全国勝率',r=>r.national_win_rate],['モーター2連対率',r=>r.motor_top_2_percent]];
+      const rawCells=[];
+      rawRows.forEach(([label,getter])=>{const vals=new Map();rawCells.push({vals,getter});addComparisonRow(label,vals,v=>v==null||v===''?'取得中…':String(v),(td,v)=>{if(label==='展示ST'&&typeof v==='string'&&/^F[.．]?\d/i.test(v))td.classList.add('v492-f');});});
+      const scoreValues=new Map(boats.map(n=>[n,ranked.get(n)?.score]));
+      addComparisonRow('AI総合点',scoreValues,v=>Number.isFinite(Number(v))?Number(v).toFixed(1)+'点':'—',td=>td.classList.add('v492-best'));
+      const breakdownKeys=[['展示タイム点','展示タイム'],['展示ST点','展示ST']];
+      function breakdownValue(r,keyword){const entry=Object.values(r?.score_breakdown||{}).find(b=>String(b.label||'').includes(keyword));return entry?entry.points+'/'+entry.max_points+'点'+(entry.imputed_neutral?' ※':''):null;}
+      for(const [label,keyword] of breakdownKeys)addComparisonRow(label,new Map(boats.map(n=>[n,breakdownValue(ranked.get(n),keyword)])),v=>v??'—');
+      addComparisonRow('AI順位',new Map(boats.map(n=>[n,ranked.get(n)?.position])),v=>v?v+'位':'—');
+      tbl.append(tbody);scroll.append(tbl);comparison.append(scroll);
+      comparison.append(el('p','展示STのFは展示でのフライングを示し、本番の失格ではありません。※は欠損・中立点。AI点数は的中確率ではありません。横にスクロールして6艇を比較できます。','v492-note'));
+      const cmpDetails=el('details');cmpDetails.append(el('summary','艇別の8項目スコアを詳しく見る'));
+      for(const n of boats){const r=ranked.get(n);if(!r)continue;const part=el('div',undefined,'v492-break');part.append(el('strong',n+'号艇 '+show(r.name)+' ／ '+Number(r.score).toFixed(1)+'点'));
+        for(const [key,b] of Object.entries(r.score_breakdown||{})){part.append(el('div',(b.label||key)+' '+b.points+'/'+b.max_points+'点'+(b.imputed_neutral?'（欠損・中立点）':'')));const bar=el('div',undefined,'v492-bar'),fill=el('span');fill.style.width=Math.max(0,Math.min(100,100*Number(b.points)/Math.max(1,Number(b.max_points))))+'%';bar.append(fill);part.append(bar);}cmpDetails.append(part);}
+      comparison.append(cmpDetails);ranking.append(comparison);
+      // raw race values are fetched separately; do not guess missing values or fabricate update timestamps.
+      (async()=>{try{const resp=await fetch(API+'/race?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});if(!resp.ok)throw Error('HTTP '+resp.status);const info=await resp.json();if(id!==predictionRequestId||!comparison.isConnected)return;
+        for(const racer of info.racers||[])rawByBoat.set(Number(racer.entry_number),racer);
+        const trs=Array.from(tbody.children);
+        rawCells.forEach(({getter},i)=>{boats.forEach((n,j)=>{const val=rawByBoat.has(n)?getter(rawByBoat.get(n)):null;const td=trs[i].children[j+1];td.textContent=val==null||val===''?'未取得':String(val);td.classList.toggle('v492-f',i===2&&typeof val==='string'&&/^F[.．]?\d/i.test(val));});});
+      }catch(e){if(id===predictionRequestId&&comparison.isConnected)rawCells.forEach((_,i)=>Array.from(tbody.children[i].children).slice(1).forEach(td=>td.textContent='未取得'));}})();
       data.ranking.forEach((r,i)=>{
         const row=el('div',undefined,'v40-rank');row.append(el('span',String(r.boat),'linked-boat-chip linked-boat-'+r.boat));
         const label=el('div',undefined,'v40-rank-name');label.append(el('strong',(i+1)+'位 '+({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')+' '+show(r.name)));
@@ -2591,7 +2710,7 @@ const outcome=$('outcomes');if(outcome){
  document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',inspect);
  setTimeout(inspect,1600);
 }
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.9.1';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v4.9.3';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
