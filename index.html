@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v4.2.8 UI</title>
+  <title>BOAT RACE AI Dashboard v4.5.1</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -3027,5 +3027,53 @@ el('v448Info').textContent='Cron最終実行 '+fmt(run.ran_at_utc)+' ／ 次の�
 }catch(e){el('v448Info').textContent='照合状況を取得できません：'+e.message+'。結果未取得を不的中とは扱いません。';}finally{busy=false;}}
 el('v448Refresh').addEventListener('click',refresh);
 refresh();setInterval(()=>{if(!document.hidden)refresh()},60000);
+})();
+</script>
+
+
+<!-- v4.5.1: six-ticket active vs twelve-ticket shadow; read-only -->
+<style id="v451-style">
+#v451Panel{max-width:1100px;margin:16px auto;padding:17px;border:1px solid #8265ad;border-radius:16px;background:linear-gradient(135deg,#261b41,#1b2743);color:#f3eeff;font-family:inherit}
+#v451Panel *{box-sizing:border-box}#v451Panel h2{color:#f5d485;font-size:19px;margin:0 0 8px}#v451Panel h3{font-size:15px;margin:15px 0 8px;color:#e9d6ff}#v451Panel p{line-height:1.6}#v451Panel .v451-top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}#v451Panel .v451-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}#v451Panel input{background:#fff;color:#1a1730;border:1px solid #9c85b5;border-radius:8px;padding:8px;min-height:37px}#v451Panel button{background:#634a89;color:white;border:1px solid #b59ace;border-radius:8px;padding:9px 13px;cursor:pointer}#v451Panel button:disabled{opacity:.5;cursor:wait}#v451Panel .v451-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#v451Panel .v451-card{padding:12px;border:1px solid #6d5a89;border-radius:12px;background:#33264d}#v451Panel .v451-card strong{display:block;font-size:22px;margin:4px 0;color:#ffe4a3}#v451Panel .v451-small{font-size:12px;color:#d9cce9}#v451Panel .v451-pill{display:inline-block;border-radius:20px;padding:4px 9px;background:#514069;color:#fff;font-size:11px}#v451Panel .v451-tickets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#v451Panel .v451-ticket{text-align:center;background:#4a3869;border:1px solid #7c66a2;border-radius:8px;padding:8px 3px;font-weight:700}#v451Panel .v451-table{width:100%;border-collapse:collapse;font-size:12px}#v451Panel .v451-table th,#v451Panel .v451-table td{border-bottom:1px solid #5c4d72;padding:8px 4px;text-align:right}#v451Panel .v451-table th:first-child,#v451Panel .v451-table td:first-child{text-align:left}#v451Panel .v451-table th{color:#dcc5f3}#v451Panel .v451-scroll{overflow-x:auto}#v451Panel .v451-muted{color:#d1c3df;font-size:12px}#v451Panel .v451-error{color:#ffd3d3}#v451Panel .v451-bar{height:8px;border-radius:9px;background:#49395c;overflow:hidden;margin:5px 0 10px}#v451Panel .v451-bar span{display:block;height:100%;background:#e5bd68;max-width:100%}@media(max-width:480px){#v451Panel{padding:12px;margin:10px 0}#v451Panel .v451-card{padding:9px}#v451Panel .v451-card strong{font-size:19px}#v451Panel .v451-table{font-size:11px}}
+</style>
+<script id="v451-script">
+(()=>{'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const root=document.createElement('section');root.id='v451Panel';root.setAttribute('aria-label','6点方式と12点方式の検証');
+root.innerHTML=`<div class="v451-top"><div><h2>6点方式・12点比較 <span class="v451-pill">v4.5.1 対応</span></h2><div class="v451-small">仮想予想の検証｜実際の舟券購入ではありません</div></div><div class="v451-controls"><label for="v451Date">検証日</label><input id="v451Date" type="date"><button type="button" id="v451Reload">再取得</button></div></div><p id="v451Status" class="v451-muted">データ取得中…</p><div id="v451Content" hidden><h3>保存済み予想の比較検証</h3><div class="v451-grid" id="v451Summary"></div><div class="v451-scroll"><table class="v451-table"><thead><tr><th>方式</th><th>件数</th><th>的中</th><th>的中率</th><th>回収率</th><th>収支</th></tr></thead><tbody id="v451Rows"></tbody></table></div><h3>方式・採点改訂別の成績</h3><div id="v451Revisions"></div><h3>最新の保存予想</h3><div id="v451Latest"></div><p class="v451-muted" id="v451Disclaimer"></p></div>`;
+const mount=document.querySelector('main')||document.body;
+mount.insertBefore(root,mount.firstChild);
+const $=id=>root.querySelector('#'+id);
+const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+$('v451Date').value=day;
+const yen=v=>Number.isFinite(Number(v))?Number(v).toLocaleString('ja-JP')+'円':'--';
+const pct=v=>v==null||!Number.isFinite(Number(v))?'--':Number(v).toFixed(2)+'%';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const names={first_head_6:'6点（本番基準）',first_head_6_plus_second_head_2:'8点（参考）',both_heads_12:'12点（比較）'};
+const modes=['first_head_6','first_head_6_plus_second_head_2','both_heads_12'];
+let busy=false;
+async function get(path){const r=await fetch(API+path,{cache:'no-store'});if(!r.ok)throw Error(path.split('?')[0]+' HTTP '+r.status);return r.json()}
+function statsLine(label,s){if(!s)return `<tr><td>${esc(label)}</td><td colspan="5">集計なし</td></tr>`;return `<tr><td>${esc(label)}</td><td>${s.races??0}</td><td>${s.hits??0}</td><td>${pct(s.hit_rate_percent)}</td><td>${pct(s.roi_percent)}</td><td>${yen(s.profit_yen??((s.returned_yen??0)-(s.stake_yen??0)))}</td></tr>`}
+function parsePred(row){try{return JSON.parse(row.prediction_json)}catch{return null}}
+async function refresh(){if(busy)return;busy=true;$('v451Reload').disabled=true;$('v451Status').textContent='比較データを取得中…';
+try{
+const date=$('v451Date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('日付を選択してください');
+const [back,snap]=await Promise.all([get('/ticket-backtest?date='+encodeURIComponent(date)),get('/snapshots?date='+encodeURIComponent(date)+'&limit=1')]);
+const all=back.overall||{};const main=all.first_head_6||{};const shadow=all.both_heads_12||{};
+$('v451Summary').innerHTML=`<div class="v451-card"><span class="v451-small">6点方式（保存済み12点からの比較を含む）</span><strong>${pct(main.roi_percent)}</strong><span class="v451-small">回収率 ／ ${yen(main.profit_yen??((main.returned_yen??0)-(main.stake_yen??0)))} ／ ${main.races??0}レース</span></div><div class="v451-card"><span class="v451-small">12点方式（比較専用）</span><strong>${pct(shadow.roi_percent)}</strong><span class="v451-small">回収率 ／ ${yen(shadow.profit_yen??((shadow.returned_yen??0)-(shadow.stake_yen??0)))} ／ ${shadow.races??0}レース</span></div>`;
+$('v451Rows').innerHTML=modes.map(k=>statsLine(names[k],all[k])).join('');
+const revisions=back.by_revision||{};
+$('v451Revisions').innerHTML=Object.keys(revisions).length?Object.entries(revisions).map(([rev,data])=>`<div class="v451-card" style="margin:8px 0"><div><b>${esc(rev)}</b> <span class="v451-small">${rev.startsWith('six-active-')?'6点が実際に保存された世代':'旧保存形式または別採点世代'}</span></div><div class="v451-scroll"><table class="v451-table"><tbody>${statsLine('6点比較',data.first_head_6)}${statsLine('12点比較',data.both_heads_12)}</tbody></table></div></div>`).join(''):'<p class="v451-muted">結果照合済みの対象レースがありません。</p>';
+const row=Array.isArray(snap.snapshots)?snap.snapshots[0]:null;const pred=row?parsePred(row):null;
+if(pred){const active=Array.isArray(pred.tickets)?pred.tickets:[];const comparison=Array.isArray(pred.comparison_tickets)?pred.comparison_tickets:[];const isSix=pred.active_ticket_strategy==='first_head_6'&&active.length===6&&Number(pred.total_stake_yen)===600;
+$('v451Latest').innerHTML=`<div class="v451-card"><div><b>保存ID ${esc(row.id)} ／ ${esc(row.venue_number)}場 ${esc(row.race_number)}R</b> <span class="v451-pill">${isSix?'6点保存確認':'旧形式・要確認'}</span></div><p class="v451-small">保存日時（UTC）: ${esc(row.recorded_at)} ／ 採点: ${esc(pred.scoring_revision||'不明')}</p><p>本番用: <b>${active.length}点・${yen(pred.total_stake_yen)}</b> ／ 比較用: <b>${comparison.length||'旧形式'}点</b></p><div class="v451-tickets">${active.map(t=>`<div class="v451-ticket">${esc(t.combination)}</div>`).join('')}</div><p class="v451-muted">${isSix?'本番用6点と比較用12点が分離されています。':'旧保存形式の場合、表示される12点は本番6点を意味しません。'}</p></div>`;
+}else{$('v451Latest').innerHTML='<p class="v451-muted">この日付の保存済み予想はありません。</p>'}
+const eligible=back.eligible_settled_races??0;
+$('v451Status').textContent=`${date} ／ 比較対象 ${eligible}レース ／ 未精算 ${back.exclusions?.pending??'--'}件 ／ Worker ${back.build_id||'不明'}`;
+$('v451Disclaimer').textContent='重要：比較値は保存済み予想の買い目順から計算した仮想バックテストです。旧12点予想からの6点抽出も含まれ、6点方式の運用実績だけではありません。改訂別の「six-active-」を区別してください。結果は非公式データで未検証、将来の収益性は保証されません。展示データ未取得の場合は予想精度にも制約があります。';
+$('v451Content').hidden=false;
+}catch(e){$('v451Status').innerHTML='<span class="v451-error">取得失敗：'+esc(e.message)+'。ネット接続とWorker APIを確認してください。</span>';$('v451Content').hidden=true}
+finally{busy=false;$('v451Reload').disabled=false}}
+$('v451Reload').addEventListener('click',refresh);$('v451Date').addEventListener('change',refresh);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});setInterval(()=>{if(!document.hidden)refresh()},60000);refresh();
 })();
 </script>
