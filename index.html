@@ -511,7 +511,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)memo.clear(
 #outcomes .v498-tier-list span{display:flex;align-items:center;gap:7px;padding:7px;background:#3b2d52;border-radius:8px;font-size:10px}
 </style></head>
 <body>
-<header><div class="eyebrow">BOAT RACE / 24 VENUES · v4.9.8</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
+<header><div class="eyebrow">BOAT RACE / 24 VENUES · v4.9.9</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
 <main>
   <div class="grid">
     <div class="metric"><span>実購入 的中率</span><b id="hit">--%</b><span id="hitSub">キー入力後に集計</span></div>
@@ -1936,6 +1936,41 @@ loadAutoPredictions();
   paint();
   const date=document.getElementById('outcomeDate');date.value=document.getElementById('scheduleDate').value;
   let rows=[],filter='all',busy=false,offset=0,hasMore=false,dayRaces=[];
+  // v4.9.9: Read-only result review. No post-race prediction recalculation.
+  const reviewStyle=document.createElement('style');reviewStyle.textContent=`
+  .v499-overlay{position:fixed;inset:0;z-index:10000;background:rgba(9,5,21,.82);display:flex;align-items:flex-end;justify-content:center;padding:12px;box-sizing:border-box}
+  .v499-dialog{background:#261a3b;color:#f7edff;border:1px solid #9876b5;border-radius:20px 20px 14px 14px;width:min(100%,540px);max-height:88dvh;overflow:auto;padding:18px;box-sizing:border-box;box-shadow:0 12px 45px #0009}
+  .v499-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.v499-head h3{margin:0;color:#f2cf7b;font-size:21px}.v499-close{background:#503b67;border:1px solid #9b81b6;color:white;border-radius:11px;padding:9px 13px}
+  .v499-muted{color:#c4b3d2;font-size:12px;line-height:1.7}.v499-section{background:#352648;border:1px solid #67507d;border-radius:13px;padding:12px;margin:12px 0}.v499-label{font-size:12px;color:#d7c4e8;margin-bottom:8px}.v499-boats{display:flex;align-items:center;gap:7px}.v499-boat{width:39px;height:39px;border-radius:10px;display:grid;place-items:center;font-size:19px;font-weight:800;border:1px solid #ffffff55}.v499-boat-1{background:#f4f4f4;color:#151515}.v499-boat-2{background:#252525;color:#fff}.v499-boat-3{background:#e4525c;color:#fff}.v499-boat-4{background:#4489e9;color:#fff}.v499-boat-5{background:#f3d34f;color:#151515}.v499-boat-6{background:#2cb171;color:#fff}
+  .v499-pair{display:flex;justify-content:space-between;gap:12px;margin:9px 0;font-size:14px}.v499-pair strong{color:#f4d17b}.v499-bets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.v499-bet{padding:10px 4px;border-radius:9px;background:#20162f;text-align:center;font-size:13px;border:1px solid #57436b}.v499-bet.win{background:#225c4d;border-color:#8bd9ba;color:#e3fff3;font-weight:800}.v499-bet small{display:block;margin-top:3px;color:#d0c3dc;font-size:10px}.v499-actions{display:flex;gap:8px;margin-top:12px}.v499-actions button{flex:1;padding:11px 6px;border:1px solid #9c7cba;border-radius:10px;background:#4a3663;color:#fff;font-weight:700}
+  @media(min-width:650px){.v499-overlay{align-items:center}.v499-dialog{border-radius:20px}}
+  `;document.head.append(reviewStyle);
+  let activeReview=null;
+  function openReview(venue,race){
+    const r=rows.find(x=>Number(x.venue)===venue&&Number(x.race)===race&&String(x.date)===date.value);
+    const daily=dayRaces.find(x=>Number(x.venue)===venue&&Number(x.race)===race);
+    const win=(daily?.status==='settled'?daily.winning:null)||r?.winning_trifecta||null;
+    const payout=Number(daily?.status==='settled'?daily.payout_per_100:r?.payout_per_100);
+    const validPayout=Number.isFinite(payout)&&payout>0;
+    const settled=Boolean(win&&validPayout);
+    const tickets=Array.isArray(r?.tickets)?r.tickets:[];
+    const stake=tickets.reduce((sum,t)=>sum+(Number(t.stake_yen)||0),0);
+    const matching=settled?tickets.filter(t=>t.combination===win):[];
+    const returned=settled?matching.reduce((sum,t)=>sum+(Number(t.stake_yen)||0)*payout/100,0):null;
+    const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const money=n=>Number(n).toLocaleString('ja-JP',{maximumFractionDigits:0})+'円';
+    const boats=settled&&/^([1-6]-){2}[1-6]$/.test(win)?win.split('-').map((n,i)=>'<div style="text-align:center"><div class="v499-boat v499-boat-'+n+'">'+n+'</div><small class="v499-muted">'+(i+1)+'着</small></div>').join(''):'<span class="v499-muted">結果未取得・未確定（非公式データ）</span>';
+    const ticketHtml=tickets.length?tickets.map(t=>'<div class="v499-bet '+(settled&&t.combination===win?'win':'')+'">'+esc(t.combination)+'<small>'+(settled&&t.combination===win?'的中 · ':'')+money(Number(t.stake_yen)||0)+'</small></div>').join(''):'<p class="v499-muted">保存済み事前予想がありません。結果のみ表示します。</p>';
+    const status=!r?'事前予想なし':!settled?'結果待ち':matching.length?'AI的中':'AI不的中';
+    const overlay=document.createElement('div');overlay.className='v499-overlay';overlay.setAttribute('role','presentation');
+    overlay.innerHTML='<section class="v499-dialog" role="dialog" aria-modal="true" aria-label="レース結果詳細"><div class="v499-head"><h3>'+esc(VENUES[venue-1])+' '+race+'R</h3><button class="v499-close" type="button">閉じる ×</button></div><p class="v499-muted">'+esc(date.value)+' ／ 非公式結果・公式未照合</p><div class="v499-section"><div class="v499-label">実際の着順（3連単）</div><div class="v499-boats">'+boats+'</div><div class="v499-pair"><span>3連単100円払戻</span><strong>'+(validPayout&&settled?money(payout):'未取得')+'</strong></div></div><div class="v499-section"><div class="v499-pair"><span>AI事前予想の判定</span><strong>'+status+'</strong></div><div class="v499-label">保存済み買い目（レース前の記録）</div><div class="v499-bets">'+ticketHtml+'</div>'+(r?'<p class="v499-muted">保存日時：'+esc(r.recorded_at||'不明')+' ／ 事前評価順位：この履歴APIでは未提供</p>':'')+'</div><div class="v499-section"><div class="v499-pair"><span>仮想投資</span><strong>'+(r?money(stake):'—')+'</strong></div><div class="v499-pair"><span>仮想払戻</span><strong>'+(r&&settled?money(returned):'—')+'</strong></div><div class="v499-pair"><span>仮想収支</span><strong>'+(r&&settled?(returned-stake>=0?'+':'')+money(returned-stake):'—')+'</strong></div><p class="v499-muted">実際の舟券購入・実収支ではありません。欠場・返還など特殊結果は公式情報で確認してください。</p></div><div class="v499-actions"><button type="button" data-action="entry">出走表を見る</button><button type="button" data-action="close">閉じる</button></div></section>';
+    const close=()=>{overlay.remove();activeReview=null;};
+    if(activeReview)activeReview.remove();activeReview=overlay;document.body.append(overlay);
+    overlay.querySelector('.v499-close').onclick=close;overlay.querySelector('[data-action="close"]').onclick=close;
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    overlay.querySelector('[data-action="entry"]').onclick=()=>{close();tab('raceView');document.getElementById('scheduleDate').value=date.value;document.getElementById('heroVenue').value=String(venue);document.getElementById('heroRace').value=String(race);document.getElementById('heroVenue').dispatchEvent(new Event('change'));document.getElementById('heroRace').dispatchEvent(new Event('change'));loadSchedule();document.getElementById('raceCockpit').scrollIntoView({behavior:'smooth',block:'start'});};
+    overlay.querySelector('.v499-close').focus();
+  }
   function paintResults(){
     const selectedDate=date.value;
     const dated=rows.filter(r=>String(r.date)===selectedDate);
@@ -1967,7 +2002,7 @@ loadAutoPredictions();
         if(hit&&validPayout){b.classList.add(payout<1000?'v497-tier1':payout<3000?'v497-tier2':payout<10000?'v497-tier3':payout<30000?'v497-tier4':'v497-tier5');b.dataset.payout=String(payout);}else if(hit){b.classList.add('v498-hit-unknown');}
         b.title=name+' '+n+'R：'+(daily?.status==='settled'?'確定出目 '+daily.winning+'／3連単100円払戻 '+Number(daily.payout_per_100).toLocaleString('ja-JP')+'円。':'結果未確定または未取得。')+(!r?' AI事前予想なし':settled?(hit?' AI的中':' AI不的中'):' AI結果照合待ち');
         b.setAttribute('aria-label',b.title);b.disabled=!daily&&!r;
-        if(daily||r)b.onclick=()=>{tab('raceView');document.getElementById('scheduleDate').value=date.value;document.getElementById('heroVenue').value=String(i+1);document.getElementById('heroRace').value=String(n);document.getElementById('heroVenue').dispatchEvent(new Event('change'));document.getElementById('heroRace').dispatchEvent(new Event('change'));loadSchedule();document.getElementById('raceCockpit').scrollIntoView({behavior:'smooth',block:'start'});};
+        if(daily||r)b.onclick=()=>openReview(i+1,n);
         board.append(b);
       }
     });
@@ -1988,14 +2023,7 @@ loadAutoPredictions();
       bottom.append(boats,el('span',settled?'払戻 '+yen(Number(r.payout_per_100)||0)+'/100円':'照合待ち','oc-money'));card.append(bottom);
       const bets=Array.isArray(r.tickets)?r.tickets.map(t=>t.combination).join(' ・ '):'不明';
       card.append(el('div','事前買い目 '+bets+' ／ '+(settled?'仮想収支 '+yen(Number(r.profit_yen)||0):'結果待ち'),'oc-sub'));
-      card.onclick=()=>{
-        tab('raceView');document.getElementById('scheduleDate').value=date.value;
-        document.getElementById('heroVenue').value=String(venue);
-        document.getElementById('heroRace').value=String(race);
-        document.getElementById('heroVenue').dispatchEvent(new Event('change'));
-        document.getElementById('heroRace').dispatchEvent(new Event('change'));
-        loadSchedule();document.getElementById('raceCockpit').scrollIntoView({behavior:'smooth',block:'start'});
-      };
+      card.onclick=()=>openReview(venue,race);
       target.append(card);
     }
   }
@@ -3474,4 +3502,75 @@ const existing=document.getElementById('v451Panel');if(existing)existing.insertA
 const $=id=>panel.querySelector('#'+id);
 const day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());$('v471Date').value=day;
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num=x=>Number(x||0).toLocaleSt
+const num=x=>Number(x||0).toLocaleString('ja-JP');const pct=x=>x==null?'--':Number(x).toFixed(2)+'%';
+const table=(head,rows)=>`<div class="v471-scroll"><table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const names={saved_first_6:'保存済み先頭6点',rank1_fixed_balanced:'1位固定・バランス',rank1_fixed_second_heavy:'1位固定・2着重視',rank1_and_rank3:'1位＋3位の2頭型',rank1_and_rank2:'1位＋2位の2頭型'};
+const venues={'1':'桐生','2':'戸田','3':'江戸川','4':'平和島','5':'多摩川','6':'浜名湖','7':'蒲郡','8':'常滑','9':'津','10':'三国','11':'びわこ','12':'住之江','13':'尼崎','14':'鳴門','15':'丸亀','16':'児島','17':'宮島','18':'徳山','19':'下関','20':'若松','21':'芦屋','22':'福岡','23':'唐津','24':'大村'};
+const fetchJson=async(path)=>{const res=await fetch(API+path,{cache:'no-store'});if(!res.ok)throw Error(path+' HTTP '+res.status);return res.json()};
+let busy=false,loaded='';
+async function refresh(){if(busy)return;const date=$('v471Date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ $('v471Status').textContent='日付を選択してください。';return;}
+busy=true;$('v471Reload').disabled=true;$('v471Status').textContent='統合分析と買い目比較を取得中…';
+try{const [a,l]=await Promise.all([fetchJson('/analytics-suite?date='+encodeURIComponent(date)),fetchJson('/ticket-layout-lab?date='+encodeURIComponent(date))]);
+if(!a.overall||!l.overall)throw Error('APIの応答形式が想定と異なります');
+const o=a.overall,rank=o.rank_first||{},n=Number(o.races||0),races=Number(l.eligible_settled_races||0);
+let html=`<div class="v471-cards"><div class="v471-card"><span class="v471-muted">照合済みレース（保存時の方式）</span><strong>${num(n)}</strong><span class="v471-muted">未照合 ${num(a.excluded?.pending)} 件</span></div><div class="v471-card"><span class="v471-muted">保存時の方式・仮想回収率</span><strong>${pct(o.roi_percent)}</strong><span class="v471-muted">収支 ${num(o.profit_yen)}円</span></div><div class="v471-card"><span class="v471-muted">保存時の方式・3連単的中</span><strong>${pct(o.exact_hit_rate_percent)}</strong><span class="v471-muted">${num(o.exact_hit)} / ${num(n)} レース</span></div><div class="v471-card"><span class="v471-muted">1着候補のカバー</span><strong>${pct(o.first_head_hit_rate_percent)}</strong><span class="v471-muted">旧2頭方式の結果を含む</span></div></div>`;
+html+='<h3>🎯 買い目5方式・各600円の仮想比較</h3>';
+const layouts=Object.entries(l.overall).sort((a,b)=>Number(b[1]?.roi_percent||0)-Number(a[1]?.roi_percent||0));
+html+=table(['方式','対象','的中','的中率','回収率','仮想収支'],layouts.map(([key,v])=>[esc(names[key]||key),num(v.races),num(v.hits),pct(v.hit_rate_percent),`<b class="${Number(v.roi_percent)>=100?'v471-good':''}">${pct(v.roi_percent)}</b>`,`${num(v.profit_yen)}円`]));
+html+=`<p class="v471-muted">${num(races)}レース・各方式600円／レース。保存済み先頭6点は旧12点の先頭6点を含み、新6点運用実績そのものではありません。</p>`;
+html+='<h3>📊 1着艇の事前AI評価順位</h3>';
+for(let i=1;i<=6;i++){const count=Number(rank[i]||0);html+=`<div class="v471-chart"><label>評価${i}位</label><span class="v471-track"><i style="width:${n?Math.min(100,100*count/n):0}%"></i></span><b>${num(count)}回</b></div>`}
+html+='<h3>🔍 外れ方の内訳（保存時の方式）</h3>';
+html+=table(['分類','レース数'],[['1着候補が外れ',num(o.miss_first)],['2着組み合わせが外れ',num(o.miss_second)],['3着組み合わせが外れ',num(o.miss_third)],['3連単的中',num(o.exact_hit)]]);
+html+='<h3>🏟️ 競艇場別・保存時の方式</h3>';
+html+=table(['競艇場','レース','3連単的中','回収率'],Object.entries(a.by_venue||{}).sort((x,y)=>Number(x[0])-Number(y[0])).map(([v,d])=>[esc((venues[v]||'場'+v)+' ('+v+')'),num(d.races),num(d.exact_hit),pct(d.roi_percent)]));
+html+='<h3>🧪 保存方式・採点世代の区別</h3>';
+html+=table(['方式／世代','レース','的中','回収率'],Object.entries(a.by_revision||{}).map(([k,v])=>[esc(k),num(v.races),num(v.exact_hit),pct(v.roi_percent)]));
+html+='<h3>📅 日別比較について</h3><p class="v471-muted">日付を切り替えて個別に検証できます。複数日をまとめた時系列集計APIは現行Worker v4.7.0にはないため、この画面では日別推移を合算表示していません。</p>';
+$('v471Body').innerHTML=html;
+$('v471Status').textContent=`${date}｜統合分析 ${num(n)}レース｜買い目比較 ${num(races)}レース｜Worker ${a.build_id||'不明'} / ${l.build_id||'不明'}`;loaded=date;
+}catch(e){$('v471Status').textContent='取得できませんでした：'+e.message+'。Worker v4.7.0の公開状態と通信を確認してください。';$('v471Body').innerHTML='';}
+finally{busy=false;$('v471Reload').disabled=false;}}
+$('v471Reload').addEventListener('click',refresh);$('v471Date').addEventListener('change',refresh);
+const nav=document.querySelector('nav');if(nav)nav.addEventListener('click',e=>{if(e.target.closest('[data-tab="stats"]')&&(!loaded||loaded!==$('v471Date').value))refresh()});
+if(!host.classList.contains('hidden'))refresh();
+})();
+</script>
+
+<style id="v494-style">
+#v494Intro{margin:12px 0;padding:16px;border:1px solid #8e70b0;border-radius:16px;background:linear-gradient(125deg,#302047,#1c2641)}
+#v494Intro h2{margin:0 0 6px;color:#f5d485;font-size:20px}#v494Intro p{color:#d9cce9;font-size:12px;line-height:1.6;margin:5px 0}
+.v494-group{margin:12px 0;border:1px solid #7c609d;border-radius:15px;background:#271d40;overflow:hidden}
+.v494-group>summary{cursor:pointer;list-style:none;padding:17px 15px;color:#f4d68c;font-weight:750;font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.v494-group>summary::-webkit-details-marker{display:none}.v494-group>summary::after{content:'＋';font-size:20px;color:#e9d7f9}.v494-group[open]>summary::after{content:'−'}
+.v494-group>summary small{display:block;color:#cfc2e0;font-weight:400;font-size:12px;margin-top:5px;line-height:1.5}
+.v494-group>.v494-content{padding:0 12px 12px}.v494-group .panel{margin:10px 0}.v494-group #v451Panel,.v494-group #v471Panel,.v494-group #v480Panel{margin:10px 0}
+#v494Intro .v494-tip{border-left:3px solid #e8c878;padding-left:10px}
+</style>
+<script id="v494-script">(()=>{'use strict';
+const stats=document.getElementById('stats'),manage=document.getElementById('manageView');if(!stats||!manage||document.getElementById('v494Intro'))return;
+const intro=document.createElement('div');intro.id='v494Intro';intro.innerHTML='<h2>📊 AI予想・成績分析</h2><p>最初に6点方式の運用成績を確認し、詳しい比較は下の項目から開けます。</p><p class="v494-tip">集計対象と方式が異なる数値は直接比較できません。表示する回収率は実購入ではなく、保存済み予想の仮想成績です。</p>';
+stats.prepend(intro);
+function group(parent,title,description,open){const d=document.createElement('details');d.className='v494-group';d.open=!!open;const sm=document.createElement('summary');const label=document.createElement('span');label.textContent=title;const small=document.createElement('small');small.textContent=description;label.append(small);sm.append(label);const content=document.createElement('div');content.className='v494-content';d.append(sm,content);parent.append(d);return content;}
+const strategy=group(stats,'🎯 買い目方式・採点比較','6点・8点・12点、5方式、AI評価順位などの比較');
+const history=group(stats,'📚 長期ログ・予想改善検証','日別・世代別・過去データによる時系列検証');
+const legacy=group(stats,'🗂️ 過去の詳細分析','旧形式の集計・詳細ツールを必要なときだけ表示');
+const ops=group(manage,'🛠️ 自動運用・データ品質','Cron、結果照合、保存漏れを確認');
+const backup=group(manage,'💾 バックアップ・端末内データ','JSONの書き出し・復元・端末内記録の削除');
+function move(id,target){const node=document.getElementById(id);if(node)target.append(node);return !!node;}
+move('v451Panel',strategy);move('v471Panel',strategy);move('v480Panel',history);
+move('v423CronPanel',ops);move('v490Panel',ops);move('v448Panel',ops);
+// Some versions use a different ID for the monitor; move only its known card if present.
+for(const node of [...stats.children]){if(node.id==='v494Intro'||node.classList.contains('v494-group')||node.id==='v422AnalyticsPanel')continue;
+ const title=node.querySelector?.('h2')?.textContent||'';
+ if(title.includes('自動予想・結果照合')||title.includes('自動保存・Cron')||title.includes('データ品質'))ops.append(node);
+ else if(title.includes('データの管理'))backup.append(node);
+ else legacy.append(node);
+}
+// Ensure core summary remains directly under the intro.
+const core=document.getElementById('v422AnalyticsPanel');if(core)intro.insertAdjacentElement('afterend',core);
+// Preserve the original DOM nodes, IDs, handlers, input values and calculation logic.
+const footer=document.querySelector('.footer');if(footer&&footer.textContent.includes('v4.8.1'))footer.innerHTML=footer.innerHTML.replace('v4.8.1','v4.9.4');
+})();</script>
+
+
