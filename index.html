@@ -4063,3 +4063,122 @@ function boot(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
+
+
+<!-- Enterprise Phase 6: independently compare current API prediction and stored D1 tickets. Read-only. -->
+<style id="enterprise-phase6-style">
+#enterprisePredictionCompare{margin:12px 0;padding:17px;border:1px solid #375771;border-radius:15px;background:#112438;color:#eaf3fc}
+#enterprisePredictionCompare .epc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#enterprisePredictionCompare h3{margin:0;font-size:16px}
+#enterprisePredictionCompare button{border:1px solid #4e8294;background:#236475;color:#fff;padding:10px 14px;border-radius:9px;font-weight:700}
+#enterprisePredictionCompare .epc-result{padding:12px;margin:12px 0;border:1px solid #49627a;border-radius:10px;background:#142c43;font-weight:700;line-height:1.65}
+#enterprisePredictionCompare .epc-result.ok{border-color:#398878;background:#123a38}
+#enterprisePredictionCompare .epc-result.warn{border-color:#b48c4a;background:#423322}
+#enterprisePredictionCompare .epc-result.bad{border-color:#bc6666;background:#42272d}
+#enterprisePredictionCompare .epc-details{font-size:12px;line-height:1.9;color:#c1d4e6;overflow-wrap:anywhere}
+#enterprisePredictionCompare .epc-note{font-size:11px;line-height:1.7;color:#abc3d7;margin:12px 0 0}
+</style>
+<script id="enterprise-phase6-script">
+(function(){'use strict';
+ const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+ function init(){
+  const anchor=document.getElementById('enterpriseSnapshotAudit');if(!anchor||document.getElementById('enterprisePredictionCompare'))return;
+  const root=document.createElement('section');root.id='enterprisePredictionCompare';root.setAttribute('aria-label','予想買い目照合');
+  const head=document.createElement('div');head.className='epc-head';const h=document.createElement('h3');h.textContent='予想買い目の整合性チェック';
+  const button=document.createElement('button');button.type='button';button.textContent='現在予想とD1を照合';head.append(h,button);
+  const result=document.createElement('div');result.className='epc-result';result.setAttribute('role','status');result.textContent='未照合。選択中のレースで照合を実行してください。';
+  const details=document.createElement('div');details.className='epc-details';
+  const note=document.createElement('p');note.className='epc-note';note.textContent='これは /predict の現在の応答と /snapshots の保存データの比較です。画面に既に描画された買い目との一致、展示取得の時刻、公式オッズ、予想精度を保証するものではありません。照合時に現在予想を再取得します。';
+  root.append(head,result,details,note);anchor.insertAdjacentElement('afterend',root);
+  const selection=()=>({date:document.getElementById('scheduleDate')?.value||'',venue:document.getElementById('heroVenue')?.value||'',race:document.getElementById('heroRace')?.value||''});
+  const keyOf=k=>[k.date,k.venue,k.race].join('|');
+  const norm=raw=>{if(typeof raw==='object'&&raw!==null)raw=raw.combination??raw.ticket??raw.bet;const m=String(raw??'').trim().match(/^([1-6])\s*[-－–>]\s*([1-6])\s*[-－–>]\s*([1-6])$/);if(!m||new Set(m.slice(1)).size!==3)return null;return m.slice(1).join('-');};
+  const extract=p=>{if(!p||!Array.isArray(p.tickets)||!p.tickets.length)return null;const out=p.tickets.map(norm);return out.every(Boolean)?out:null;};
+  const sorted=a=>a.slice().sort().join('|');
+  const show=(kind,message,lines=[])=>{result.className='epc-result'+(kind?' '+kind:'');result.textContent=message;details.replaceChildren();for(const line of lines){const div=document.createElement('div');div.textContent=line;details.append(div);}};
+  let seq=0;
+  const reset=()=>{seq++;button.disabled=false;show('','レースが変更されました。再照合してください。');};
+  async function fetchJson(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
+  async function check(){
+   const k=selection(),request=++seq;details.replaceChildren();
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(k.date)||!/^\d+$/.test(k.venue)||!/^\d+$/.test(k.race)){show('warn','確認不可：日付・場・レースを選択してください。');return;}
+   button.disabled=true;show('','現在予想と保存予想を取得しています…');
+   try{
+    const [live,store]=await Promise.all([fetchJson(API+'/predict?'+new URLSearchParams(k)),fetchJson(API+'/snapshots?date='+encodeURIComponent(k.date)+'&limit=500')]);
+    if(request!==seq||keyOf(k)!==keyOf(selection()))return;
+    if(!Array.isArray(store.snapshots))throw Error('保存APIの応答形式が不明');
+    const rows=store.snapshots.filter(x=>Number(x.venue_number??x.venue)===Number(k.venue)&&Number(x.race_number??x.race)===Number(k.race));
+    const liveTickets=extract(live);
+    if(!rows.length){show('warn','確認不可：取得範囲内にD1保存予想がありません。',['取得 '+store.snapshots.length+'件。未保存とは断定できません。','現在予想：'+(liveTickets?liveTickets.join(' / '):'買い目を解析できません')]);return;}
+    rows.sort((a,b)=>String(b.recorded_at||b.created_at||'').localeCompare(String(a.recorded_at||a.created_at||'')));
+    const row=rows[0];let saved=null;try{saved=typeof row.prediction_json==='string'?JSON.parse(row.prediction_json):row.prediction_json}catch(e){}
+    const savedTickets=extract(saved);
+    const version=String(row.model_version??saved?.model_version??'不明');
+    const base=['保存ID：'+String(row.id??'不明'),'保存モデル：'+version,'保存日時（原文）：'+String(row.recorded_at??row.created_at??'不明'),'現在予想：'+(liveTickets?liveTickets.join(' / '):'解析不可'),'D1保存予想：'+(savedTickets?savedTickets.join(' / '):'解析不可')];
+    if(!liveTickets||!savedTickets){show('warn','確認不可：片方または両方の買い目を解析できません。',base);return;}
+    const unique=a=>new Set(a).size===a.length;
+    if(!unique(liveTickets)||!unique(savedTickets)){show('warn','確認不可：重複買い目を検出しました。',base);return;}
+    const same=sorted(liveTickets)===sorted(savedTickets);
+    const phase=version.includes('exhibition-final')?'展示後モデル名':'事前／不明';
+    base.push('保存フェーズ：'+phase);
+    base.push('照合方法：組み合わせを順序に依存せず比較（購入金額は未照合）');
+    if(same){show('ok','一致：現在のAPI予想とD1保存予想の買い目が同じです。',base);}
+    else{show('bad','不一致：現在のAPI予想とD1保存予想の買い目が異なります。',base.concat(['保存と現在で計算時点・展示反映状況が異なる可能性があります。']));}
+   }catch(e){if(request===seq)show('warn','確認不可：APIの取得に失敗しました。',[String(e.message)]);}
+   finally{if(request===seq)button.disabled=false;}
+  }
+  button.addEventListener('click',check);
+  ['scheduleDate','heroVenue','heroRace'].forEach(id=>document.getElementById(id)?.addEventListener('change',reset));
+  document.getElementById('heroRaceDots')?.addEventListener('click',reset);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
+
+<!-- Enterprise release candidate: stages 7-9 consolidated; read-only and reversible -->
+<style id="enterprise-release-style">
+#enterpriseRelease{margin:14px 0 20px;padding:19px;background:#102238;border:1px solid #35546e;border-radius:17px;color:#edf5ff}
+#enterpriseRelease h2{margin:0;font-size:20px}#enterpriseRelease .er-muted{color:#b8cce0;font-size:12px;line-height:1.7}
+#enterpriseRelease .er-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+#enterpriseRelease button{border-radius:9px;padding:10px 13px;border:1px solid #467588;background:#1d5365;color:white;font-weight:700}
+#enterpriseRelease .er-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#enterpriseRelease .er-box{padding:12px;background:#0b1a2d;border:1px solid #304961;border-radius:12px;min-width:0}
+#enterpriseRelease .er-box b{display:block;margin:5px 0;font-size:15px}#enterpriseRelease .er-box small{color:#b4c8da;line-height:1.6}
+#enterpriseRelease .er-status{padding:11px;background:#1a3246;border-radius:9px;margin-top:12px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+#enterpriseRelease .er-check{display:flex;align-items:flex-start;gap:8px;margin:10px 0;font-size:12px;color:#c4d7e7}
+#enterpriseRelease .er-check input{margin-top:3px}
+#enterpriseRelease .er-badge{display:inline-block;padding:4px 8px;border-radius:6px;background:#4b3c28;color:#ffe0a2;font-size:11px}
+#enterpriseRelease .er-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+@media(max-width:540px){#enterpriseRelease{padding:14px}#enterpriseRelease .er-grid{grid-template-columns:1fr}#enterpriseRelease .er-actions button{flex:1}}
+</style>
+<script id="enterprise-release-script">
+(function(){'use strict';
+ function init(){
+  const anchor=document.getElementById('enterpriseDecision')||document.getElementById('enterpriseBar');
+  if(!anchor||document.getElementById('enterpriseRelease'))return;
+  const root=document.createElement('section');root.id='enterpriseRelease';root.setAttribute('aria-label','運用判断と公開前チェック');
+  const top=document.createElement('div');top.className='er-row';
+  const h=document.createElement('h2');h.textContent='運用判断センター';
+  const badge=document.createElement('span');badge.className='er-badge';badge.textContent='検証中・購入推奨ではありません';top.append(h,badge);
+  const p=document.createElement('p');p.className='er-muted';p.textContent='購入前に確認する情報をまとめた入口です。予想・展示・オッズ・D1保存の内容は既存画面で確認してください。未確認のデータを「確認済み」とは表示しません。';
+  const grid=document.createElement('div');grid.className='er-grid';
+  const boxes=[['展示・進入','6艇の展示タイム、展示ST、進入と取得時刻を確認'],['AI買い目','3連単の組み合わせと予想の計算時刻を確認'],['公式オッズ','最新オッズと締切をBOAT RACE公式サイトで確認'],['D1保存・照合','保存フェーズ、保存日時、現在予想との照合結果を確認']];
+  for(const [name,description] of boxes){const b=document.createElement('div');b.className='er-box';const title=document.createElement('b');title.textContent=name;const small=document.createElement('small');small.textContent=description;b.append(title,small);grid.append(b);}
+  const actions=document.createElement('div');actions.className='er-actions';
+  function action(label,handler){const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',handler);actions.append(b);return b;}
+  const state=document.createElement('div');state.className='er-status';state.setAttribute('role','status');state.textContent='未確認：この表示だけでは展示後の最終予想・オッズ・保存整合性を保証できません。';
+  function goTo(id){const node=document.getElementById(id);if(node){node.scrollIntoView({behavior:'smooth',block:'start'});state.textContent='対象の表示位置に移動しました。内容・更新時刻を確認してください。';}else state.textContent='この画面では対象が見つかりません。既存のレース画面から確認してください。';}
+  action('レースを確認',()=>goTo('raceDecisionHub'));
+  action('保存予想を確認',()=>goTo('enterpriseSnapshotAudit'));
+  action('買い目を照合',()=>goTo('enterprisePredictionCompare'));
+  action('分析を開く',()=>{const node=document.getElementById('stats');const nav=document.querySelector('[data-tab="stats"]');if(nav)nav.click();if(node)node.scrollIntoView({behavior:'smooth',block:'start'});else state.textContent='分析画面を確認してください。';});
+  const summary=document.createElement('details');summary.className='er-muted';const summaryTitle=document.createElement('summary');summaryTitle.textContent='公開前・購入前の確認チェックリスト';summary.append(summaryTitle);
+  const checks=['展示データの取得時刻と6艇分の有無を確認','3連単6点と合計購入金額を確認','現在予想とD1保存予想の照合結果を確認','公式オッズと締切を確認','実購入記録と仮想検証の収支を混同していない'];
+  checks.forEach((name,i)=>{const row=document.createElement('label');row.className='er-check';const input=document.createElement('input');input.type='checkbox';input.setAttribute('aria-label',name);const txt=document.createElement('span');txt.textContent=name;row.append(input,txt);summary.append(row);});
+  const foot=document.createElement('p');foot.className='er-muted';foot.textContent='このチェックは利用者の目視確認用です。チェックを入れてもAPIの検証が完了したことにはなりません。実購入・仮想6点・旧12点の成績は既存分析で別々に確認してください。';summary.append(foot);
+  root.append(top,p,grid,actions,state,summary);anchor.insertAdjacentElement('afterend',root);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
