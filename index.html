@@ -3900,3 +3900,77 @@ body.enterprise-simple #enterpriseDecision .ed-deep{display:none}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
 </script>
+
+
+<!-- Enterprise Phase 5: auditable D1 snapshot status, strictly read-only -->
+<style id="enterprise-phase5-css">
+#enterpriseSnapshotAudit{margin:12px 0;padding:16px;background:#0c2033;border:1px solid #42617b;border-radius:14px;color:#e8f3ff}
+#enterpriseSnapshotAudit .esa-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#enterpriseSnapshotAudit h3{margin:0;font-size:16px}
+#enterpriseSnapshotAudit button{border:1px solid #548097;border-radius:9px;background:#235066;color:white;padding:9px 13px;font-weight:700}
+#enterpriseSnapshotAudit .esa-status{margin:10px 0;color:#c1d5e6;font-size:12px;line-height:1.7}
+#enterpriseSnapshotAudit .esa-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+#enterpriseSnapshotAudit .esa-fact{border:1px solid #37536b;border-radius:10px;padding:10px;background:#122b41}
+#enterpriseSnapshotAudit .esa-fact span{display:block;font-size:11px;color:#aac5d8}
+#enterpriseSnapshotAudit .esa-fact strong{display:block;font-size:13px;margin-top:4px;overflow-wrap:anywhere}
+#enterpriseSnapshotAudit .esa-tickets{font-size:12px;line-height:1.9;margin-top:10px;overflow-wrap:anywhere}
+#enterpriseSnapshotAudit .esa-caution{font-size:11px;color:#e4c59a;margin:12px 0 0;line-height:1.7}
+</style>
+<script id="enterprise-phase5-js">
+(function(){'use strict';
+ const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+ function boot(){
+  const host=document.getElementById('raceDecisionHub');if(!host||document.getElementById('enterpriseSnapshotAudit'))return;
+  const root=document.createElement('section');root.id='enterpriseSnapshotAudit';root.setAttribute('aria-label','保存済み予想監査');
+  const head=document.createElement('div');head.className='esa-head';
+  const h=document.createElement('h3');h.textContent='保存済み予想の確認';
+  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='D1保存を照会';head.append(h,refresh);
+  const status=document.createElement('p');status.className='esa-status';status.setAttribute('role','status');status.textContent='選択レースのD1保存情報を照会できます。';
+  const facts=document.createElement('div');facts.className='esa-facts';
+  const tickets=document.createElement('div');tickets.className='esa-tickets';
+  const caution=document.createElement('p');caution.className='esa-caution';caution.textContent='重要：この画面は保存済み予想を表示するだけです。画面の再計算買い目との一致、展示反映の正確性、公式オッズとの整合は自動認証していません。保存が見つからない場合も、ページ取得範囲外の可能性があります。';
+  root.append(head,status,facts,tickets,caution);host.insertAdjacentElement('afterend',root);
+  const current=()=>({date:document.getElementById('scheduleDate')?.value||'',venue:document.getElementById('heroVenue')?.value||'',race:document.getElementById('heroRace')?.value||''});
+  const jst=raw=>{if(!raw)return '不明';const d=new Date(/(?:Z|[+-]\d\d:?\d\d)$/.test(String(raw))?raw:String(raw).replace(' ','T')+'Z');return Number.isNaN(d.getTime())?'形式不明（'+String(raw)+'）':new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(d)+' JST';};
+  function fact(name,value){const el=document.createElement('div');el.className='esa-fact';const l=document.createElement('span');l.textContent=name;const b=document.createElement('strong');b.textContent=value;el.append(l,b);facts.append(el);}
+  let sequence=0;
+  function reset(){sequence++;facts.replaceChildren();tickets.replaceChildren();status.textContent='レースが変更されました。「D1保存を照会」で最新情報を確認してください。';}
+  async function load(){const key=current();const request=++sequence;facts.replaceChildren();tickets.replaceChildren();
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(key.date)||!/^\d+$/.test(key.venue)||!/^\d+$/.test(key.race)){status.textContent='日付・場・レースを選択してください。';return;}
+   refresh.disabled=true;status.textContent='D1保存データを照会中…';
+   try{
+    const url=API+'/snapshots?date='+encodeURIComponent(key.date)+'&limit=500';
+    const response=await fetch(url,{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);
+    const data=await response.json();if(!Array.isArray(data.snapshots))throw Error('APIの応答形式が不明');
+    if(request!==sequence)return;
+    const rows=data.snapshots.filter(x=>Number(x.venue_number??x.venue)===Number(key.venue)&&Number(x.race_number??x.race)===Number(key.race));
+    if(!rows.length){status.textContent='この照会範囲内では保存予想が見つかりません（'+key.date+'・'+key.venue+'場 '+key.race+'R）。未保存と断定できません。';fact('照会結果','該当なし／未確定');fact('取得レコード数',String(data.snapshots.length));return;}
+    rows.sort((a,b)=>String(b.recorded_at||b.created_at||'').localeCompare(String(a.recorded_at||a.created_at||'')));
+    const row=rows[0];let pred=null;try{pred=typeof row.prediction_json==='string'?JSON.parse(row.prediction_json):row.prediction_json}catch(e){}
+    const version=String(row.model_version||pred?.model_version||'不明');
+    const final=version.includes('exhibition-final');
+    status.textContent='保存レコード '+rows.length+'件を確認（取得 '+data.snapshots.length+'件中）。最新の該当レコードを表示しています。';
+    fact('保存ID',String(row.id??'不明'));
+    fact('保存日時',jst(row.recorded_at||row.created_at));
+    fact('保存モデル',version);
+    fact('予想フェーズ',final?'展示後最終モデル名':'事前／不明（最終確認不可）');
+    const count=row.exhibition_times_received??pred?.exhibition_times_received;
+    fact('保存時の展示件数',count==null?'記録なし':String(count)+'艇');
+    fact('保存時の展示状態',String(row.exhibition_data_status??pred?.exhibition_data_status??'記録なし'));
+    if(pred){
+     const arr=Array.isArray(pred.tickets)?pred.tickets:[];
+     fact('保存済み買い目',arr.length+'点');
+     fact('保存済み購入想定',pred.total_stake_yen!=null?Number(pred.total_stake_yen).toLocaleString('ja-JP')+'円':'不明');
+     if(arr.length){const line=document.createElement('div');line.textContent='保存された組み合わせ：'+arr.map(t=>typeof t==='string'?t:String(t.combination??'不明')).join(' ／ ');tickets.append(line);}
+    }else fact('買い目JSON','未取得／解析不可');
+    if(rows.length>1){const line=document.createElement('div');line.textContent='同レースに複数保存があります。モデル名と保存日時を必ず確認してください。';tickets.append(line);}
+   }catch(e){if(request===sequence)status.textContent='照会失敗：'+e.message+'。Worker API・通信状況を確認してください。';}
+   finally{if(request===sequence)refresh.disabled=false;}
+  }
+  refresh.addEventListener('click',load);
+  ['scheduleDate','heroVenue','heroRace'].forEach(id=>document.getElementById(id)?.addEventListener('change',reset));
+  document.getElementById('heroRaceDots')?.addEventListener('click',reset);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
