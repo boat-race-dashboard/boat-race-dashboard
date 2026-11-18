@@ -4320,7 +4320,7 @@ const init=()=>{
  const root=document.getElementById('stats')||document.body;
  const panel=document.createElement('section');panel.id='v300-audit';
  panel.style.cssText='margin:18px 8px;padding:16px;border:1px solid #76668b;border-radius:14px;background:#211936;color:#f7f1ff';
- panel.innerHTML='<h2 style="margin:0 0 10px">公式結果・予想照合の全件監査 <small>v3.1</small></h2><p style="font-size:12px;opacity:.85">D1の公式結果と予想照合をレース別に表示。旧データの照合済み記録は自動削除しません。未照合は不的中ではありません。</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="date" id="v300-date"><button id="v300-refresh" type="button">監査を更新</button></div><p id="v300-status" role="status">読み込み待ち</p><div id="v300-summary"></div><div id="v300-rows" style="max-height:420px;overflow:auto"></div>';
+ panel.innerHTML='<h2 style="margin:0 0 10px">公式結果・予想照合の全件監査 <small>v3.3</small></h2><p style="font-size:12px;opacity:.85">D1の公式結果と予想照合をレース別に表示。旧データの照合済み記録は自動削除しません。未照合は不的中ではありません。</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input type="date" id="v300-date"><button id="v300-refresh" type="button">監査を更新</button></div><p id="v300-status" role="status">読み込み待ち</p><div id="v300-summary"></div><div id="v300-rows" style="max-height:420px;overflow:auto"></div>';
  root.prepend(panel);
  const $=id=>panel.querySelector('#'+id);
  $('v300-date').value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -4333,6 +4333,6 @@ const init=()=>{
   const labels={settled:'照合済み（保存済み）',official_saved_not_matched:'公式結果保存済み・未照合',unverified_ledger_result:'旧非公式結果のみ（確定対象外）',no_result_in_ledger:'公式結果未保存'};
   $('v300-rows').innerHTML='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th>場</th><th>R</th><th>予想数</th><th>状況</th></tr></thead><tbody>'+items.map(r=>'<tr><td style="padding:5px">'+escape(r.venue)+'</td><td>'+escape(r.race)+'</td><td>'+escape(r.snapshots)+'</td><td>'+escape(labels[r.reason]||r.reason)+'</td></tr>').join('')+'</tbody></table>';
   $('v300-status').textContent='取得成功 ／ Worker '+(data.build_id||'不明')+' ／ '+new Date().toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo'})+'更新';
- }catch(e){$('v300-status').textContent='監査取得失敗：'+e.message+'。Worker v5.1.0の公開状態を確認してください。';}finally{busy=false;$('v300-refresh').disabled=false;}}
+ }catch(e){$('v300-status').textContent='監査取得失敗：'+e.message+'。Worker APIの公開状態を確認してください。';}finally{busy=false;$('v300-refresh').disabled=false;}}
  $('v300-refresh').addEventListener('click',load);$('v300-date').addEventListener('change',load);load();setInterval(()=>{if(!document.hidden)load();},60000);
 };if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();})();</script>
