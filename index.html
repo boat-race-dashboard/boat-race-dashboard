@@ -1726,8 +1726,8 @@ loadAutoPredictions();
       const maximum=Number(data.total_fields)||data.ranking.reduce((n,r)=>n+(Number(r.total_fields)||8),0);
       const gap=Number(data.ranking[0]?.score||0)-Number(data.ranking[1]?.score||0);
       const insight=el('div',undefined,'v424-insight');
-      insight.append(el('strong','評価差 '+gap.toFixed(1)+'点 ／ データ充足 '+available+'/'+maximum+'（'+(available/maximum*100).toFixed(1)+'%）'));
-      insight.append(el('div','展示タイム '+(data.exhibition_times_received||0)+'/6艇 ／ これは的中確率や信頼度の保証ではありません。','muted'));
+      insight.append(el('strong','評価差 '+gap.toFixed(1)+'点 ／ 取得状況 '+available+'/'+maximum+'（'+(available/maximum*100).toFixed(1)+'%）'));
+      insight.append(el('div','展示 '+(data.exhibition_times_received||0)+'/6艇 ／ 取得率だけで見送り判定はしません。的中率・信頼度を保証する値ではありません。','muted'));
       tickets.append(insight);
       renderTicketPayouts(data.tickets,date,venue,race,tickets);
       // v4.9.3: Score-derived Plackett-Luce reference distribution, NOT calibrated hit probabilities.
@@ -1770,7 +1770,7 @@ loadAutoPredictions();
             row.append(el('span',o.probability.toFixed(2)+'%','v493-pct'));list.append(row);
           });
         };
-        render('all',10);
+        render('all',6);
         const all=el('details');all.append(el('summary','120通りをすべて見る・1着艇で絞る'));
         const filters=el('div',undefined,'v493-filter'),label=el('label','1着艇 '),select=el('select');
         [['all','全艇'],...Array.from({length:6},(_,i)=>[String(i+1),(i+1)+'号艇'])].forEach(([value,name])=>{const opt=el('option',name);opt.value=value;select.append(opt);});
@@ -1783,8 +1783,10 @@ loadAutoPredictions();
       // v5.8.1: Detailed scoring lives in the main AI prediction screen, not just analytics.
       if(Array.isArray(data.ranking)&&data.ranking.some(r=>r.detailed_factors)){
         const detailPanel=el('section',undefined,'v492-panel');
-        detailPanel.append(el('h3','🧮 新AI｜20項目100点・減点・展開補正'));
-        detailPanel.append(el('p','基本点（未取得項目は中立点）− リスク減点 ＋ ST相対補正。暫定モデルであり、実績による検証前です。','muted'));
+        detailPanel.append(el('h3','🧮 新AI｜20項目採点'));
+        const detailFold=el('details');
+        detailFold.append(el('summary','20項目の点数・減点理由を詳しく見る'));
+        detailFold.append(el('p','基本点 − リスク減点 ＋ ST相対補正。未取得項目は中立点。暫定モデルです。','muted'));
         const scroll=el('div',undefined,'v492-scroll'),table=el('table',undefined,'v492-table');
         const head=el('tr');head.append(el('th','評価項目'));
         const byBoat=new Map(data.ranking.map(r=>[Number(r.boat),r]));
@@ -1801,8 +1803,9 @@ loadAutoPredictions();
           addRow(f.label+' / '+f.max_points+'点',r=>{const x=r?.detailed_factors?.[f.id];return x?.data_available?x.points.toFixed(1):'未取得（中立）'});
         }
         addRow('減点理由',r=>r?.detailed_penalties?.length?r.detailed_penalties.map(x=>x.label+' '+x.points).join(' / '):'なし');
-        table.append(body);scroll.append(table);detailPanel.append(scroll);
-        detailPanel.append(el('p','コース別・今節ST・風波・戦法など、元データのない項目は未取得。STや展示による基本評価と減点には相関があり、効果は未検証です。','muted'));
+        table.append(body);scroll.append(table);detailFold.append(scroll);
+        detailFold.append(el('p','コース別・今節ST・風波・戦法などの未取得項目があります。採点と減点の効果は未検証です。','muted'));
+        detailPanel.append(detailFold);
         ranking.append(detailPanel);
       }
       // v4.9.3: 公式展示情報に近い6艇比較表。点数はWorkerから受け取った値をそのまま使用。
