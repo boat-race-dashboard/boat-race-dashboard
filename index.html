@@ -3361,6 +3361,77 @@ function init(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();</script>
 
+
+<style id="v550-compact-race-css">
+#v550QuickBar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:7px;padding:9px;margin:8px 0;background:#15243bf2;border:1px solid #6e608c;border-radius:12px;backdrop-filter:blur(10px)}
+#v550QuickBar button,.v550-toggle{border:1px solid #77648f!important;border-radius:9px!important;background:#34264f!important;color:#f8eaff!important;padding:9px 10px!important;font-size:12px!important;min-height:39px!important;font-weight:700!important}
+#v550QuickBar button[aria-expanded="true"],.v550-toggle[aria-expanded="true"]{background:#eacb7e!important;color:#261b37!important}
+#v550QuickBar .v550-title{font-size:12px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v550-section-closed{display:none!important}
+#v446Nav.v550-minimal .v446-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+#v446Nav.v550-minimal .v446-venue{min-height:42px;padding:5px 1px}
+#v446Nav.v550-minimal .v446-venue small{display:none}
+#v446Nav.v550-minimal .v446-venue b{font-size:12px}
+#v446Nav.v550-minimal .v446-head,#v446Nav.v550-minimal .v446-note{display:none}
+#v446Nav.v550-minimal{padding:8px}
+#v446Nav.v550-minimal .v446-switch{margin-bottom:6px}
+#v446Nav.v550-minimal .v446-switch button{padding:6px}
+#raceDecisionHub.v550-small .rdh-note,#raceDecisionHub.v550-small .rdh-state,#raceDecisionHub.v550-small .rdh-alert{display:none}
+#raceDecisionHub.v550-small{padding:9px;margin:7px 0}
+#raceDecisionHub.v550-small .rdh-steps{margin:6px 0 0;gap:5px}
+#raceDecisionHub.v550-small .rdh-step{padding:8px 4px}
+#raceDecisionHub.v550-small .rdh-step small{display:none}
+#raceDecisionHub.v550-small h3{font-size:14px}
+#raceDecisionHub.v550-small .rdh-pill{display:none}
+#enterpriseSnapshotAudit.v550-small .esa-status,#enterpriseSnapshotAudit.v550-small .esa-caution,
+#enterprisePredictionCompare.v550-small .epc-note{display:none}
+#enterpriseSnapshotAudit.v550-small,#enterprisePredictionCompare.v550-small{padding:10px;margin:7px 0}
+#enterpriseSnapshotAudit.v550-small .esa-facts:empty,#enterpriseSnapshotAudit.v550-small .esa-tickets:empty,
+#enterprisePredictionCompare.v550-small .epc-details:empty{display:none}
+#enterpriseSnapshotAudit.v550-small .esa-head h3,#enterprisePredictionCompare.v550-small .epc-head h3{font-size:14px}
+@media(max-width:390px){#v550QuickBar{gap:4px;padding:6px}#v550QuickBar button{padding:7px!important;font-size:11px!important}}
+</style>
+<script id="v550-compact-race-js">(()=>{
+'use strict';
+const IDS=['v446Nav','raceDecisionHub','enterpriseSnapshotAudit','enterprisePredictionCompare'];
+const SETTINGS='boat_v550_compact_prefs';
+let prefs={};
+try{prefs=JSON.parse(localStorage.getItem(SETTINGS)||'{}')||{}}catch{}
+function persist(){try{localStorage.setItem(SETTINGS,JSON.stringify(prefs))}catch{}}
+function state(id){return prefs[id]??(id==='v446Nav'?'compact':'closed')}
+function apply(id){
+ const node=document.getElementById(id);if(!node)return;
+ const st=state(id);
+ node.classList.toggle('v550-section-closed',st==='closed');
+ node.classList.toggle('v550-minimal',id==='v446Nav'&&st==='compact');
+ node.classList.toggle('v550-small',id!=='v446Nav'&&st==='compact');
+ const b=document.querySelector('[data-v550="'+id+'"]');
+ if(b){b.setAttribute('aria-expanded',String(st!=='closed'));b.textContent=({v446Nav:'開催場',raceDecisionHub:'判断ガイド',enterpriseSnapshotAudit:'D1保存',enterprisePredictionCompare:'買い目照合'})[id]+(st==='closed'?' ＋':st==='compact'?' ▾':' −')}
+}
+function toggle(id){
+ const st=state(id);prefs[id]=st==='closed'?'compact':st==='compact'?'full':'closed';
+ persist();apply(id);
+}
+function init(){
+ if(document.getElementById('v550QuickBar'))return;
+ const hero=document.getElementById('raceCockpit');
+ if(!hero)return;
+ const bar=document.createElement('div');bar.id='v550QuickBar';
+ const name=document.createElement('span');name.className='v550-title';name.textContent='補助パネル';
+ bar.append(name);
+ for(const id of IDS){
+  const b=document.createElement('button');b.type='button';b.dataset.v550=id;
+  b.addEventListener('click',()=>toggle(id));bar.append(b);
+ }
+ const anchor=document.getElementById('v446Nav')||hero;
+ anchor.parentNode.insertBefore(bar,anchor);
+ for(const id of IDS)apply(id);
+ // Reapply after the existing scripts finish creating optional audit panels.
+ for(const ms of [500,1800,4000])setTimeout(()=>IDS.forEach(apply),ms);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
+
 </body>
 </html>
 
