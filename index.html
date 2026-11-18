@@ -2005,7 +2005,7 @@ loadAutoPredictions();
     const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status)&&Number(r.returned_yen)>0)||(filter==='miss'&&['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status)&&Number(r.returned_yen)===0)||(filter==='pending'&&!['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status)));
     // v4.3.3: 24 venues x 12 races in one width-fitted matrix. Missing snapshots are NOT losses.
     const matrix=document.getElementById('v433ResultMatrix');matrix.replaceChildren();
-    const legend=el('div',undefined,'v498-legend');legend.innerHTML='<span class="v498-legend-title">結果の見方</span><span class="v498-pill"><i class="v498-dot" style="--dot:#d96364"></i>ハズレ</span><span class="v498-pill"><i class="v498-dot" style="--dot:#44cdb1"></i>未照合</span><span class="v498-pill"><i class="v498-dot" style="--dot:#81748f"></i>予想なし</span><details class="v498-payout-key"><summary>的中配当の色 <span aria-hidden="true">⌄</span></summary><div class="v498-tier-list"><span><i style="--dot:#c9ddec"></i>〜999円</span><span><i style="--dot:#8fd5b7"></i>1,000〜2,999円</span><span><i style="--dot:#f0ca77"></i>3,000〜9,999円</span><span><i style="--dot:#eaa064"></i>10,000〜29,999円</span><span><i style="--dot:#c18aeb"></i>30,000円〜</span></div></details>';matrix.append(legend);
+    const legend=el('div',undefined,'v498-legend');legend.innerHTML='<span class="v498-legend-title">結果の見方</span><span class="v498-pill"><i class="v498-dot" style="--dot:#d96364"></i>ハズレ</span><span class="v498-pill"><i class="v498-dot" style="--dot:#44cdb1"></i>未照合</span><span class="v498-pill"><i class="v498-dot" style="--dot:#81748f"></i>予想なし</span><span class="v498-pill"><i class="v498-dot" style="--dot:#8c8c8c"></i>中止</span><details class="v498-payout-key"><summary>的中配当の色 <span aria-hidden="true">⌄</span></summary><div class="v498-tier-list"><span><i style="--dot:#c9ddec"></i>〜999円</span><span><i style="--dot:#8fd5b7"></i>1,000〜2,999円</span><span><i style="--dot:#f0ca77"></i>3,000〜9,999円</span><span><i style="--dot:#eaa064"></i>10,000〜29,999円</span><span><i style="--dot:#c18aeb"></i>30,000円〜</span></div></details>';matrix.append(legend);
     const board=el('div',undefined,'v433-matrix');
     const corner=el('span','場','v433-matrix-label');board.append(corner);
     for(let n=1;n<=12;n++)board.append(el('span',String(n),'v433-matrix-col'));
@@ -2018,10 +2018,11 @@ loadAutoPredictions();
         const settled=['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r?.result_status),hit=settled&&Number(r.returned_yen)>0;
         const payout=Number(r?.payout_per_100);
         const validPayout=Number.isFinite(payout)&&payout>0;
-        const state=!daily&&!r?'none':!r?'v497-no-prediction':settled?(hit?'hit':'miss'):'pending';
-        const b=el('button',String(n),'v433-matrix-cell '+state);b.type='button';
+        const cancelled=daily?.status==='cancelled'&&daily?.cancellation_verified===true;
+        const state=cancelled?'v514-cancelled':!daily&&!r?'none':!r?'v497-no-prediction':settled?(hit?'hit':'miss'):'pending';
+        const b=el('button',cancelled?'中':String(n),'v433-matrix-cell '+state);b.type='button';
         if(hit&&validPayout){b.classList.add(payout<1000?'v497-tier1':payout<3000?'v497-tier2':payout<10000?'v497-tier3':payout<30000?'v497-tier4':'v497-tier5');b.dataset.payout=String(payout);}else if(hit){b.classList.add('v498-hit-unknown');}
-        b.title=name+' '+n+'R：'+(daily?.status==='settled'?'確定出目 '+daily.winning+'／3連単100円払戻 '+Number(daily.payout_per_100).toLocaleString('ja-JP')+'円。':'結果未確定または未取得。')+(!r?' AI事前予想なし':settled?(hit?' AI的中':' AI不的中'):' AI結果照合待ち');
+        b.title=name+' '+n+'R：'+(cancelled?'公式開催中止。的中・不的中の対象外。':daily?.status==='settled'?'確定出目 '+daily.winning+'／3連単100円払戻 '+Number(daily.payout_per_100).toLocaleString('ja-JP')+'円。':'結果未確定または未取得。')+(!r?' AI事前予想なし':settled?(hit?' AI的中':' AI不的中'):' AI結果照合待ち');
         b.setAttribute('aria-label',b.title);b.disabled=!daily&&!r;
         if(daily||r)b.onclick=()=>openReview(i+1,n);
         board.append(b);
@@ -2989,8 +2990,9 @@ async function refresh(force=false){
  inflight=(async()=>{try{
  const response=await fetch(API+'/schedule?date='+encodeURIComponent(day),{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);
  const json=await response.json();if(!Array.isArray(json.venues))throw Error('invalid schedule');
- const next=[];for(const v of json.venues){for(const x of v.race_closing_times||[]){const n=Number(v.number),r=Number(x.race??x.race_number??x.rno),time=parse(x.closing_at);if(n>=1&&n<=24&&r>=1&&r<=12&&Number.isFinite(time))next.push({v:n,r,time,raw:x.closing_at});}}
- rows=next;loaded=true;fetchDay=day;fetchTime=now();document.getElementById('v446Note').textContent='開催 '+new Set(rows.map(x=>x.v)).size+'場／取得 '+new Date().toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'})+'。非公式日程のため締切変更・中止は公式で確認してください。';render();
+ const cancelledVenues=json.venues.filter(v=>v.cancellation_status==='cancelled'&&v.cancellation_verified===true).map(v=>v.name);
+ const next=[];for(const v of json.venues){if(v.cancellation_status==='cancelled'&&v.cancellation_verified===true)continue;for(const x of v.race_closing_times||[]){const n=Number(v.number),r=Number(x.race??x.race_number??x.rno),time=parse(x.closing_at);if(n>=1&&n<=24&&r>=1&&r<=12&&Number.isFinite(time))next.push({v:n,r,time,raw:x.closing_at});}}
+ rows=next;loaded=true;fetchDay=day;fetchTime=now();document.getElementById('v446Note').textContent='開催 '+new Set(rows.map(x=>x.v)).size+'場／取得 '+new Date().toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'})+'。'+(cancelledVenues.length?'公式中止：'+cancelledVenues.join('、')+'（締切順から除外）。':'中止未確認の場は表示される場合があります。')+' 非公式日程のため締切変更は公式で確認してください。';render();
  }catch(e){loaded=false;rows=[];render();document.getElementById('v446Note').textContent='日程取得失敗：'+e.message+'。締切時刻を推測表示しません。';}finally{inflight=null;}})();return inflight;
 }
 nav.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;render();}));
@@ -3043,11 +3045,12 @@ async function load(force=false){
    for(let r=1;r<=12;r++){const cell=document.createElement('td'),x=map.get(v+'|'+r);
     if(!x){cell.textContent='—';cell.className='v483-wait'}
     else if(x.status==='settled'){cell.textContent=x.winning;cell.className='v483-done';cell.title='3連単100円払戻：'+x.payout_per_100+'円｜'+(x.officially_verified?'公式払戻ページ照合済':x.result_origin==='stored_earlier'?'D1保存済（公式照合未確認）':'非公式取得（公式照合未確認）');if(x.officially_verified)cell.dataset.official='true'}
+    else if(x.status==='cancelled'&&x.cancellation_verified===true){cell.textContent='中止';cell.className='v483-cancelled';cell.title='公式開催中止を確認。結果待ち・不的中ではありません';}
     else if(x.status==='nonstandard_or_incomplete'){cell.textContent='要確認';cell.className='v483-issue';cell.title=x.result_issue||''}
     else{const closing=x.closing_at?new Date(String(x.closing_at).replace(' ','T')+'+09:00'):null;const elapsed=closing&&Number.isFinite(closing.getTime())&&Date.now()>closing.getTime()+20*60000;const later=j.races.some(y=>y.venue===v&&y.race>r&&y.status==='settled');const gap=later&&x.closing_at==null;cell.textContent=gap?'欠落疑い':elapsed?'未取得':'結果待ち';cell.className=gap||elapsed?'v483-issue':'v483-wait';cell.title=gap?'後続レースの結果が存在します。取得元の欠落疑い。公式結果を確認してください。':elapsed?'締切20分後でも結果未取得。開催中止・遅延の可能性もあります。':'未開催または結果公開待ち';}row.append(cell)}body.append(row)}
   table.append(body);$('v483Table').replaceChildren(table);
   const cv=j.coverage||{};const verified=j.races.filter(x=>x.officially_verified===true).length;
-  $('v483Status').textContent=date+'｜掲載 '+j.races.length+'R／結果 '+j.settled+'R（公式確認 '+verified+'R・その他 '+(j.settled-verified)+'R）／未確定 '+j.pending+'R／要確認 '+j.nonstandard+'R'+(j.coverage?'｜締切20分超で未取得 '+cv.overdue_unresolved+'R・時刻不明 '+cv.unknown_time_unresolved+'R':'')+'｜取得 '+new Date(j.fetched_at_utc).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo'})+'（公式結果優先・未検証結果を含む）';
+  $('v483Status').textContent=date+'｜掲載 '+j.races.length+'R／結果 '+j.settled+'R（公式確認 '+verified+'R・その他 '+(j.settled-verified)+'R）／未確定 '+j.pending+'R／中止 '+(j.cancelled||0)+'R／要確認 '+j.nonstandard+'R'+(j.coverage?'｜締切20分超で未取得 '+cv.overdue_unresolved+'R・時刻不明 '+cv.unknown_time_unresolved+'R':'')+'｜取得 '+new Date(j.fetched_at_utc).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo'})+'（公式結果優先・未検証結果を含む）';
  }catch(e){$('v483Status').textContent='結果取得失敗：'+e.message+'（前回の表は残しています）'}finally{busy=false}
 }
 $('v483Refresh').addEventListener('click',()=>load(true));$('outcomeDate')?.addEventListener('change',()=>load(true));
@@ -4336,3 +4339,8 @@ const init=()=>{
  }catch(e){$('v300-status').textContent='監査取得失敗：'+e.message+'。Worker APIの公開状態を確認してください。';}finally{busy=false;$('v300-refresh').disabled=false;}}
  $('v300-refresh').addEventListener('click',load);$('v300-date').addEventListener('change',load);load();setInterval(()=>{if(!document.hidden)load();},60000);
 };if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();})();</script>
+
+<style id="v514-cancellation-style">
+.v483-cancelled{background:#444354!important;color:#fff!important;font-weight:700!important}
+.v433-matrix-cell.v514-cancelled{background:#4b4a59!important;color:#fff!important;border:2px dashed #b8b8bf!important;font-size:12px!important;letter-spacing:0!important}
+</style>
