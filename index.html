@@ -1099,13 +1099,14 @@ async function loadRaceDetail(){
     const table=el('table',undefined,'race-table');
     const head=document.createElement('thead');
     const hr=document.createElement('tr');
-    ['艇','選手名','級別コード','全国勝率','全国2連対率','平均ST','モーター','モーター2連対率','展示タイム','展示進入','展示ST'].forEach(k=>hr.append(el('th',k)));
+    ['艇','選手名','級別コード','F/L','全国勝率','全国2連対率','平均ST','モーター','モーター2連対率','展示タイム','展示進入','展示ST'].forEach(k=>hr.append(el('th',k)));
     head.append(hr);table.append(head);
     const body=document.createElement('tbody');
     for(const r of payload.racers){
       const tr=document.createElement('tr');
       const values=[
         r.entry_number,r.name,r.rank_number,
+        (r.flying_count==null?'F—':'F'+r.flying_count)+' / '+(r.late_count==null?'L—':'L'+r.late_count),
         r.national_win_rate,r.national_top_2_percent==null?null:r.national_top_2_percent+'%',
         r.average_start_timing,r.motor_number,
         r.motor_top_2_percent==null?null:r.motor_top_2_percent+'%',
@@ -1570,7 +1571,7 @@ loadAutoPredictions();
     racers.forEach(r=>{
       const row=el('div',undefined,'v40-compact-row');
       row.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number));
-      const name=el('div',undefined,'v40-name');name.append(el('span',({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')+' '+show(r.name)),el('small','登録 '+show(r.registration_number)));
+      const name=el('div',undefined,'v40-name');name.append(el('span',({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')+' '+show(r.name)),el('small','登録 '+show(r.registration_number)+' ／ F'+show(r.flying_count)+' L'+show(r.late_count)));
       const stats=el('div',undefined,'v40-stats');stats.append(el('b','全国 '+show(r.national_win_rate)),el('span','M '+show(r.motor_top_2_percent,'%')+' ／ ST '+show(r.average_start_timing)));
       row.append(name,stats);list.append(row);
     });return list;
@@ -1594,9 +1595,9 @@ loadAutoPredictions();
       const card=el('article',undefined,'cockpit-card');
       const top=el('div',undefined,'cockpit-card-top');
       top.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number));
-      const name=el('div',undefined,'cockpit-name');name.append(el('strong',show(r.name)),el('small','登録 '+show(r.registration_number)+' ／ '+({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')));top.append(name);card.append(top);
+      const name=el('div',undefined,'cockpit-name');name.append(el('strong',show(r.name)),el('small','登録 '+show(r.registration_number)+' ／ F'+show(r.flying_count)+' L'+show(r.late_count)+' ／ '+({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')));top.append(name);card.append(top);
       const metrics=el('div',undefined,'cockpit-metrics');
-      [['全国勝率',r.national_win_rate],['全国2連対率',show(r.national_top_2_percent,'%')],['当地勝率',r.local_win_rate],['平均ST',r.average_start_timing],['モーター',show(r.motor_number)+' / '+show(r.motor_top_2_percent,'%')],['ボート',show(r.boat_number)+' / '+show(r.boat_top_2_percent,'%')]].forEach(([k,v])=>{const m=el('div',undefined,'cockpit-metric');m.append(el('small',k),el('strong',show(v)));metrics.append(m);});
+      [['F/L', 'F'+show(r.flying_count)+' / L'+show(r.late_count)],['全国勝率',r.national_win_rate],['全国2連対率',show(r.national_top_2_percent,'%')],['当地勝率',r.local_win_rate],['平均ST',r.average_start_timing],['モーター',show(r.motor_number)+' / '+show(r.motor_top_2_percent,'%')],['ボート',show(r.boat_number)+' / '+show(r.boat_top_2_percent,'%')]].forEach(([k,v])=>{const m=el('div',undefined,'cockpit-metric');m.append(el('small',k),el('strong',show(v)));metrics.append(m);});
       card.append(metrics);list.append(card);
     });return list;
   }
@@ -1825,7 +1826,7 @@ loadAutoPredictions();
         details.append(section);
       }
       ranking.append(details);
-      ranking.append(el('p','8項目：全国勝率25・当地勝率12・モーター16・平均ST12・展示タイム12・展示ST8・進入コース10・級別5点。欠損は中立点。点数は的中確率ではありません。','muted'));
+      ranking.append(el('p','基本8項目100点＋F/L補正（F1 -2、F2以上 -5、L1につき -1・最大 -3）。F/L未取得なら補正なし。暫定値で検証前、的中確率ではありません。','muted'));
       // v4.2.6: display only real stored course/technique counts; never fabricate statistics.
       const historyPanel=el('details',undefined,'v424-breakdown');historyPanel.append(el('summary','選手別コース実績・決まり手（蓄積データ）'));
       const historyBody=el('div','選手履歴を確認中…','muted');historyPanel.append(historyBody);ranking.append(historyPanel);
