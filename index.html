@@ -3143,6 +3143,78 @@ let rows=[],filter='all';const labels={review:'検討対象',wait:'様子見',sk
 function renderRows(){const items=filter==='all'?rows:rows.filter(x=>x.classification===filter);const box=$('v4911List');if(!box)return;box.innerHTML=items.length?items.map(x=>`<div class="race"><b>${esc(x.venue)}場 ${esc(x.race)}R</b><span class="tag ${esc(x.classification)}">${labels[x.classification]||'判定不可'}</span><div class="hint">${esc(x.reason)} ／ 評価差 ${x.score_gap??'—'}点 ／ 充足率 ${pct(x.coverage_percent)} ／ 展示 ${n(x.exhibition_count)}艇</div><small>${x.settled?(x.hit?'仮想6点的中':'仮想6点不的中')+' ／ 払戻 '+yen(x.returned_yen):'未照合・検証対象外'} ／ 保存ID ${esc(x.snapshot_id)}</small></div>`).join(''):'<p class="hint">該当する保存済みレースはありません。</p>';}
 $('v4911Run').onclick=async()=>{const day=$('v4911Date').value;if(!/^\d{4}-\d{2}-\d{2}$/.test(day))return;$('v4911Run').disabled=true;$('v4911Status').textContent='保存済み予想を集計中…';$('v4911Body').innerHTML='';try{const res=await fetch('https://boat-race-api.7phr5nzkbt.workers.dev/race-selection-history?date='+encodeURIComponent(day),{cache:'no-store'});const d=await res.json();if(!res.ok)throw Error(d.error||'HTTP '+res.status);rows=d.rows||[];filter='all';const t=d.totals||{};const card=(label,value)=>`<div><small>${esc(label)}</small><b>${esc(value)}</b></div>`;let html='<div class="cards">'+card('検討対象',n(t.review)) +card('様子見',n(t.wait))+card('見送り',n(t.skip))+'</div>';html+=`<p class="hint">判定不可 ${n(t.unassessable)}件 ／ 保存済み ${n(rows.length)}件 ／ 結果照合 ${n(t.settled)}件 ／ 重複除外 ${n(d.pagination?.duplicates_excluded)}件</p>`;html+='<h3>仮想6点の検証</h3><div class="cards">'+card('全保存レース回収率',pct(t.all_settled_roi_percent))+card('検討対象の回収率',pct(t.review_settled_roi_percent))+card('検討対象の的中率',pct(t.review_hit_rate_percent))+'</div>';html+=`<p class="hint">検討対象の照合済み ${n(t.review_settled_races)}件 ／ 投資 ${yen(t.review_settled_stake_yen)} ／ 払戻 ${yen(t.review_settled_returned_yen)} ／ 収支 ${yen((t.review_settled_returned_yen||0)-(t.review_settled_stake_yen||0))}</p>`;html+='<h3>レース別の判定</h3><div class="filters" id="v4911Filters">'+Object.entries({all:'すべて',review:'検討対象',wait:'様子見',skip:'見送り',unassessable:'判定不可'}).map(([k,v])=>`<button data-filter="${k}" class="${k==='all'?'active':''}">${v}</button>`).join('')+'</div><div id="v4911List"></div>';$('v4911Body').innerHTML=html;$('v4911Filters').onclick=e=>{const b=e.target.closest('button[data-filter]');if(!b)return;filter=b.dataset.filter;p.querySelectorAll('#v4911Filters button').forEach(x=>x.classList.toggle('active',x===b));renderRows();};renderRows();$('v4911Status').textContent=day+' ／ Worker '+d.build_id+(d.pagination?.limited?' ／ 上限500件のため不完全':'')+' ／ 保存済み分のみ。結果後に設計した暫定ルールの後ろ向き検証です。';}catch(e){$('v4911Status').textContent='取得できません：'+e.message+'。Worker v4.9.11を先に公開してください。';}finally{$('v4911Run').disabled=false;}};
 })();</script>
+
+<style id="analysis-hub-v520-style">
+#analysisHub .ah-intro{position:relative}
+#analysisHub .ah-topline button{min-height:42px}
+#analysisHub .ah-tab{cursor:pointer;transition:background .15s,border-color .15s}
+#analysisHub .ah-tab:focus-visible,#analysisHub summary:focus-visible{outline:3px solid #f2d78d;outline-offset:2px}
+#analysisHub .ah-page{min-width:0}
+#analysisHub .ah-page .panel{max-width:100%;overflow-wrap:anywhere}
+#analysisHub .ah-page table{display:block;max-width:100%;overflow-x:auto}
+#analysisHub .ah-quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+#analysisHub .ah-quick-card{border:1px solid #5d6a89;border-radius:11px;background:#1b2940;padding:11px;min-width:0}
+#analysisHub .ah-quick-card span{display:block;color:#b9c8de;font-size:11px;margin-bottom:6px}
+#analysisHub .ah-quick-card strong{display:block;font-size:18px;overflow-wrap:anywhere}
+#analysisHub .ah-status{font-size:12px;color:#d1dcf0;margin:9px 0 0;line-height:1.6}
+#analysisHub .ah-help{font-size:12px;line-height:1.65;color:#d4d8e7;padding:10px 12px;border-left:3px solid #9eb0d4;background:#243049;margin:10px 0}
+#analysisHub .ah-fold[open]>summary{border-bottom:1px solid #625c78}
+#analysisHub .ah-fold>summary{min-height:44px}
+#analysisHub .ah-footer-note{font-size:11px;line-height:1.6;color:#bdc9dd;margin:14px 0}
+@media(min-width:720px){#analysisHub .ah-quick{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:390px){#analysisHub .ah-tab{padding:10px 6px;font-size:13px}#analysisHub .ah-tab small{font-size:10px}}
+</style>
+<script id="analysis-hub-v520-script">(()=>{
+'use strict';
+function ready(){
+ const hub=document.getElementById('analysisHub');if(!hub||hub.dataset.v520)return;hub.dataset.v520='1';
+ const intro=hub.querySelector('.ah-intro'),meta=hub.querySelector('#ahMeta');
+ const quick=document.createElement('div');quick.className='ah-quick';
+ const metrics=[['新AI保存予想','--','v520saved'],['的中率','--','v520hit'],['回収率','--','v520roi'],['仮想収支','--','v520profit']];
+ for(const [label,value,id] of metrics){const c=document.createElement('div');c.className='ah-quick-card';const s=document.createElement('span');s.textContent=label;const b=document.createElement('strong');b.id=id;b.textContent=value;c.append(s,b);quick.append(c)}
+ const first=hub.querySelector('[data-ah-page="overview"]');
+ if(first)first.insertBefore(quick,first.querySelector('.ah-note')?.nextSibling||first.firstChild);
+ const status=document.createElement('p');status.className='ah-status';status.id='ah520Status';status.setAttribute('role','status');
+ status.textContent='表示中の既存集計を読み取ります。保存0件は的中率0%を意味しません。';intro.append(status);
+ const help=document.createElement('p');help.className='ah-help';
+ help.textContent='数字は実際の舟券購入履歴ではなく、保存済み予想の仮想評価です。公式照合前・中止・予想なしは不的中に含めません。';
+ if(first)first.append(help);
+ const footer=document.createElement('p');footer.className='ah-footer-note';
+ footer.textContent='表示が更新されない場合は「表示を更新」を使用してください。元データは既存のWorkerが管理し、この画面は予想や結果を書き換えません。';hub.append(footer);
+ function textOf(el){return (el?.innerText||el?.textContent||'').replace(/\s+/g,' ').trim()}
+ function update(){
+  const panel=document.getElementById('v422AnalyticsPanel');if(!panel)return;
+  const source=textOf(panel);
+  // Only extract values from the original new-model performance panel, never infer them from the older model.
+  const rules=[
+   ['v520saved',/(?:保存済み予想|保存予想)\s*[:：]?\s*(\d+)\s*件/],
+   ['v520hit',/的中率\s*[:：]?\s*(\d+(?:\.\d+)?\s*%|--)/],
+   ['v520roi',/回収率\s*[:：]?\s*(\d+(?:\.\d+)?\s*%|--)/],
+   ['v520profit',/仮想収支\s*[:：]?\s*([+−\-]?\s*[¥￥]?\s*[\d,]+\s*円?|--)/]
+  ];
+  let found=0;
+  for(const [id,re] of rules){const m=source.match(re),el=document.getElementById(id);if(m){el.textContent=m[1].trim();found++}}
+  if(/\b0\s*件/.test(textOf(document.getElementById('v520saved')))){for(const id of ['v520hit','v520roi','v520profit'])document.getElementById(id).textContent='--'}
+  status.textContent=found?'既存の新AI集計を表示中（'+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+'確認）。未取得項目は -- と表示。':'既存の新AI集計の読み込み待ち。値は推測で補いません。';
+ }
+ const observer=new MutationObserver(()=>{if(hub.dataset.v520Timer)return;hub.dataset.v520Timer='1';requestAnimationFrame(()=>{hub.dataset.v520Timer='';update()})});
+ const panel=document.getElementById('v422AnalyticsPanel');
+ if(panel)observer.observe(panel,{subtree:true,childList:true,characterData:true});
+ update();
+ const buttons=[...hub.querySelectorAll('[data-ah]')];
+ function selectTab(k){const b=buttons.find(x=>x.dataset.ah===k);if(b){b.click();try{sessionStorage.setItem('boat_analysis_tab',k)}catch(_){}}}
+ buttons.forEach(b=>b.addEventListener('click',()=>{try{sessionStorage.setItem('boat_analysis_tab',b.dataset.ah)}catch(_){}}));
+ try{const saved=sessionStorage.getItem('boat_analysis_tab');if(['overview','tickets','deep','system'].includes(saved))selectTab(saved)}catch(_){}
+ // Refresh on returning to the analytics tab, but at most once per 3 minutes; no background polling.
+ let lastRefresh=0;
+ const refresh=()=>{if(Date.now()-lastRefresh<180000)return;lastRefresh=Date.now();const b=hub.querySelector('#ahRefresh');if(b&&!b.disabled)b.click()};
+ const analyticsTab=document.querySelector('[data-tab="stats"]');
+ if(analyticsTab)analyticsTab.addEventListener('click',()=>{if(document.visibilityState==='visible')refresh()});
+ hub.querySelector('#ahRefresh')?.addEventListener('click',()=>{lastRefresh=Date.now();status.textContent='各分析パネルに更新を要求しました。取得完了後の表示をご確認ください。'});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
+})();</script>
+
 </body>
 </html>
 
