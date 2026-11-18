@@ -3215,6 +3215,152 @@ function ready(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })();</script>
 
+
+<style id="v530-prediction-operations-style">
+#v530PredPanel{margin:12px 0;border:1px solid #6685a3;border-radius:15px;padding:15px;background:#14253a;color:#f2f6ff}
+#v530PredPanel h2{font-size:18px;margin:0 0 8px}
+#v530PredPanel .v530-muted{color:#b8c9de;font-size:12px;line-height:1.6}
+#v530PredPanel .v530-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+#v530PredPanel .v530-card{background:#20344d;border:1px solid #536985;border-radius:9px;padding:10px}
+#v530PredPanel .v530-card small{display:block;color:#c3d0e2}#v530PredPanel .v530-card b{font-size:18px}
+#v530PredPanel button{border:1px solid #9eb3d4;border-radius:8px;background:#364d70;color:white;padding:10px 14px;min-height:42px}
+#v530PredPanel .v530-item{border-top:1px solid #536985;padding:10px 0;line-height:1.7;font-size:13px}
+#v530PredPanel .v530-warning{border-left:3px solid #f1c877;padding:8px 10px;background:#333046;font-size:12px;line-height:1.6}
+#v530PredPanel .v530-ok{color:#9edfc4}#v530PredPanel .v530-warn{color:#f5d18a}
+</style>
+<script id="v530-prediction-operations-script">(()=>{
+'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n};
+function init(){
+ if(document.getElementById('v530PredPanel'))return;
+ const home=document.getElementById('home'),stats=document.getElementById('stats');
+ const target=home||stats;if(!target)return;
+ const panel=el('section');panel.id='v530PredPanel';
+ panel.append(el('h2','','🧭 予想運用チェック'),el('p','v530-muted','実際に予想する前に、データの取得状況・自動保存・照合の状態をまとめて確認。表示は閲覧専用です。'));
+ const btn=el('button','','最新状況を確認');btn.type='button';
+ const stamp=el('p','v530-muted','未確認');stamp.setAttribute('role','status');
+ const cards=el('div','v530-cards'),items=el('div'),note=el('p','v530-warning','予想順位は的中確率ではありません。非公式データに依存するため、展示・オッズ・締切は投票前に公式情報で再確認してください。');
+ panel.append(btn,stamp,cards,items,note);
+ target.insertBefore(panel,target.firstChild);
+ function metric(label,value){const c=el('div','v530-card');c.append(el('small','',label),el('b','',value));cards.append(c)}
+ function safeDate(s){const d=new Date(s);return Number.isFinite(d.getTime())?d:null}
+ function fmt(s){const d=safeDate(s);return d?d.toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'時刻不明'}
+ async function json(path){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);try{const r=await fetch(API+path,{cache:'no-store',signal:controller.signal});if(!r.ok)throw Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(timer)}}
+ let running=false,last=0;
+ async function refresh(){
+  if(running)return;running=true;btn.disabled=true;stamp.textContent='取得中…';cards.replaceChildren();items.replaceChildren();
+  const res=await Promise.allSettled([json('/recommendations'),json('/automation-status'),json('/cron-status')]);
+  const [recs,auto,cron]=res.map(r=>r.status==='fulfilled'?r.value:null);
+  const now=Date.now();last=now;
+  metric('現在の候補レース',recs?String(recs.upcoming_races??'--'):'取得不可');
+  metric('条件を満たす候補',recs?String(recs.qualifying_races??'--'):'取得不可');
+  metric('保存済み予想',auto?String(auto.stored_snapshots??'--'):'取得不可');
+  metric('未照合',auto?String(auto.pending??'--'):'取得不可');
+  const lastRun=safeDate(cron?.last_run?.ran_at_utc);
+  const age=lastRun?Math.round((now-lastRun.getTime())/60000):null;
+  const warnings=[];
+  if(!recs)warnings.push('候補取得APIに接続できません');
+  if(!auto)warnings.push('D1の保存状況を確認できません');
+  if(!cron)warnings.push('Cron履歴を確認できません');
+  if(age!==null&&age>180)warnings.push('Cron最終実行から約'+age+'分経過（実行間隔の設定は未検証）');
+  if(recs?.warning)warnings.push('候補順位は実験的なルールベース評価です');
+  stamp.textContent='確認時刻 '+new Date(now).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'})+' / Cron最終記録 '+(lastRun?fmt(lastRun):'不明');
+  if(warnings.length){const w=el('p','v530-warning',warnings.join('／'));items.append(w)}
+  if(recs&&Array.isArray(recs.items)){
+   const eligible=recs.items.filter(x=>x.passes_criteria===true).slice(0,5);
+   items.append(el('h3','','条件を満たすレース（最大5件）'));
+   if(!eligible.length)items.append(el('p','v530-muted','現時点では条件を満たす候補がありません。無理に推奨しません。'));
+   for(const x of eligible){
+    const d=el('div','v530-item');
+    const closing=safeDate(x.closing_at),remain=closing?Math.round((closing.getTime()-Date.now())/60000):null;
+    const label=(x.venue_name||'競艇場'+x.venue)+' '+x.race+'R';
+    d.append(el('strong','',label+'｜締切 '+fmt(x.closing_at)),el('div','v530-muted','データ充足 '+(x.coverage_percent??'--')+'% ／ 展示取得 '+(x.exhibition_count??'--')+'艇 ／ 評価差 '+(x.score_gap??'--')+'点'));
+    if(remain!==null&&remain<5)d.append(el('p','v530-warn','締切が近いため公式時刻を必ず確認'));
+    if(Array.isArray(x.tickets)&&x.tickets.length){const picks=x.tickets.slice(0,6).map(t=>typeof t==='string'?t:(t?.combination||t?.ticket||'')).filter(Boolean);if(picks.length)d.append(el('div','','仮想買い目：'+picks.join(' / ')))}
+    items.append(d);
+   }
+  }
+  if(!recs)items.append(el('p','v530-muted','候補一覧は表示できません。古いデータを最新として表示しません。'));
+  btn.disabled=false;running=false;
+ }
+ btn.addEventListener('click',refresh);
+ // No periodic requests; explicitly refresh when needed.
+ const tab=document.querySelector('[data-tab="home"]');
+ if(tab)tab.addEventListener('click',()=>{if(!last)refresh()},{once:true});
+ refresh();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
+
+<style id="v540-compact-style">
+.v540-nav{position:sticky;top:0;z-index:12;background:#12253beF;border:1px solid #526d8d;border-radius:12px;padding:10px;margin:8px 0 12px;backdrop-filter:blur(10px)}
+.v540-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.v540-head strong{font-size:13px;color:#e4edff}
+.v540-all{border:1px solid #748ca9!important;border-radius:7px!important;padding:7px 10px!important;min-height:35px!important;font-size:12px!important;background:#263e59!important;color:#f2f5ff!important}
+.v540-choices{display:flex;gap:7px;overflow-x:auto;scrollbar-width:thin;padding:1px 1px 6px;scroll-snap-type:x proximity}
+.v540-choice{flex:0 0 auto;max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid #647b9b!important;background:#22334d!important;border-radius:8px!important;color:#e4eaf7!important;padding:10px!important;font-size:12px!important;min-height:42px!important;scroll-snap-align:start}
+.v540-choice[aria-selected="true"]{background:#5b4977!important;border-color:#e6c47c!important;box-shadow:inset 0 0 0 1px #e6c47c}
+.v540-hidden{display:none!important}
+.v540-nav .v540-desc{font-size:11px;color:#c5d1e2;margin:3px 0 0;line-height:1.5}
+.v540-top{position:fixed;right:14px;bottom:85px;z-index:80;width:44px;height:44px;border-radius:50%!important;background:#40577a!important;border:1px solid #8da1c1!important;color:#fff!important;box-shadow:0 3px 15px #0008;font-size:19px!important}
+@media(min-width:760px){.v540-choices{flex-wrap:wrap;overflow:visible}.v540-top{right:24px}}
+</style>
+<script id="v540-compact-script">(()=>{
+'use strict';
+const tabs=['home','outcomes','add','results','stats','manage'];
+const state={};
+function label(n,i){const h=n.querySelector('h2,h3,summary');let t=(h?.textContent||n.getAttribute('aria-label')||'項目 '+(i+1)).replace(/\s+/g,' ').trim();return t.length>27?t.slice(0,26)+'…':t}
+function panels(section){
+ // Keep direct child panels; group existing nested analysis sections without moving any nodes or changing handlers.
+ return [...section.children].filter(n=>n.classList?.contains('panel')||n.id==='v530PredPanel'||n.classList?.contains('v494-group')||n.tagName==='DETAILS')
+ .filter(n=>!n.hidden&&n.style.display!=='none'&&getComputedStyle(n).display!=='none');
+}
+function make(id){
+ const sec=document.getElementById(id);if(!sec)return;
+ let nav=sec.querySelector(':scope > .v540-nav');
+ if(!nav){nav=document.createElement('div');nav.className='v540-nav';nav.setAttribute('aria-label','ページ内メニュー');
+  const head=document.createElement('div');head.className='v540-head';
+  const title=document.createElement('strong');title.textContent='ページ内メニュー';
+  const all=document.createElement('button');all.type='button';all.className='v540-all';
+  head.append(title,all);
+  const choices=document.createElement('div');choices.className='v540-choices';choices.setAttribute('role','tablist');
+  const desc=document.createElement('p');desc.className='v540-desc';desc.textContent='項目を選ぶと、その内容だけを表示します。';
+  nav.append(head,choices,desc);sec.insertBefore(nav,sec.firstChild);
+  all.addEventListener('click',()=>{const s=state[id]||{};s.all=!s.all;state[id]=s;draw(id);});
+ }
+ draw(id);
+}
+function draw(id){
+ const sec=document.getElementById(id),nav=sec?.querySelector(':scope > .v540-nav');if(!nav)return;
+ const list=panels(sec).filter(n=>n!==nav),choices=nav.querySelector('.v540-choices'),all=nav.querySelector('.v540-all');
+ if(list.length<2){nav.style.display='none';list.forEach(n=>n.classList.remove('v540-hidden'));return}
+ nav.style.display='';
+ let s=state[id];if(!s){s={all:false,selected:0};state[id]=s}
+ s.selected=Math.min(s.selected,list.length-1);
+ const signature=list.map((n,i)=>n.id||label(n,i)).join('|');
+ if(nav.dataset.signature!==signature){nav.dataset.signature=signature;choices.replaceChildren();
+  list.forEach((n,i)=>{const b=document.createElement('button');b.type='button';b.className='v540-choice';b.textContent=label(n,i);b.dataset.index=i;b.setAttribute('role','tab');
+   b.addEventListener('click',()=>{s.all=false;s.selected=i;draw(id);window.scrollTo({top:Math.max(0,nav.getBoundingClientRect().top+window.scrollY-12),behavior:'smooth'})});
+   choices.append(b)});
+ }
+ list.forEach((n,i)=>n.classList.toggle('v540-hidden',!s.all&&i!==s.selected));
+ [...choices.children].forEach((b,i)=>b.setAttribute('aria-selected',String(!s.all&&i===s.selected)));
+ all.textContent=s.all?'1項目表示に戻す':'すべて表示';
+ nav.querySelector('.v540-desc').textContent=s.all?'全項目を表示中。必要な項目を選ぶと短くなります。':'選択中：'+label(list[s.selected],s.selected)+'（全'+list.length+'項目）';
+}
+function init(){
+ tabs.forEach(make);
+ // Some panels are inserted by existing code after initial load.
+ setTimeout(()=>tabs.forEach(make),1800);
+ setTimeout(()=>tabs.forEach(make),4500);
+ document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>make(b.dataset.tab),30)));
+ let top=document.getElementById('v540Top');
+ if(!top){top=document.createElement('button');top.id='v540Top';top.className='v540-top';top.type='button';top.textContent='↑';top.title='画面上部へ戻る';top.setAttribute('aria-label','画面上部へ戻る');top.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));document.body.append(top)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
+
 </body>
 </html>
 
