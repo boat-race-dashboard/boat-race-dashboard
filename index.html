@@ -4844,3 +4844,60 @@ for(const [k,n] of Object.entries(names)){const ts=d.strategies?.[k];h+=`<div cl
 const miss=(d.features||[]).filter(x=>x.missing_count>0);if(miss.length)h+='<details><summary>欠損データ</summary><p class="shmuted">'+miss.map(x=>`${esc(x.boat)}号艇：${esc((x.missing_fields||[]).join(', '))}`).join(' / ')+'</p></details>';$('shpred').innerHTML=h}catch(e){$('shpstatus').textContent='取得失敗：'+e.message+'（開催データや入力条件を確認）'}}
 $('shload').addEventListener('click',load);$('shpredict').addEventListener('click',predict);$('ahRefresh')?.addEventListener('click',()=>{if(page.classList.contains('ah-active'))load()});load();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();})();</script>
+
+<script id="v584-odds-and-official-safety">(()=>{'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const el=id=>document.getElementById(id);
+const selected=()=>({date:el('scheduleDate')?.value||'',venue:el('heroVenue')?.value||'',race:el('heroRace')?.value||''});
+const key=s=>[s.date,s.venue,s.race].join('/');
+function init(){
+ const desk=el('v570Desk'),notice=el('oddsNotice');if(!desk||!notice)return;
+ let current=key(selected()),requesting=false,validOddsKey='',oddsAt='';
+ const odds=el('v570Odds');
+ const panel=document.createElement('section');panel.id='officialReadOnlyPanel';
+ panel.style.cssText='margin:12px 0;padding:12px;border:1px solid #7d7199;border-radius:12px;background:#19283d;color:#f0ebff;font-size:12px;line-height:1.7';
+ const title=document.createElement('strong');title.textContent='公式データ取得・安全診断（読み取り専用）';
+ const state=document.createElement('p');state.textContent='公式サイトの接続可否は未確認。公式値への切り替えは検証完了まで保留します。';
+ const button=document.createElement('button');button.type='button';button.textContent='公式データの接続を診断';button.style.cssText='padding:8px 12px;border-radius:8px;background:#51436c;color:white;border:1px solid #8c7eae';
+ const links=document.createElement('div');links.style.cssText='display:flex;gap:12px;flex-wrap:wrap;margin-top:8px';
+ panel.append(title,state,button,links);desk.append(panel);
+ function refreshLinks(){const s=selected();links.replaceChildren();if(!/^\d{4}-\d{2}-\d{2}$/.test(s.date)||!/^\d+$/.test(s.venue)||!/^\d+$/.test(s.race))return;
+ const q='hd='+s.date.replace(/-/g,'')+'&jcd='+String(s.venue).padStart(2,'0')+'&rno='+s.race;
+ for(const [name,path] of [['公式出走表','racelist'],['公式直前情報','beforeinfo'],['公式オッズ','odds3t']]){const a=document.createElement('a');a.href='https://www.boatrace.jp/owpc/pc/race/'+path+'?'+q;a.target='_blank';a.rel='noopener noreferrer';a.textContent=name;a.style.color='#f2d17f';links.append(a)} }
+ function sync(){const k=key(selected());if(k!==current){current=k;validOddsKey='';oddsAt='';odds.textContent='要確認';state.textContent='レースが変わりました。公式データは未確認です。';refreshLinks();return}
+ const t=notice.textContent||'';const m=t.match(/取得\s*(\d+)\/120通り/);
+ if(m&&Number(m[1])===120){ // Confirm current race through a newly initiated fetch, not stale DOM contents.
+  if(validOddsKey===k){odds.textContent='120/120取得';odds.title='公式掲載オッズを取得（最終オッズとは限りません）。'+oddsAt;}
+ }else if(validOddsKey===k){validOddsKey='';odds.textContent='要確認'}
+ }
+ // Record the active race when a refresh is initiated; ignore old odds responses after selection changes.
+ const refresh=el('oddsRefresh');
+ function markRequest(){requesting=true;const requestKey=key(selected());validOddsKey='';odds.textContent='取得中';
+ const mo=new MutationObserver(()=>{const t=notice.textContent||'';if(!t.includes('取得中')&&!t.includes('取得します')){mo.disconnect();requesting=false;if(requestKey===key(selected())&&/取得\s*120\/120通り/.test(t)){validOddsKey=requestKey;oddsAt=new Date().toLocaleString('ja-JP');}sync()}});
+ mo.observe(notice,{childList:true,subtree:true,characterData:true});setTimeout(()=>{mo.disconnect();requesting=false;sync()},16000);
+ }
+ refresh?.addEventListener('click',markRequest,{capture:true});
+ // Also capture automatic/tab-triggered odds fetches from the existing dashboard.
+ let pendingKey='',sawLoading=false;
+ const oddsObserver=new MutationObserver(()=>{
+   const t=notice.textContent||'',k=key(selected());
+   if(/オッズを取得中|非公式オッズを取得中|取得中…/.test(t)){
+     if(!sawLoading){pendingKey=k;sawLoading=true;validOddsKey='';odds.textContent='取得中';}
+   }else if(sawLoading){
+     sawLoading=false;
+     if(pendingKey===k&&/取得\s*120\/120通り/.test(t)){
+       validOddsKey=k;oddsAt=new Date().toLocaleString('ja-JP');
+     }
+     sync();
+   }
+ });
+ oddsObserver.observe(notice,{childList:true,subtree:true,characterData:true});
+ // Clicking the odds tab can initiate a fetch as well; do not assert current-race validity without an explicit refresh.
+ for(const id of ['scheduleDate','heroVenue','heroRace'])el(id)?.addEventListener('change',sync);
+ button.addEventListener('click',async()=>{const s=selected(),k=key(s);button.disabled=true;state.textContent='公式サイトへの接続を確認中…';try{const r=await fetch(API+'/official-source-diagnostics?'+new URLSearchParams(s),{cache:'no-store'});const j=await r.json();if(k!==key(selected()))return;if(!r.ok)throw Error('HTTP '+r.status);const names={racelist:'出走表',exhibition:'直前情報',odds:'オッズ'};
+ state.textContent=Object.entries(j.official_sources||{}).map(([n,v])=>names[n]+': '+(v.reachable?'HTML接続成功（項目未検証）':'取得未確認')).join(' ／ ')+'。AI入力の公式切替は未実施・D1変更なし。';
+ }catch(e){if(k===key(selected()))state.textContent='公式診断を取得できません：'+String(e.message).slice(0,90)+'。既存AIへの影響はありません。'}finally{button.disabled=false}});
+ refreshLinks();sync();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
