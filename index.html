@@ -3432,6 +3432,95 @@ function init(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();</script>
 
+<style id="v560-style">
+#v560Dock{background:#19263e;border:1px solid #8365a6;border-radius:15px;padding:12px;margin:10px 0;color:#f5ecff}
+#v560Dock .v560-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+#v560Dock .v560-head strong{font-size:17px}#v560Dock .v560-head small{font-size:11px;color:#d5c8e4}
+#v560Dock .v560-list{display:flex;overflow-x:auto;gap:8px;padding:4px 1px 8px;scroll-snap-type:x proximity}
+#v560Dock .v560-list button{flex:0 0 132px;scroll-snap-align:start;background:#36274f;color:#fff;border:1px solid #846ca4;border-radius:10px;padding:10px;text-align:left;min-height:67px}
+#v560Dock .v560-list button b{display:block;font-size:14px}#v560Dock .v560-list button span{display:block;color:#f1d38e;margin-top:4px;font-size:13px}
+#v560Dock .v560-list button.v560-active{border:2px solid #f1d38e;background:#53406c}
+#v560Dock .v560-tools{display:flex;gap:8px;align-items:center;margin-top:6px}
+#v560Dock .v560-tools button{padding:9px 10px;border:1px solid #8e76ac;background:#2f3a56;color:white;border-radius:8px;font-size:12px;min-height:40px}
+#v560Dock .v560-note{font-size:11px;color:#c8bcd8;line-height:1.5;margin-top:8px}
+#raceCockpit.v560-condensed .hero-choose,#raceCockpit.v560-condensed #heroRaceDots,#raceCockpit.v560-condensed .hero-race-label,#raceCockpit.v560-condensed .hero-overline,#raceCockpit.v560-condensed .hero-caption{display:none!important}
+#raceCockpit.v560-condensed .hero-top{margin-bottom:6px}#raceCockpit.v560-condensed .hero-title{font-size:21px}
+#v446Nav.v560-hide-nav{display:none!important}
+#v560Dock .v560-status{font-size:12px;color:#e6c47c}
+</style>
+<script id="v560-script">(()=>{
+'use strict';
+function init(){
+ const hero=document.getElementById('raceCockpit'),nav=document.getElementById('v446Nav');if(!hero||!nav||document.getElementById('v560Dock'))return;
+ const dock=document.createElement('section');dock.id='v560Dock';dock.innerHTML='<div class="v560-head"><strong>⏱ 締切順で選ぶ</strong><small>本日の予定時刻</small></div><div class="v560-list" id="v560List"><span class="v560-status">締切情報を読み込み中…</span></div><div class="v560-tools"><button type="button" id="v560Next">次の締切へ</button><button type="button" id="v560Expand">レース選択を開く</button><button type="button" id="v560Reload">更新</button></div><div class="v560-note" id="v560Note">非公式の締切予定です。公式の締切時刻・中止・展示・オッズを必ず確認してください。</div>';
+ nav.parentNode.insertBefore(dock,nav);
+ const list=dock.querySelector('#v560List'),note=dock.querySelector('#v560Note'),venue=document.getElementById('heroVenue'),race=document.getElementById('heroRace');
+ const btnMode=nav.querySelector('[data-mode="closing"]');if(btnMode)btnMode.click();
+ nav.classList.add('v560-hide-nav');hero.classList.add('v560-condensed');
+ // Override earlier optional panel hiding only for the race navigation; other user settings remain intact.
+ const v550Button=document.querySelector('[data-v550="v446Nav"]');if(v550Button)v550Button.style.display='none';
+ let expanded=false;
+ function sync(){
+  const src=nav.querySelectorAll('.v446-next');const now=Date.now();
+  list.replaceChildren();
+  if(!src.length){const x=document.createElement('span');x.className='v560-status';x.textContent=(nav.querySelector('#v446Content')?.textContent||'').includes('取得できません')?'締切データを取得できません。更新してください。':'締切予定のあるレースはありません。';list.append(x);return}
+  [...src].slice(0,8).forEach(b=>{
+   const c=document.createElement('button');c.type='button';const title=b.querySelector('b')?.textContent||'レース';const time=b.querySelector('span')?.textContent||'時刻不明';
+   const t=document.createElement('b');t.textContent=title;const x=document.createElement('span');x.textContent='締切予定 '+time;c.append(t,x);
+   const active=title.includes(venue?.selectedOptions?.[0]?.textContent?.replace(/^\d+\s*/,''))&&title.endsWith(' '+race?.value+'R');c.classList.toggle('v560-active',!!active);
+   c.addEventListener('click',()=>{b.click();document.querySelector('[data-cockpit-tab="prediction"]')?.click();sync();hero.scrollIntoView({behavior:'smooth',block:'start'})});list.append(c);
+  });
+ }
+ dock.querySelector('#v560Next').addEventListener('click',()=>{const first=nav.querySelector('.v446-next');if(first){first.click();document.querySelector('[data-cockpit-tab="prediction"]')?.click();sync();hero.scrollIntoView({behavior:'smooth',block:'start'})}else note.textContent='次の締切予定がありません。'});
+ dock.querySelector('#v560Expand').addEventListener('click',()=>{expanded=!expanded;hero.classList.toggle('v560-condensed',!expanded);nav.classList.toggle('v560-hide-nav',!expanded);dock.querySelector('#v560Expand').textContent=expanded?'レース選択を閉じる':'レース選択を開く';if(expanded){nav.querySelector('[data-mode="venues"]')?.click()}else{nav.querySelector('[data-mode="closing"]')?.click()}sync()});
+ dock.querySelector('#v560Reload').addEventListener('click',()=>{const d=document.getElementById('scheduleDate');if(d)d.dispatchEvent(new Event('change',{bubbles:true}));note.textContent='日程を再取得しています…';setTimeout(()=>{sync();note.textContent='非公式の締切予定です。公式の締切時刻・中止・展示・オッズを必ず確認してください。'},1300)});
+ const target=nav.querySelector('#v446Content');if(target){let scheduled=false;new MutationObserver(()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;sync()})}).observe(target,{childList:true,subtree:true})}
+ venue?.addEventListener('change',sync);race?.addEventListener('change',sync);
+ setTimeout(sync,100);setTimeout(sync,1200);
+ // Keep the compact dock aligned to today's live closing-order list, not a duplicate schedule calculation.
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
+<style id="v570-css">
+#v570Desk{background:linear-gradient(145deg,#192a40,#251d3b);border:1px solid #8b77a7;border-radius:16px;padding:13px;margin:10px 0;color:#f8f2ff}
+#v570Desk *{box-sizing:border-box}#v570Desk .v570-line{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}#v570Desk .v570-kicker{font-size:11px;color:#c9c1da}#v570Desk .v570-title{font-size:18px;font-weight:800}#v570Desk .v570-timer{font-size:21px;font-weight:900;font-variant-numeric:tabular-nums;color:#f3d58b}#v570Desk .v570-status{font-size:12px;line-height:1.6;color:#d9d0e7}#v570Desk .v570-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:11px 0}#v570Desk .v570-cell{background:#2b3150;border:1px solid #6c6689;border-radius:9px;padding:9px 5px;text-align:center}#v570Desk .v570-cell b{display:block;font-size:13px}#v570Desk .v570-cell small{display:block;font-size:10px;color:#d0c8dd;margin-top:4px}#v570Desk .v570-actions{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}#v570Desk button{flex:0 0 auto;background:#45365f;border:1px solid #9b86b6;border-radius:9px;color:#fff;padding:9px 11px;min-height:40px;font-size:12px;font-weight:700}#v570Desk button:disabled{opacity:.6}#v570Desk .v570-warning{font-size:12px;line-height:1.6;padding:9px;background:#423548;border-left:3px solid #e6c478;border-radius:5px;margin-top:9px}#v570Desk details{margin-top:9px;border-top:1px solid #6b6080;padding-top:9px}#v570Desk summary{font-size:12px;font-weight:700;cursor:pointer}#v570Desk .v570-mini{font-size:11px;color:#d4cce2;line-height:1.6}#v570Desk .v570-tag{font-size:11px;padding:3px 7px;border-radius:7px;background:#3d4d5f}#v570Desk .v570-timer.past{color:#e7aeb0}
+@media(max-width:390px){#v570Desk{padding:10px}#v570Desk .v570-title{font-size:16px}#v570Desk .v570-timer{font-size:18px}}
+</style>
+<script id="v570-js">(()=>{'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const by=id=>document.getElementById(id);
+function init(){if(by('v570Desk'))return;const dock=by('v560Dock'),hero=by('raceCockpit');if(!dock||!hero)return;
+const root=document.createElement('section');root.id='v570Desk';root.innerHTML=`<div class="v570-line"><div><div class="v570-kicker">予想コックピット・選択中</div><div class="v570-title" id="v570Race">レースを確認中</div></div><div style="text-align:right"><div class="v570-kicker">予定締切まで</div><div class="v570-timer" id="v570Timer">--:--</div></div></div><div class="v570-status" id="v570State">データ取得状況を確認しています</div><div class="v570-grid"><div class="v570-cell"><b id="v570Ex">未確認</b><small>展示データ</small></div><div class="v570-cell"><b id="v570Odds">未確認</b><small>オッズ</small></div><div class="v570-cell"><b id="v570Decision">要確認</b><small>見送り判定</small></div></div><div class="v570-actions"><button type="button" id="v570Check">展示を確認</button><button type="button" id="v570Prediction">AI予想へ</button><button type="button" id="v570OddsBtn">オッズへ</button><button type="button" id="v570Analysis">分析へ</button><button type="button" id="v570History">履歴・診断へ</button></div><div class="v570-warning" id="v570Reason">予想を表示しても、展示・公式オッズ・締切を確認するまでは購入判断を確定しないでください。</div><details><summary>予想の比較・品質チェック・週間分析</summary><div class="v570-mini">展示前後の予想差・モデル別成績・6点/8点/12点の仮想収支・保存漏れ・未照合は既存の分析タブで確認できます。自動学習や期待値の算出は、検証済みの確率モデルがない限り実施済みとは表示しません。</div><div class="v570-actions"><button type="button" id="v570Compare">モデル・買い方比較</button><button type="button" id="v570System">保存・照合診断</button></div></details><p class="v570-mini">締切予定・展示は非公式情報を含みます。中止・変更・実際の投票締切は公式で最終確認してください。</p>`;
+dock.parentNode.insertBefore(root,dock);
+let key='',ex=null,checking=false,closing=null;
+const selected=()=>({date:by('scheduleDate')?.value||'',venue:by('heroVenue')?.value||'',race:by('heroRace')?.value||''});
+function goTab(id){const target=document.querySelector('[data-tab="'+id+'"]');if(target)target.click();else by(id)?.scrollIntoView({behavior:'smooth',block:'start'});}
+function cockpit(name){const b=document.querySelector('[data-cockpit-tab="'+name+'"]');if(b)b.click();hero.scrollIntoView({behavior:'smooth',block:'start'});}
+function analysis(k){goTab('stats');setTimeout(()=>{const b=document.querySelector('[data-ah="'+k+'"]');b?.click();by('analysisHub')?.scrollIntoView({behavior:'smooth',block:'start'})},80)}
+by('v570Prediction').onclick=()=>cockpit('prediction');by('v570OddsBtn').onclick=()=>cockpit('odds');by('v570Analysis').onclick=()=>analysis('overview');by('v570Compare').onclick=()=>analysis('tickets');by('v570System').onclick=()=>analysis('system');by('v570History').onclick=()=>analysis('system');
+function update(){const s=selected(),nextKey=[s.date,s.venue,s.race].join('/');if(nextKey!==key){key=nextKey;ex=null;by('v570Ex').textContent='未確認';by('v570Odds').textContent='要確認';}
+const name=by('heroVenue')?.selectedOptions?.[0]?.textContent?.replace(/^\d+\s*/,'')||'競艇場';by('v570Race').textContent=name+' '+(s.race||'?')+'R';
+const status=by('heroRaceStatus')?.textContent||'';by('v570State').textContent=status.trim().replace(/\s+/g,' ').slice(0,100)||'締切予定を確認中';
+const raw=by('heroRaceStatus')?.dataset?.closingAt||by('heroRaceStatus')?.getAttribute('data-deadline')||'';
+const parsed=raw?new Date(raw):null;closing=parsed&&Number.isFinite(parsed.getTime())?parsed:null;
+const raceText=by('heroRaceStatus')?.textContent||'';
+if(!closing){const m=raceText.match(/(?:締切予定|締切)\s*(\d{1,2}):(\d{2})/);if(m&&s.date){const d=new Date(s.date+'T'+m[1].padStart(2,'0')+':'+m[2]+':00+09:00');if(Number.isFinite(d.getTime()))closing=d}}
+const left=closing?Math.floor((closing.getTime()-Date.now())/1000):null;
+const timer=by('v570Timer');timer.classList.toggle('past',left!==null&&left<=0);timer.textContent=left===null?'時刻未確認':left<=0?'予定時刻経過':Math.floor(left/60)+':'+String(left%60).padStart(2,'0');
+const stale=left!==null&&left<=0;let decision='要確認',why='展示・公式オッズ・締切を確認してから判断してください。';
+if(stale){decision='見送り候補';why='予定締切時刻を経過しています。公式情報で変更が確認できるまで投票しないでください。'}
+else if(ex?.count===6){decision='オッズ確認';why='展示タイム6艇分の取得を確認。ただし予想への反映・公式オッズ・投票可否は未確認です。'}
+else if(ex?.count>=0){decision='見送り候補';why='展示タイムが'+ex.count+'/6艇です。データ不足のため購入判断は保留してください。'}
+by('v570Decision').textContent=decision;by('v570Reason').textContent=why;
+}
+by('v570Check').onclick=async()=>{if(checking)return;const s=selected();if(!s.date||!s.venue||!s.race)return;checking=true;by('v570Check').disabled=true;by('v570Ex').textContent='取得中';const q=new URLSearchParams(s);try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);let r;try{r=await fetch(API+'/exhibition-diagnostics?'+q,{cache:'no-store',signal:ctrl.signal})}finally{clearTimeout(timer)}if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();if([s.date,s.venue,s.race].join('/')!==key)return;const n=Number(j.valid_exhibition_times_now);if(!Number.isInteger(n)||n<0||n>6)throw Error('展示件数不正');ex={count:n};by('v570Ex').textContent=n+'/6艇';}catch(e){if([s.date,s.venue,s.race].join('/')===key){ex=null;by('v570Ex').textContent='取得失敗';by('v570Reason').textContent='展示データの取得に失敗しました（'+String(e.message).slice(0,90)+'）。未取得を取得済みとして扱いません。'}}finally{checking=false;by('v570Check').disabled=false;update()}};
+for(const id of ['scheduleDate','heroVenue','heroRace'])by(id)?.addEventListener('change',update);
+by('heroRaceDots')?.addEventListener('click',()=>setTimeout(update,50));
+// Countdown only while page is visible; no polling of the prediction API.
+setInterval(()=>{if(!document.hidden)update()},1000);update();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
 </body>
 </html>
 
