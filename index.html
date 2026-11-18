@@ -3018,13 +3018,13 @@ refresh(true);
 #v483Panel th,#v483Panel td{text-align:center;padding:7px 3px;border-radius:6px;background:#403151;white-space:nowrap}
 #v483Panel th:first-child{position:sticky;left:0;background:#38294d;z-index:1}
 #v483Panel td:first-child{position:sticky;left:0;background:#38294d;text-align:left;font-weight:700;z-index:1}
-#v483Panel .v483-done{background:#4b3962;color:#ffe2a2}#v483Panel .v483-wait{color:#bcaecb}#v483Panel .v483-issue{background:#654450;color:#ffe0d9}
+#v483Panel .v483-done[data-official="true"]{outline:1px solid #7ed6ba;outline-offset:-2px}#v483Panel .v483-done{background:#4b3962;color:#ffe2a2}#v483Panel .v483-wait{color:#bcaecb}#v483Panel .v483-issue{background:#654450;color:#ffe0d9}
 </style>
 <script id="v483-script">
 (()=>{'use strict';
 const host=document.getElementById('outcomes');if(!host)return;
 const panel=document.createElement('section');panel.id='v483Panel';
-panel.innerHTML='<div class="v483-row"><div><h3>当日全レース結果（非公式）</h3><div class="v483-muted">AI予想が保存されていないレースも表示します。欠落＝取得元に結果なし、未取得＝締切20分後も結果なし（いずれも公式未確認）</div></div><button id="v483Refresh" type="button">結果を再取得</button></div><p class="v483-muted" id="v483Status">取得待ち</p><div class="v483-scroll" id="v483Table"></div>';
+panel.innerHTML='<div class="v483-row"><div><h3>当日全レース結果（公式優先）</h3><div class="v483-muted">保存予想の有無に関係なく表示。公式取得結果と未検証結果を区別します。未取得は結果が確認できていない状態です。</div></div><button id="v483Refresh" type="button">結果を再取得</button></div><p class="v483-muted" id="v483Status">取得待ち</p><div class="v483-scroll" id="v483Table"></div>';
 const head=host.querySelector('.outcomes-head');if(head)head.after(panel);else host.prepend(panel);
 const $=id=>document.getElementById(id),API='https://boat-race-api.7phr5nzkbt.workers.dev';
 let busy=false,last=0,loadedDay='';
@@ -3042,11 +3042,12 @@ async function load(force=false){
   for(const v of venues){const row=document.createElement('tr'),name=document.createElement('td');name.textContent=j.races.find(x=>x.venue===v)?.venue_name||String(v);row.append(name);
    for(let r=1;r<=12;r++){const cell=document.createElement('td'),x=map.get(v+'|'+r);
     if(!x){cell.textContent='—';cell.className='v483-wait'}
-    else if(x.status==='settled'){cell.textContent=x.winning;cell.className='v483-done';cell.title='3連単100円払戻：'+x.payout_per_100+'円'}
+    else if(x.status==='settled'){cell.textContent=x.winning;cell.className='v483-done';cell.title='3連単100円払戻：'+x.payout_per_100+'円｜'+(x.officially_verified?'公式払戻ページ照合済':x.result_origin==='stored_earlier'?'D1保存済（公式照合未確認）':'非公式取得（公式照合未確認）');if(x.officially_verified)cell.dataset.official='true'}
     else if(x.status==='nonstandard_or_incomplete'){cell.textContent='要確認';cell.className='v483-issue';cell.title=x.result_issue||''}
-    else{const closing=x.closing_at?new Date(String(x.closing_at).replace(' ','T')+'+09:00'):null;const elapsed=closing&&Number.isFinite(closing.getTime())&&Date.now()>closing.getTime()+20*60000;const later=j.races.some(y=>y.venue===v&&y.race>r&&y.status==='settled');const gap=later&&x.closing_at==null;cell.textContent=gap?'欠落':elapsed?'未取得':'未開催等';cell.className=gap||elapsed?'v483-issue':'v483-wait';cell.title=gap?'後続レースの結果が存在します。取得元の欠落疑い。公式結果を確認してください。':elapsed?'締切20分後でも結果未取得。開催中止・遅延の可能性もあります。':'未開催または結果公開待ち';}row.append(cell)}body.append(row)}
+    else{const closing=x.closing_at?new Date(String(x.closing_at).replace(' ','T')+'+09:00'):null;const elapsed=closing&&Number.isFinite(closing.getTime())&&Date.now()>closing.getTime()+20*60000;const later=j.races.some(y=>y.venue===v&&y.race>r&&y.status==='settled');const gap=later&&x.closing_at==null;cell.textContent=gap?'欠落疑い':elapsed?'未取得':'結果待ち';cell.className=gap||elapsed?'v483-issue':'v483-wait';cell.title=gap?'後続レースの結果が存在します。取得元の欠落疑い。公式結果を確認してください。':elapsed?'締切20分後でも結果未取得。開催中止・遅延の可能性もあります。':'未開催または結果公開待ち';}row.append(cell)}body.append(row)}
   table.append(body);$('v483Table').replaceChildren(table);
-  $('v483Status').textContent=date+'｜掲載 '+j.races.length+'R／結果 '+j.settled+'R／未確定 '+j.pending+'R（未開催・欠落を含む）／要確認 '+j.nonstandard+'R｜取得 '+new Date(j.fetched_at_utc).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo'})+'（非公式・公式未照合）';
+  const cv=j.coverage||{};const verified=j.races.filter(x=>x.officially_verified===true).length;
+  $('v483Status').textContent=date+'｜掲載 '+j.races.length+'R／結果 '+j.settled+'R（公式確認 '+verified+'R・その他 '+(j.settled-verified)+'R）／未確定 '+j.pending+'R／要確認 '+j.nonstandard+'R'+(j.coverage?'｜締切20分超で未取得 '+cv.overdue_unresolved+'R・時刻不明 '+cv.unknown_time_unresolved+'R':'')+'｜取得 '+new Date(j.fetched_at_utc).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo'})+'（公式結果優先・未検証結果を含む）';
  }catch(e){$('v483Status').textContent='結果取得失敗：'+e.message+'（前回の表は残しています）'}finally{busy=false}
 }
 $('v483Refresh').addEventListener('click',()=>load(true));$('outcomeDate')?.addEventListener('change',()=>load(true));
