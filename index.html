@@ -1396,7 +1396,7 @@ async function loadSnapshotChecks(){
       const item=el('div',undefined,'record');
       const venueName=VENUES[Number(r.venue)-1]||('場番号'+r.venue);
       const heading=el('div',undefined,'row');
-      const settledRecord=r.result_status==='settled_unofficial';
+      const settledRecord=['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status);
       heading.append(
         el('strong',(r.date||'日付不明')+' '+venueName+' '+r.race+'R / ID '+r.snapshot_id),
         el('span',settledRecord?'照合済み（非公式）':'結果待ち','pill')
@@ -1439,8 +1439,8 @@ VENUES.forEach((name,i)=>{const opt=document.createElement('option');opt.value=S
 function renderAutoPredictions(){
   const venue=autoVenueFilter.value, status=autoStatusFilter.value;
   const rows=autoRows.filter(r=>(venue==='all'||Number(r.venue)===Number(venue))&&
-    (status==='all'||(status==='settled'?(r.result_status==='settled_unofficial'):(r.result_status!=='settled_unofficial'))));
-  const done=rows.filter(r=>r.result_status==='settled_unofficial');
+    (status==='all'||(status==='settled'?(['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status)):(!['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status)))));
+  const done=rows.filter(r=>['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status));
   const hits=done.filter(r=>Number(r.returned_yen)>0).length;
   const spent=done.reduce((a,r)=>a+(Number(r.stake_yen)||0),0);
   const returned=done.reduce((a,r)=>a+(Number(r.returned_yen)||0),0);
@@ -1454,7 +1454,7 @@ function renderAutoPredictions(){
   rows.forEach(r=>{
     const item=el('div',undefined,'record compact-record');
     const venueName=VENUES[Number(r.venue)-1]||('場番号'+r.venue);
-    const settled=r.result_status==='settled_unofficial';
+    const settled=['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status);
     const head=el('div',undefined,'row');
     head.append(el('strong',(r.date||'日付不明')+' '+venueName+' '+r.race+'R'),el('span',settled?'照合済み':'結果待ち','pill'));
     item.append(head);
@@ -1987,7 +1987,7 @@ loadAutoPredictions();
       if(!old||(Number.isFinite(id)&&id<Number(old.snapshot_id)))canonical.set(key,r);
     }
     const dated=Array.from(canonical.values()).sort((a,b)=>Number(a.venue)-Number(b.venue)||Number(a.race)-Number(b.race));
-    const settled=dated.filter(r=>r.result_status==='settled_unofficial');
+    const settled=dated.filter(r=>['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status));
     const hits=settled.filter(r=>Number(r.returned_yen)>0);
     const spent=settled.reduce((sum,r)=>sum+(Number(r.stake_yen)||0),0);
     const returned=settled.reduce((sum,r)=>sum+(Number(r.returned_yen)||0),0);
@@ -2002,7 +2002,7 @@ loadAutoPredictions();
       document.getElementById('v441Returned').textContent=money(returned);
       document.getElementById('v441Profit').textContent=(returned-spent>=0?'+':'−')+money(Math.abs(returned-spent));
     }
-    const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)>0)||(filter==='miss'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)===0)||(filter==='pending'&&r.result_status!=='settled_unofficial'));
+    const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status)&&Number(r.returned_yen)>0)||(filter==='miss'&&['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status)&&Number(r.returned_yen)===0)||(filter==='pending'&&!['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status)));
     // v4.3.3: 24 venues x 12 races in one width-fitted matrix. Missing snapshots are NOT losses.
     const matrix=document.getElementById('v433ResultMatrix');matrix.replaceChildren();
     const legend=el('div',undefined,'v498-legend');legend.innerHTML='<span class="v498-legend-title">結果の見方</span><span class="v498-pill"><i class="v498-dot" style="--dot:#d96364"></i>ハズレ</span><span class="v498-pill"><i class="v498-dot" style="--dot:#44cdb1"></i>未照合</span><span class="v498-pill"><i class="v498-dot" style="--dot:#81748f"></i>予想なし</span><details class="v498-payout-key"><summary>的中配当の色 <span aria-hidden="true">⌄</span></summary><div class="v498-tier-list"><span><i style="--dot:#c9ddec"></i>〜999円</span><span><i style="--dot:#8fd5b7"></i>1,000〜2,999円</span><span><i style="--dot:#f0ca77"></i>3,000〜9,999円</span><span><i style="--dot:#eaa064"></i>10,000〜29,999円</span><span><i style="--dot:#c18aeb"></i>30,000円〜</span></div></details>';matrix.append(legend);
@@ -2015,7 +2015,7 @@ loadAutoPredictions();
       board.append(el('span',name,'v433-matrix-label'));
       for(let n=1;n<=12;n++){
         const r=byKey.get((i+1)+'-'+n),daily=dayRaces.find(x=>Number(x.venue)===i+1&&Number(x.race)===n);
-        const settled=r?.result_status==='settled_unofficial',hit=settled&&Number(r.returned_yen)>0;
+        const settled=['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r?.result_status),hit=settled&&Number(r.returned_yen)>0;
         const payout=Number(r?.payout_per_100);
         const validPayout=Number.isFinite(payout)&&payout>0;
         const state=!daily&&!r?'none':!r?'v497-no-prediction':settled?(hit?'hit':'miss'):'pending';
@@ -2033,7 +2033,7 @@ loadAutoPredictions();
     document.getElementById('outcomeStatus').textContent=selectedDate+'：レース単位 '+shown.length+'件表示（元記録 '+allDated.length+'件、同一レースは最初の保存予想を代表表示）／'+(Math.floor(offset/200)+1)+'ページ目（200件／ページ）。全レース結果は開催データから表示。';
     if(!shown.length){target.append(el('div','該当する事前予想・照合記録がありません','empty'));return;}
     for(const r of shown){
-      const venue=Number(r.venue),race=Number(r.race),settled=r.result_status==='settled_unofficial',hit=settled&&Number(r.returned_yen)>0;
+      const venue=Number(r.venue),race=Number(r.race),settled=['settled_unofficial','settled_official','settled_legacy_unverified'].includes(r.result_status),hit=settled&&Number(r.returned_yen)>0;
       const card=document.createElement('button');card.type='button';card.className='outcome-card';
       const top=el('div',undefined,'oc-top');top.append(el('strong',(VENUES[venue-1]||'場番号'+venue)+' '+race+'R'));
       const badge=el('span',!settled?'結果待ち':hit?'的中':'ハズレ','oc-status'+(!settled?'':hit?' hit':' miss'));top.append(badge);card.append(top);
@@ -2836,7 +2836,7 @@ const outcome=$('outcomes');if(outcome){
    const [a,b]=await Promise.all([fetch(API+'/snapshot-checks',{cache:'no-store'}),fetch(API+'/cron-status',{cache:'no-store'})]);
    if(!a.ok)throw Error('照合API HTTP '+a.status);
    const j=await a.json(),rows=Array.isArray(j.results)?j.results:[],d=$('outcomeDate')?.value;
-   const current=rows.filter(x=>x.date===d),pending=current.filter(x=>x.result_status!=='settled_unofficial');
+   const current=rows.filter(x=>x.date===d),pending=current.filter(x=>!['settled_unofficial','settled_official','settled_legacy_unverified'].includes(x.result_status));
    const cron=b.ok?await b.json():null;
    const last=cron?.last_run,when=last?.ran_at_utc?labelTime(last.ran_at_utc):'未確認';
    const categories={waiting_for_result:'結果公開待ち',source_unavailable:'外部APIエラー',result_incomplete_or_special:'特殊結果・払戻未取得',snapshot_invalid:'保存データ要確認',check_error:'照合エラー',not_checked_yet:'初回照合待ち'};
