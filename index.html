@@ -4344,3 +4344,62 @@ const init=()=>{
 .v483-cancelled{background:#444354!important;color:#fff!important;font-weight:700!important}
 .v433-matrix-cell.v514-cancelled{background:#4b4a59!important;color:#fff!important;border:2px dashed #b8b8bf!important;font-size:12px!important;letter-spacing:0!important}
 </style>
+
+<style id="analysis-hub-v510-style">
+#analysisHub{margin:14px 0 20px;color:#f4f0ff}#analysisHub *{box-sizing:border-box}
+#analysisHub .ah-intro{border:1px solid #72678e;background:linear-gradient(125deg,#251c43,#1c2c47);padding:17px;border-radius:16px;margin-bottom:12px}
+#analysisHub h2{margin:0 0 6px;color:#f9e5b0;font-size:21px}#analysisHub .ah-muted{font-size:12px;opacity:.83;line-height:1.55}
+#analysisHub .ah-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+#analysisHub .ah-tab{border:1px solid #73638e;border-radius:11px;padding:12px 8px;background:#312749;color:#f8f5ff;text-align:left;font-weight:700;min-height:57px}
+#analysisHub .ah-tab[aria-selected="true"]{border:2px solid #e6c681;background:#4a365d;color:#fff1c6}
+#analysisHub .ah-tab small{display:block;font-size:11px;font-weight:400;margin-top:4px;opacity:.86}
+#analysisHub .ah-page{display:none}#analysisHub .ah-page.ah-active{display:block}
+#analysisHub .ah-page>.panel,#analysisHub .ah-page>#v451Panel,#analysisHub .ah-page>#v471Panel{margin:10px 0!important}
+#analysisHub details.ah-fold{border:1px solid #655b7b;border-radius:12px;background:#29223d;margin:10px 0;overflow:hidden}
+#analysisHub details.ah-fold>summary{cursor:pointer;padding:13px;font-weight:700;color:#f6e5ba;list-style-position:inside}
+#analysisHub details.ah-fold>.ah-content{padding:0 10px 10px;overflow-x:auto}
+#analysisHub .ah-note{border-left:3px solid #e5be78;padding:9px 11px;margin:10px 0;font-size:12px;line-height:1.6;background:#30273f}
+#analysisHub .ah-topline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#analysisHub .ah-topline button{background:#5e4d80;color:#fff;border:1px solid #aa95c5;border-radius:8px;padding:8px 12px}
+#analysisHub .ah-meta{font-size:12px;opacity:.9;margin-top:7px}
+#analysisHub #v300-audit{max-width:none!important;margin:0!important}
+@media(min-width:720px){#analysisHub .ah-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+<script id="analysis-hub-v510-script">(()=>{'use strict';
+function init(){const stats=document.getElementById('stats');if(!stats||document.getElementById('analysisHub'))return;
+const hub=document.createElement('div');hub.id='analysisHub';
+hub.innerHTML=`<div class="ah-intro"><div class="ah-topline"><div><h2>📊 AI分析センター</h2><div class="ah-muted">成績・買い方・詳細分析・システム診断を整理した閲覧専用画面</div></div><button id="ahRefresh" type="button">表示を更新</button></div><div class="ah-meta" id="ahMeta">保存済みの予想と照合結果を使用。未照合・中止・予想なしは的中失敗と区別します。</div></div>
+<div class="ah-tabs" role="tablist" aria-label="分析メニュー">
+<button type="button" class="ah-tab" data-ah="overview" aria-selected="true">📈 成績サマリー<small>新AIの実績・保存状況</small></button>
+<button type="button" class="ah-tab" data-ah="tickets" aria-selected="false">🎯 買い方比較<small>6点・8点・12点／方式別</small></button>
+<button type="button" class="ah-tab" data-ah="deep" aria-selected="false">🏟️ 詳細分析<small>競艇場・順位・外れ方</small></button>
+<button type="button" class="ah-tab" data-ah="system" aria-selected="false">⚙️ システム診断<small>Cron・照合・全件監査</small></button></div>
+<section class="ah-page ah-active" data-ah-page="overview"><p class="ah-note">新AIモデルの予想が0件なら「未集計」です。従来モデルの保存件数とは別に扱い、0%の的中率とは解釈しません。</p></section>
+<section class="ah-page" data-ah-page="tickets"><p class="ah-note">各方式の数字は仮想バックテストです。旧12点から抽出した6点と、実際に6点で保存された予想を混同しないでください。</p></section>
+<section class="ah-page" data-ah-page="deep"><p class="ah-note">少数レースの高回収率は偶然の影響が大きいため、対象件数を確認してから比較してください。</p></section>
+<section class="ah-page" data-ah-page="system"><p class="ah-note">通常は確認不要です。未照合が増えたときやCronが停止したときだけ詳細を開いてください。</p></section>`;
+stats.insertBefore(hub,stats.firstChild);
+const page=k=>hub.querySelector('[data-ah-page="'+k+'"]');
+function move(id,k){const n=document.getElementById(id);if(n&&n!==hub&& !hub.contains(n))page(k).appendChild(n);return n}
+function fold(node,k,label,open=false){if(!node)return;const d=document.createElement('details');d.className='ah-fold';d.open=open;const title=document.createElement('summary');title.textContent=label;const content=document.createElement('div');content.className='ah-content';d.append(title,content);page(k).appendChild(d);content.appendChild(node);return d}
+move('v422AnalyticsPanel','overview');
+fold(move('v451Panel','tickets'),'tickets','6点・8点・12点の比較',true);
+fold(move('v471Panel','deep'),'deep','統合分析・競艇場別・順位別',true);
+fold(move('v423CronPanel','system'),'system','自動保存・Cron履歴');
+fold(move('v300-audit','system'),'system','公式結果・予想照合の全件監査');
+const known=new Set(['v422AnalyticsPanel','v451Panel','v471Panel','v423CronPanel','v300-audit']);
+for(const node of Array.from(stats.children)){
+ if(node===hub||node.classList?.contains('hidden')||node.hasAttribute('hidden')||node.style?.display==='none')continue;
+ if(node.classList?.contains('panel')&&!known.has(node.id)){
+ const heading=node.querySelector('h2')?.textContent||'その他の記録・旧機能';
+ fold(node,'system',heading);
+ }
+}
+const buttons=[...hub.querySelectorAll('[data-ah]')];
+function select(k){buttons.forEach(b=>b.setAttribute('aria-selected',String(b.dataset.ah===k)));hub.querySelectorAll('[data-ah-page]').forEach(p=>p.classList.toggle('ah-active',p.dataset.ahPage===k));}
+buttons.forEach(b=>b.addEventListener('click',()=>select(b.dataset.ah)));
+hub.querySelector('#ahRefresh').addEventListener('click',()=>{for(const id of ['v422Refresh','v451Reload','v471Reload','v423Refresh','v300-refresh']){const b=document.getElementById(id);if(b&&!b.disabled)b.click()}hub.querySelector('#ahMeta').textContent='更新を要求しました。各パネルの取得結果と時刻を確認してください。'});
+const old=document.getElementById('v422AnalyticsPanel');if(old){const info=document.createElement('p');info.className='ah-muted';info.textContent='表示値は既存のWorker集計に基づきます。データが0件のときは新モデルの集計対象がない可能性があり、既存予想全体が0件という意味ではありません。';old.appendChild(info)}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
