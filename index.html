@@ -3541,6 +3541,16 @@ else if(ex?.count===6){decision='オッズ確認';why='展示タイム6艇分の
 else if(ex?.count>=0){decision='見送り候補';why='展示タイムが'+ex.count+'/6艇です。データ不足のため購入判断は保留してください。'}
 by('v570Decision').textContent=decision;by('v570Reason').textContent=why;
 }
+// Share verified exhibition diagnostics with the separate cockpit panel.
+window.addEventListener('boat-exhibition-diagnostic',event=>{
+ const d=event.detail||{},s=selected();
+ if(String(d.date)!==s.date||String(d.venue)!==s.venue||String(d.race)!==s.race)return;
+ const n=Number(d.count);
+ if(!Number.isInteger(n)||n<0||n>6)return;
+ ex={count:n,checkedAt:d.checkedAt||null};
+ by('v570Ex').textContent=n+'/6艇';
+ update();
+});
 by('v570Check').onclick=async()=>{if(checking)return;const s=selected();if(!s.date||!s.venue||!s.race)return;checking=true;by('v570Check').disabled=true;by('v570Ex').textContent='取得中';const q=new URLSearchParams(s);try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);let r;try{r=await fetch(API+'/exhibition-diagnostics?'+q,{cache:'no-store',signal:ctrl.signal})}finally{clearTimeout(timer)}if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();if([s.date,s.venue,s.race].join('/')!==key)return;const n=Number(j.valid_exhibition_times_now);if(!Number.isInteger(n)||n<0||n>6)throw Error('展示件数不正');ex={count:n};by('v570Ex').textContent=n+'/6艇';}catch(e){if([s.date,s.venue,s.race].join('/')===key){ex=null;by('v570Ex').textContent='取得失敗';by('v570Reason').textContent='展示データの取得に失敗しました（'+String(e.message).slice(0,90)+'）。未取得を取得済みとして扱いません。'}}finally{checking=false;by('v570Check').disabled=false;update()}};
 for(const id of ['scheduleDate','heroVenue','heroRace'])by(id)?.addEventListener('change',update);
 by('heroRaceDots')?.addEventListener('click',()=>setTimeout(update,50));
@@ -4706,7 +4716,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       status.textContent='レースが変更されました。再確認してください';return;
     }
     const n=Number(data.valid_exhibition_times_now);
-    if(!Number.isFinite(n))throw new Error('展示件数を判定できません');
+    if(!Number.isInteger(n)||n<0||n>6)throw new Error('展示件数を判定できません');
+    // Only update the currently selected race; this does not claim AI reflection.
+    window.dispatchEvent(new CustomEvent('boat-exhibition-diagnostic',{detail:{date,venue,race,count:n,checkedAt:data.checked_at_utc||null}}));
     const now=new Date();
     const closing=data.closing_at?new Date(data.closing_at):null;
     const closed=closing&&!isNaN(closing.valueOf())&&now>=closing;
