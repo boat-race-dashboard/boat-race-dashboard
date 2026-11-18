@@ -1973,7 +1973,18 @@ loadAutoPredictions();
   }
   function paintResults(){
     const selectedDate=date.value;
-    const dated=rows.filter(r=>String(r.date)===selectedDate);
+    // v2.4: one canonical pre-race snapshot per venue/race on the current page.
+    // Use the earliest saved snapshot (smallest D1 id), not whichever outcome happens to be a hit.
+    // The same canonical set drives matrix, cards and summary metrics.
+    const allDated=rows.filter(r=>String(r.date)===selectedDate);
+    const canonical=new Map();
+    for(const r of allDated){
+      const v=Number(r.venue),n=Number(r.race),id=Number(r.snapshot_id);
+      if(!Number.isInteger(v)||v<1||v>24||!Number.isInteger(n)||n<1||n>12)continue;
+      const key=v+'-'+n,old=canonical.get(key);
+      if(!old||(Number.isFinite(id)&&id<Number(old.snapshot_id)))canonical.set(key,r);
+    }
+    const dated=Array.from(canonical.values()).sort((a,b)=>Number(a.venue)-Number(b.venue)||Number(a.race)-Number(b.race));
     const settled=dated.filter(r=>r.result_status==='settled_unofficial');
     const hits=settled.filter(r=>Number(r.returned_yen)>0);
     const spent=settled.reduce((sum,r)=>sum+(Number(r.stake_yen)||0),0);
@@ -1989,13 +2000,13 @@ loadAutoPredictions();
     const corner=el('span','場','v433-matrix-label');board.append(corner);
     for(let n=1;n<=12;n++)board.append(el('span',String(n),'v433-matrix-col'));
     const byKey=new Map();
-    for(const r of dated){const v=Number(r.venue),n=Number(r.race);if(v>=1&&v<=24&&n>=1&&n<=12){const key=v+'-'+n;const prior=byKey.get(key);if(!prior||prior.result_status!=='settled_unofficial')byKey.set(key,r);}}
+    for(const r of dated){byKey.set(Number(r.venue)+'-'+Number(r.race),r);}
     VENUES.forEach((name,i)=>{
       board.append(el('span',name,'v433-matrix-label'));
       for(let n=1;n<=12;n++){
         const r=byKey.get((i+1)+'-'+n),daily=dayRaces.find(x=>Number(x.venue)===i+1&&Number(x.race)===n);
         const settled=r?.result_status==='settled_unofficial',hit=settled&&Number(r.returned_yen)>0;
-        const payout=Number(daily?.payout_per_100??r?.payout_per_100);
+        const payout=Number(r?.payout_per_100);
         const validPayout=Number.isFinite(payout)&&payout>0;
         const state=!daily&&!r?'none':!r?'v497-no-prediction':settled?(hit?'hit':'miss'):'pending';
         const b=el('button',String(n),'v433-matrix-cell '+state);b.type='button';
@@ -2009,7 +2020,7 @@ loadAutoPredictions();
     matrix.append(board);
     const coverage=el('p','開催データ '+dayRaces.length+'R／事前予想 '+byKey.size+'R（現在ページ）。未保存は不的中扱いしません。','v433-coverage');matrix.append(coverage);
     const target=document.getElementById('outcomeList');target.replaceChildren();
-    document.getElementById('outcomeStatus').textContent=selectedDate+'：履歴 '+shown.length+'件表示／'+(Math.floor(offset/200)+1)+'ページ目（200件／ページ）。全レース結果は開催データから表示。';
+    document.getElementById('outcomeStatus').textContent=selectedDate+'：レース単位 '+shown.length+'件表示（元記録 '+allDated.length+'件、同一レースは最初の保存予想を代表表示）／'+(Math.floor(offset/200)+1)+'ページ目（200件／ページ）。全レース結果は開催データから表示。';
     if(!shown.length){target.append(el('div','該当する事前予想・照合記録がありません','empty'));return;}
     for(const r of shown){
       const venue=Number(r.venue),race=Number(r.race),settled=r.result_status==='settled_unofficial',hit=settled&&Number(r.returned_yen)>0;
