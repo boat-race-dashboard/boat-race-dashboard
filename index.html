@@ -4245,3 +4245,64 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+
+
+<!-- Exhibition latency diagnostics v2.3: read-only; no predictions or DB writes -->
+<style id="exhibition-latency-v23-style">
+#exLatencyPanel{margin:12px 0;padding:15px;border:1px solid #3e6575;border-radius:14px;background:#10283b;color:#e7f1f9}
+#exLatencyPanel h3{font-size:16px;margin:0 0 8px}
+#exLatencyPanel p{font-size:12px;line-height:1.65;color:#bfd1df;margin:7px 0}
+#exLatencyPanel button{padding:10px 14px;border:1px solid #66a9b0;background:#1c6772;color:#fff;border-radius:9px;font-weight:700}
+#exLatencyPanel button:disabled{opacity:.55}
+#exLatencyPanel .exlat-status{font-size:13px;font-weight:650;margin:10px 0}
+#exLatencyPanel .exlat-warning{color:#ffdc9b}
+#exLatencyPanel .exlat-good{color:#9fe0c5}
+</style>
+<script id="exhibition-latency-v23-script">
+(function(){
+ 'use strict';
+ const api='https://boat-race-api.7phr5nzkbt.workers.dev';
+ function init(){
+  if(document.getElementById('exLatencyPanel'))return;
+  const raceView=document.getElementById('raceView');if(!raceView)return;
+  const panel=document.createElement('section');panel.id='exLatencyPanel';
+  const title=document.createElement('h3');title.textContent='展示情報の即時診断';
+  const explain=document.createElement('p');explain.textContent='Workerのキャッシュを使わない診断APIで、非公式データ元の展示取得状況を確認します。既存のAI予想や保存データは変更しません。';
+  const button=document.createElement('button');button.type='button';button.textContent='展示データを再確認';
+  const status=document.createElement('div');status.className='exlat-status';status.setAttribute('role','status');status.textContent='未確認';
+  const details=document.createElement('p');details.textContent='締切前に公式サイトの展示情報と照合してください。';
+  panel.append(title,explain,button,status,details);
+  raceView.insertBefore(panel,raceView.firstChild);
+  function val(id){return document.getElementById(id)?.value||'';}
+  function valid(d,v,r){return /^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isInteger(+v)&&+v>=1&&+v<=24&&Number.isInteger(+r)&&+r>=1&&+r<=12;}
+  let controller=null;
+  button.addEventListener('click',async()=>{
+   const date=val('scheduleDate'),venue=val('heroVenue'),race=val('heroRace');
+   if(!valid(date,venue,race)){status.textContent='日付・競艇場・レースを選択してください';return;}
+   if(controller)controller.abort();
+   controller=new AbortController();
+   const params=new URLSearchParams({date,venue,race});
+   button.disabled=true;status.textContent='キャッシュを使わず展示データを確認中…';details.textContent='';
+   try{
+    const res=await fetch(api+'/exhibition-diagnostics?'+params,{cache:'no-store',signal:controller.signal});
+    const data=await res.json();
+    if(!res.ok)throw new Error('HTTP '+res.status+' '+String(data.error||''));
+    if(val('scheduleDate')!==date||val('heroVenue')!==venue||val('heroRace')!==race){
+      status.textContent='レースが変更されました。再確認してください';return;
+    }
+    const n=Number(data.valid_exhibition_times_now);
+    if(!Number.isFinite(n))throw new Error('展示件数を判定できません');
+    const now=new Date();
+    const closing=data.closing_at?new Date(data.closing_at):null;
+    const closed=closing&&!isNaN(closing.valueOf())&&now>=closing;
+    status.className='exlat-status '+(n===6&&!closed?'exlat-good':'exlat-warning');
+    status.textContent='取得結果：展示タイム '+n+'/6艇'+(closed?' ／ 締切後':' ／ 締切前かは公式情報で確認');
+    const checked=data.checked_at_utc?new Date(data.checked_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'}):'不明';
+    details.textContent='確認時刻 '+checked+'（JST）。'+(n===0?'非公式データ元では未取得。公式サイトにあれば反映遅延の疑いがあります。':n<6?'一部のみ取得。展示後の最終予想と断定できません。':'6艇分の展示タイムを取得。ただし表示中の買い目に反映済みとは限りません。')+' 既存のレース画面は必要に応じて再読み込みしてください。';
+   }catch(e){if(e.name!=='AbortError'){status.className='exlat-status exlat-warning';status.textContent='取得失敗';details.textContent=String(e.message)+'。非公式APIの応答を確認できませんでした。';}}
+   finally{button.disabled=false;}
+  });
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
