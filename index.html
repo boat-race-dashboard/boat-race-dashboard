@@ -1947,7 +1947,7 @@ loadAutoPredictions();
   `;document.head.append(reviewStyle);
   let activeReview=null;
   function openReview(venue,race){
-    const r=rows.find(x=>Number(x.venue)===venue&&Number(x.race)===race&&String(x.date)===date.value);
+    const r=rows.filter(x=>Number(x.venue)===venue&&Number(x.race)===race&&String(x.date)===date.value).sort((a,b)=>Number(a.snapshot_id)-Number(b.snapshot_id))[0];
     const daily=dayRaces.find(x=>Number(x.venue)===venue&&Number(x.race)===race);
     const win=(daily?.status==='settled'?daily.winning:null)||r?.winning_trifecta||null;
     const payout=Number(daily?.status==='settled'?daily.payout_per_100:r?.payout_per_100);
@@ -1973,7 +1973,7 @@ loadAutoPredictions();
   }
   function paintResults(){
     const selectedDate=date.value;
-    // v2.4: one canonical pre-race snapshot per venue/race on the current page.
+    // v2.5: one canonical pre-race snapshot per venue/race on the current page.
     // Use the earliest saved snapshot (smallest D1 id), not whichever outcome happens to be a hit.
     // The same canonical set drives matrix, cards and summary metrics.
     const allDated=rows.filter(r=>String(r.date)===selectedDate);
@@ -1992,6 +1992,14 @@ loadAutoPredictions();
     document.getElementById('outcomeSettled').textContent=settled.length+'R';
     document.getElementById('outcomeHits').textContent=hits.length+'R';
     document.getElementById('outcomeRoi').textContent=spent?(100*returned/spent).toFixed(1)+'%':'—';
+    // v2.5: finance and ROI share exactly the same canonical, settled, current-page rows.
+    const finance=document.getElementById('v441OutcomeFinance');
+    if(finance){
+      const money=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
+      document.getElementById('v441Stake').textContent=money(spent);
+      document.getElementById('v441Returned').textContent=money(returned);
+      document.getElementById('v441Profit').textContent=(returned-spent>=0?'+':'−')+money(Math.abs(returned-spent));
+    }
     const shown=dated.filter(r=>filter==='all'||(filter==='hit'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)>0)||(filter==='miss'&&r.result_status==='settled_unofficial'&&Number(r.returned_yen)===0)||(filter==='pending'&&r.result_status!=='settled_unofficial'));
     // v4.3.3: 24 venues x 12 races in one width-fitted matrix. Missing snapshots are NOT losses.
     const matrix=document.getElementById('v433ResultMatrix');matrix.replaceChildren();
@@ -2751,29 +2759,13 @@ if(outcomes&&metrics){
   small.textContent=label;strong.id=id;strong.textContent='—';cell.append(small,strong);summary.append(cell);
  }
  metrics.after(summary);
- let busy=false;
- async function load(){
-  if(busy)return;busy=true;
-  try{
-   const response=await fetch(API+'/snapshot-checks',{cache:'no-store'});
-   if(!response.ok)throw Error('HTTP '+response.status);
-   const payload=await response.json(),d=$('outcomeDate')?.value;
-   if(!Array.isArray(payload.results))throw Error('不正なデータ形式');
-   const rows=payload.results.filter(x=>String(x.date)===d&&x.result_status==='settled_unofficial');
-   const stake=rows.reduce((n,x)=>n+(Number(x.stake_yen)||0),0);
-   const returned=rows.reduce((n,x)=>n+(Number(x.returned_yen)||0),0);
-   $('v441Stake').textContent=yen(stake);$('v441Returned').textContent=yen(returned);
-   $('v441Profit').textContent=(returned-stake>=0?'+':'−')+yen(Math.abs(returned-stake));
-  }catch{
-   ['v441Stake','v441Returned','v441Profit'].forEach(id=>$(id).textContent='未取得');
-  }finally{busy=false;}
- }
- $('outcomeRefresh')?.addEventListener('click',load);
- $('outcomeDate')?.addEventListener('change',load);
- document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',load);
- load();
+ // Financial metrics are updated only by paintResults() from the canonical page set.
+ // No second fetch: independent /snapshot-checks totals previously caused mismatched denominators.
+ const outcomeNote=document.createElement('p');outcomeNote.className='muted';outcomeNote.style.fontSize='11px';
+ outcomeNote.textContent='金額・回収率・的中数は同じ表示ページの代表予想（照合済み）から計算。フィルターによる変動なし。全日集計ではありません。';
+ summary.after(outcomeNote);
  const note=document.createElement('p');note.className='muted';note.style.fontSize='10px';
- note.textContent='仮想収支は事前保存予想の結果照合済み分のみ。実際の購入収支ではありません。';
+ note.textContent='仮想収支は表示ページの事前保存予想の結果照合済み分のみ。実際の購入収支ではありません。';
  summary.after(note);
 }
 // Replace old footer version text without changing legacy model labels.
