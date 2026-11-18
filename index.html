@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v5.8.0 | Shadow AI</title>
+  <title>BOAT RACE AI Dashboard v5.8.1 | Detailed AI</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -1780,6 +1780,31 @@ loadAutoPredictions();
         probPanel.append(el('p','★はAI推奨買い目。棒の長さは表示中の最大値に対する相対値です。合計100%は計算上の配分であり、実際の的中率を保証しません。結果判明後の評価は事前予想として扱わないでください。'));
       }else probPanel.append(el('p','6艇のAI評価点が揃っていないため推定値を表示できません。'));
       ranking.append(probPanel);
+      // v5.8.1: Detailed scoring lives in the main AI prediction screen, not just analytics.
+      if(Array.isArray(data.ranking)&&data.ranking.some(r=>r.detailed_factors)){
+        const detailPanel=el('section',undefined,'v492-panel');
+        detailPanel.append(el('h3','🧮 新AI｜20項目100点・減点・展開補正'));
+        detailPanel.append(el('p','基本点（未取得項目は中立点）− リスク減点 ＋ ST相対補正。暫定モデルであり、実績による検証前です。','muted'));
+        const scroll=el('div',undefined,'v492-scroll'),table=el('table',undefined,'v492-table');
+        const head=el('tr');head.append(el('th','評価項目'));
+        const byBoat=new Map(data.ranking.map(r=>[Number(r.boat),r]));
+        for(let n=1;n<=6;n++)head.append(el('th',n+'号艇'));
+        const th=el('thead');th.append(head);table.append(th);
+        const body=el('tbody');
+        const addRow=(label,fn)=>{const tr=el('tr');tr.append(el('td',label));for(let n=1;n<=6;n++)tr.append(el('td',String(fn(byBoat.get(n)))));body.append(tr)};
+        addRow('最終総合点',r=>r?.score?.toFixed(1)??'—');
+        addRow('基本点',r=>r?.base_score?.toFixed(1)??'—');
+        addRow('リスク減点',r=>r?.risk_deduction!=null?'−'+r.risk_deduction.toFixed(1):'—');
+        addRow('ST相対補正',r=>r?.tactical_adjustment!=null?(r.tactical_adjustment>0?'+':'')+r.tactical_adjustment.toFixed(1):'—');
+        addRow('取得項目',r=>r?.detailed_coverage?.observed+'/20');
+        for(const f of data.scoring_details?.factors||[]){
+          addRow(f.label+' / '+f.max_points+'点',r=>{const x=r?.detailed_factors?.[f.id];return x?.data_available?x.points.toFixed(1):'未取得（中立）'});
+        }
+        addRow('減点理由',r=>r?.detailed_penalties?.length?r.detailed_penalties.map(x=>x.label+' '+x.points).join(' / '):'なし');
+        table.append(body);scroll.append(table);detailPanel.append(scroll);
+        detailPanel.append(el('p','コース別・今節ST・風波・戦法など、元データのない項目は未取得。STや展示による基本評価と減点には相関があり、効果は未検証です。','muted'));
+        ranking.append(detailPanel);
+      }
       // v4.9.3: 公式展示情報に近い6艇比較表。点数はWorkerから受け取った値をそのまま使用。
       const comparison=el('section',undefined,'v492-panel');
       comparison.append(el('h3','6艇比較｜展示情報・AI採点'));
