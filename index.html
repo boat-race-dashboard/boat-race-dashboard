@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v5.9.0 | Mobile usability</title>
+  <title>BOAT RACE AI Dashboard v6.2.0 | Four-screen navigation</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -3691,6 +3691,78 @@ button{transition:background-color .15s,border-color .15s}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })();
 </script>
+<!-- v6.2.0: four-screen navigation, isolated from legacy navigation state -->
+<style id="v620-style">
+:root{--v620gold:#f2d17a;--v620purple:#4d3a65}
+html{scroll-padding-top:12px}body{padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
+body.v620-ready .tabs{display:none!important}
+#v620Nav{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#151b30f7;border-top:1px solid #85669d;box-shadow:0 -5px 22px #0008}
+#v620Nav button{border:0;border-radius:12px;min-height:50px;background:transparent;color:#e4d8ef;font-size:clamp(11px,2.9vw,14px);font-weight:750;padding:8px 2px}
+#v620Nav button[aria-current="page"]{background:var(--v620purple);color:var(--v620gold)}
+#v620HomeHeader,#v620DetailHeader{background:#241d38;border:1px solid #79618c;border-radius:14px;padding:12px;margin:10px 0}
+#v620HomeHeader h2,#v620DetailHeader h2{color:var(--v620gold);margin:0 0 6px;font-size:17px}
+#v620HomeHeader p,#v620DetailHeader p{color:#d4c6e1;font-size:12px;line-height:1.6;margin:4px 0}
+#v620HomeHeader .v620actions,#v620DetailHeader .v620actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.v620actions button{background:#4c3865;color:#f8e6b7;border:1px solid #9b7aa9;border-radius:10px;min-height:44px;padding:8px 12px;font-weight:700}
+#v620HomeHeader .v620-state{font-size:12px;color:#b9e6d4;overflow-wrap:anywhere}
+body.v620-ready #home>.panel:not(:first-of-type){display:none!important}
+body.v620-ready #home>.panel:first-of-type{margin-top:8px}
+body.v620-ready #home #goAdd{display:none!important}
+body.v620-ready #home #venues{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px}
+body.v620-ready #home #venues button{min-height:62px;padding:7px 3px!important;font-size:13px!important}
+body.v620-ready #home #venues button small{font-size:10px!important}
+body.v620-ready #home .schedule-controls{margin-top:8px}
+body.v620-ready #home #refreshSchedule{display:none!important}
+body.v620-ready #home .venue-filter{margin:8px 0}
+body.v620-ready #raceView>.v39-back{display:none!important}
+#v620DetailHeader{position:relative}
+#v620DetailHeader .v620actions button:first-child{background:#e9c675;color:#241b35;border-color:#e9c675}
+body.v620-ready #raceView{padding-bottom:25px}
+@media(max-width:360px){body.v620-ready #home #venues{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+</style>
+<script id="v620-script">(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const screens={races:'home',detail:'raceView',analysis:'stats',admin:'manageView'};
+let current='races',busy=false,lastAttempt=0,serial=0;
+const labels=[['races','レース一覧'],['detail','レース詳細'],['analysis','分析・成績'],['admin','管理・診断']];
+function state(msg){const e=$('v620State');if(e)e.textContent=msg;}
+function go(key,scroll=true){const id=screens[key];if(!id||!$(id))return;
+ current=key;
+ // The existing router owns all secondary tabs and their data-loading side effects.
+ const button=document.querySelector('.tabs [data-tab="'+id+'"]');
+ if(button)button.click();else if(typeof tab==='function')tab(id);
+ // Explicitly reconcile visibility after legacy handlers, without deleting their sections.
+ for(const [k,target] of Object.entries(screens))$(target)?.classList.toggle('hidden',k!==key);
+ $('v620Nav')?.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.screen===key?'page':'false'));
+ if(scroll)window.scrollTo(0,0);
+}
+function refresh(force=false){if(document.hidden||!navigator.onLine){state('画面非表示・オフラインのため待機');return;}
+ if(busy||(!force&&Date.now()-lastAttempt<90000))return;
+ const btn=$('refreshSchedule');if(!btn||btn.disabled){state('更新開始不可：既存の取得処理を確認してください');return;}
+ busy=true;lastAttempt=Date.now();const n=++serial;state('データ取得を要求中…');
+ try{btn.click();state('取得要求済み（成功未確認）。下の取得状況を確認してください');}
+ catch(err){state('取得要求エラー：'+String(err.message||err));}
+ finally{busy=false;}
+}
+function init(){if($('v620Nav')||!$('home')||!$('raceView')||!$('stats')||!$('manageView'))return;
+ const nav=document.createElement('nav');nav.id='v620Nav';nav.setAttribute('aria-label','ダッシュボード画面切替');
+ for(const [key,label] of labels){const b=document.createElement('button');b.type='button';b.dataset.screen=key;b.textContent=label;b.addEventListener('click',()=>go(key));nav.append(b);}document.body.append(nav);
+ const home=document.createElement('div');home.id='v620HomeHeader';home.innerHTML='<h2>全国24場からレースを選ぶ</h2><p>競艇場をタップするとレース詳細へ移動します。開催の確定情報ではありません。</p><div class="v620actions"><button type="button" id="v620Refresh">データを再取得</button><button type="button" id="v620OpenDetail">選択中のレース</button></div><p class="v620-state" id="v620State" aria-live="polite">取得結果は下の状態表示で確認してください</p>';
+ $('home').prepend(home);
+ $('v620Refresh').addEventListener('click',()=>refresh(true));$('v620OpenDetail').addEventListener('click',()=>go('detail'));
+ const detail=document.createElement('div');detail.id='v620DetailHeader';detail.innerHTML='<h2>レース詳細</h2><p>出走表・AI予想・展示・オッズは下の既存タブで切り替えます。</p><div class="v620actions"><button type="button" id="v620ToAI">AI予想を見る</button><button type="button" id="v620ToList">一覧に戻る</button></div>';
+ $('raceView').prepend(detail);
+ $('v620ToList').addEventListener('click',()=>go('races'));
+ $('v620ToAI').addEventListener('click',()=>{const cockpit=$('raceCockpit');const candidates=[...cockpit?.querySelectorAll('button')||[]];const b=candidates.find(x=>/AI予想/.test(x.textContent||'')&&x.offsetParent!==null);if(b)b.click();cockpit?.scrollIntoView({block:'start',behavior:'smooth'});});
+ // Selection is already handled by the original venue router; only mirror its navigation.
+ $('venues')?.addEventListener('click',e=>{if(e.target.closest('button[data-venue]'))setTimeout(()=>go('detail'),80)});
+ document.body.classList.add('v620-ready');go('races');
+ setInterval(()=>{if(current==='races')refresh(false)},90000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&current==='races')refresh(false)});
+ window.addEventListener('online',()=>{if(current==='races')refresh(false)});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
 </body>
 </html>
 
@@ -5062,59 +5134,3 @@ $('v588Status').textContent=(errors.length?'一部取得失敗：'+errors.join('
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
-
-
-
-<!-- v6.1.0: navigation reconciliation with the existing tab router; no API/AI/Cron mutation -->
-<style id="v610-style">
-#v610Bottom{position:fixed;z-index:9000;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:#151c32f7;border-top:1px solid #88739e;padding:8px 8px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -6px 18px #0005}
-#v610Bottom button{min-width:0;min-height:48px;border:0;border-radius:11px;background:transparent;color:#ddd0e9;font-weight:700;font-size:clamp(10px,2.7vw,13px);padding:8px 2px;white-space:normal}
-#v610Bottom button[aria-current="page"]{background:#4d3a65;color:#f2d17a}
-body.v610-ready{padding-bottom:calc(105px + env(safe-area-inset-bottom))!important}
-body.v610-ready .tabs{display:none!important}
-body.v610-ready #home>.panel:not(:first-child){display:none!important}
-body.v610-ready #home>.panel:first-child{margin-top:8px}
-#v610Head{background:#211c34;border:1px solid #80658e;border-radius:12px;padding:12px;margin-bottom:12px}
-#v610Head .v610-row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-#v610Head h2{color:#f2d17a;font-size:17px;margin:0 0 6px}
-#v610Head p{font-size:12px;color:#c9bdd9;margin:0 0 10px}
-#v610Head button{background:#e9c675;color:#231a32;border:0;border-radius:9px;padding:10px 12px;font-weight:700;min-height:44px}
-#v610Status{font-size:12px;color:#c9bdd9;overflow-wrap:anywhere}
-@media(max-width:450px){body.v610-ready #venues{grid-template-columns:repeat(2,minmax(0,1fr))!important}body.v610-ready #home>.panel:first-child{padding:12px!important}}
-</style>
-<script id="v610-script">(()=>{'use strict';
-const $=id=>document.getElementById(id);
-const targets={races:'home',detail:'raceView',analysis:'stats',admin:'manageView'};
-let view='races',lastRequest=0,inFlight=false;
-function status(s){const e=$('v610Status');if(e)e.textContent=s;}
-function go(which){const target=targets[which];if(!target||!$(target))return;view=which;
-  // Existing application tab() contains important side effects and is the only router.
-  const b=document.querySelector('.tabs [data-tab="'+target+'"]');
-  if(b)b.click();else if(typeof tab==='function')tab(target);
-  document.querySelectorAll('#v610Bottom button').forEach(x=>x.setAttribute('aria-current',x.dataset.view===which?'page':'false'));
-  window.scrollTo({top:0,behavior:'instant'});
-}
-function refresh(force){if(document.hidden||!navigator.onLine){status('オフラインまたは画面非表示のため更新待機');return;}
-  if(inFlight||(!force&&Date.now()-lastRequest<90000))return;
-  const button=$('refreshSchedule');if(!button||button.disabled){status('一覧更新を開始できません');return;}
-  inFlight=true;lastRequest=Date.now();status('更新要求中…（取得成功は未確認）');
-  try{button.click();status('更新要求済み · 取得結果は画面の状態表示で確認してください');}
-  catch(e){status('更新要求失敗: '+String(e.message||e));}
-  finally{inFlight=false;}
-}
-function init(){if($('v610Bottom')||!$('home')||!$('raceView')||!$('stats')||!$('manageView'))return;
- const nav=document.createElement('nav');nav.id='v610Bottom';nav.setAttribute('aria-label','主要画面');
- for(const [key,label] of [['races','レース一覧'],['detail','レース詳細'],['analysis','分析・成績'],['admin','管理・診断']]){
-  const b=document.createElement('button');b.type='button';b.dataset.view=key;b.textContent=label;b.addEventListener('click',()=>go(key));nav.append(b);
- }document.body.append(nav);
- const head=document.createElement('div');head.id='v610Head';head.innerHTML='<h2>全国24場・レース選択</h2><p>競艇場を選んだ後「レース詳細」で確認できます。開催状況は公式サイトで確認してください。</p><div class="v610-row"><span id="v610Status" aria-live="polite">自動更新：既存処理と連携</span><button id="v610Refresh" type="button">再取得</button></div>';
- $('home').insertBefore(head,$('home').firstChild);$('v610Refresh').addEventListener('click',()=>refresh(true));
- // Keep selection in the existing race router, do not duplicate its source of truth.
- const venues=$('venues');if(venues)venues.addEventListener('click',e=>{if(e.target.closest('button')){setTimeout(()=>go('detail'),150);}});
- document.body.classList.add('v610-ready');go('races');
- setInterval(()=>{if(view==='races')refresh(false)},90000);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&view==='races')refresh(false)});
- window.addEventListener('online',()=>{if(view==='races')refresh(false)});
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();</script>
