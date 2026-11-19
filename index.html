@@ -341,6 +341,15 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .v492-break strong{color:#f5d782}
 .v492-bar{height:5px;border-radius:5px;background:#554568;overflow:hidden;margin:3px 0 8px}
 .v492-bar span{display:block;height:100%;background:linear-gradient(90deg,#9472c4,#f5d782)}
+
+/* v5.8.7 dual prediction display: presentation only, no writes */
+.v587-dual{margin:18px 0;padding:15px;border:1px solid #a78bfa;border-radius:15px;background:rgba(27,23,50,.55)}
+.v587-dual h3{margin:0 0 9px;font-size:1.12rem}.v587-dual p{font-size:.84rem;line-height:1.65;opacity:.9}
+.v587-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+.v587-card{padding:12px;border:1px solid rgba(190,160,250,.42);border-radius:12px;background:rgba(15,15,33,.35)}
+.v587-card h4{margin:0 0 8px;font-size:1rem}.v587-ticket{display:flex;justify-content:space-between;gap:5px;border-bottom:1px solid rgba(255,255,255,.12);padding:7px 0;font-variant-numeric:tabular-nums}
+.v587-ticket span{font-size:.76rem;opacity:.8;white-space:nowrap}
+@media(max-width:650px){.v587-grid{grid-template-columns:1fr}}
 </style>
 <style>
 .v425-controls{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
@@ -1757,6 +1766,38 @@ loadAutoPredictions();
           const card=el('div',undefined,'v493-kpi');card.append(el('span',label),el('strong',value));kpis.append(card);
         }
         probPanel.append(kpis);
+        // v5.8.7: two independent READ-ONLY interpretations of the same prediction snapshot.
+        // Do not alter Worker, stored predictions, D1, or the original recommended tickets.
+        const dual=el('section',undefined,'v587-dual');
+        dual.append(el('h3','本命予想 vs 実力評価｜2方式の比較'));
+        dual.append(el('p','本命＝120通りの参考推定確率順。実力＝既存20項目AIの1着固定型買い目。いずれも未校正の仮説で、的中確率を保証しません。'));
+        const dualGrid=el('div',undefined,'v587-grid');
+        const makePanel=(heading,description,combinations)=>{
+          const panel=el('div',undefined,'v587-card');
+          panel.append(el('h4',heading),el('p',description));
+          const table=el('div',undefined,'v587-ticket-list');
+          combinations.forEach((combo,i)=>{
+            const row=el('div',undefined,'v587-ticket');
+            row.append(el('strong',(i+1)+'. '+combo),el('span','100円（仮想）'));
+            table.append(row);
+          });
+          panel.append(table,el('p','6点 × 100円 = 600円（購入操作なし）'));
+          return panel;
+        };
+        const mainSix=outcomes.slice(0,6).map(o=>o.combination);
+        const skillSix=[...new Set((data.tickets||[]).map(t=>String(t.combination)))].slice(0,6);
+        dualGrid.append(makePanel('🎯 本命予想｜着順確率順','参考確率の上位6点。コース・展開の実測的中率ではありません。',mainSix));
+        if(skillSix.length===6){
+          dualGrid.append(makePanel('🏆 実力評価｜既存AI','20項目の採点と従来の買い目生成ルールをそのまま使用。',skillSix));
+        }else{
+          const missing=el('div',undefined,'v587-card');missing.append(el('h4','🏆 実力評価｜既存AI'),el('p','買い目が6点揃わないため比較を保留します。'));dualGrid.append(missing);
+        }
+        dual.append(dualGrid);
+        const overlap=mainSix.filter(c=>skillSix.includes(c)).length;
+        dual.append(el('p','共通買い目 '+overlap+'/6点。順位の不一致はエラーと決めつけず、異なる仮説として検証します。'));
+        if(data.retrospective_risk||data.is_result_available)dual.append(el('p','⚠ 結果判明後の表示です。事前予想として集計しないでください。'));
+        probPanel.append(dual);
+
         probPanel.append(el('p','AI採点から計算した未校正の参考値です。過去の的中率や統計的に検証された的中確率ではありません。6艇の相対評価を重み付けし、着順を重複なしで選ぶ仮モデル（温度15点）です。'));
         const list=el('div');probPanel.append(list);
         const render=(head,limit)=>{
@@ -4935,3 +4976,32 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();</script>
+
+
+<style id="v588-analysis-style">
+#v588Panel{margin:16px 0;padding:18px;border:1px solid rgba(125,145,200,.35);border-radius:16px;background:rgba(22,27,54,.72);color:#f0f3ff}#v588Panel h2{margin:0 0 8px;font-size:21px}#v588Panel p{line-height:1.6}#v588Panel .v588bar{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:14px 0}#v588Panel label{display:flex;flex-direction:column;gap:5px;font-size:13px}#v588Panel input{color:#111;background:#fff;border-radius:7px;padding:9px;border:1px solid #aaa}#v588Panel button{padding:10px 14px;border:0;border-radius:9px;background:#c6ddff;color:#142044;font-weight:700;cursor:pointer}#v588Panel button:disabled{opacity:.5}#v588Panel .v588grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin:12px 0}#v588Panel .v588metric{background:rgba(255,255,255,.09);border-radius:10px;padding:12px}#v588Panel .v588metric small{display:block;opacity:.8}#v588Panel .v588metric strong{display:block;font-size:22px;margin-top:5px}#v588Panel .v588table{overflow-x:auto}#v588Panel table{width:100%;border-collapse:collapse;font-size:13px}#v588Panel td,#v588Panel th{padding:8px;border-bottom:1px solid rgba(255,255,255,.16);text-align:left;white-space:nowrap}#v588Panel .v588warn{font-size:12px;opacity:.85}#v588Panel .v588status{font-size:13px;min-height:20px}#v588Panel details{margin-top:14px}#v588Panel summary{cursor:pointer;font-weight:600}
+</style>
+<script id="v588-analysis-script">
+(()=>{'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>Number(v||0).toLocaleString('ja-JP');
+const percent=v=>v===null||v===undefined?'未集計':Number(v).toFixed(2)+'%';
+const day=(shift=0)=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Date.now()+shift*86400000));
+const cell=(label,value)=>'<div class="v588metric"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong></div>';
+const table=(heads,rows)=>'<div class="v588table"><table><thead><tr>'+heads.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+async function get(path){const r=await fetch(API+path,{cache:'no-store'});const d=await r.json();if(!r.ok)throw Error((d.error||'HTTP '+r.status)+' ['+path+']');return d;}
+function init(){const host=$('stats');if(!host||$('v588Panel'))return;const panel=document.createElement('section');panel.id='v588Panel';panel.innerHTML=`<h2>🧠 自動分析センター <small>Dashboard v5.8.9 / Worker v5.2.9対応</small></h2><p>保存済み事前予想の自動集計・過去データの分析進捗・Cron診断・中止判定をまとめて確認できます。閲覧専用で、本番予想やD1データを変更しません。</p><div class="v588bar"><label>開始日<input type="date" id="v588From"></label><label>終了日<input type="date" id="v588To"></label><button type="button" id="v588Load">最新データを更新</button><button type="button" id="v588All">全期間</button><button type="button" id="v588Week">直近7日</button></div><p id="v588Status" class="v588status" aria-live="polite">「最新データを更新」でWorkerから取得します。</p><div id="v588Metrics" class="v588grid"></div><div id="v588Coverage"></div><details open><summary>📅 日別の分析状況</summary><div id="v588Days"></div></details><details><summary>⏱️ 自動分析の実行履歴</summary><div id="v588Runs"></div></details><details><summary>🛡️ 中止レース・照合診断</summary><div id="v588Cancel"></div></details><p class="v588warn">結果はWorker内部の公式／暫定分類をそのまま表示します。外部公式結果との独立照合済みとは限りません。保存ログ件数は重複を含む可能性があり、実購入の収支ではありません。未分析の日付は集計に含まれません。</p>`;
+host.append(panel);$('v588From').value=day(-6);$('v588To').value=day();
+$('v588All').onclick=()=>{$('v588From').value='2000-01-01';$('v588To').value=day();load()};$('v588Week').onclick=()=>{$('v588From').value=day(-6);$('v588To').value=day();load()};$('v588Load').onclick=load;
+let busy=false;async function load(){if(busy)return;const from=$('v588From').value,to=$('v588To').value;if(!from||!to||from>to){$('v588Status').textContent='日付の範囲を確認してください。';return;}busy=true;$('v588Load').disabled=true;$('v588Status').textContent='APIから取得中…';const paths=['/automatic-analysis-summary?from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to),'/automatic-analysis-status','/automatic-analysis-run-status','/cancellation-diagnostics','/cancellation-status'];const res=await Promise.allSettled(paths.map(get));const val=i=>res[i].status==='fulfilled'?res[i].value:null;const errors=res.map((r,i)=>r.status==='rejected'?paths[i]+': '+r.reason.message:null).filter(Boolean);const summary=val(0),status=val(1),runs=val(2),cancel=val(3),cancelStatus=val(4);
+if(summary){const t=summary.totals||{};$('v588Metrics').innerHTML=cell('分析済み日数',num(t.days)+'日')+cell('対象スナップ',num(t.source_rows)+'件')+cell('分析可能',num(t.eligible_rows)+'件')+cell('的中率',percent(t.hit_rate_percent))+cell('回収率（仮想）',percent(t.roi_percent))+cell('仮想収支',num(t.profit_yen)+'円')+cell('未照合',num(t.pending_rows)+'件')+cell('公式分類',num(t.official_rows)+'件');$('v588Coverage').innerHTML='<p>対象日数 '+num(summary.source_days)+'日 ／ 分析済み '+num(summary.analyzed_days)+'日 ／ 過去処理 '+(summary.backfill_complete?'完了と報告':'未完了')+(summary.truncated?' ／ 集計上限到達':'')+'</p>';$('v588Days').innerHTML=table(['日付','分析可能','公式分類','暫定','未照合','部分集計'],(summary.days||[]).slice().reverse().map(d=>[d.date,num(d.eligible),num(d.official),num(d.provisional),num(d.pending),d.partial?'あり':'なし']));}else{$('v588Metrics').innerHTML='';$('v588Coverage').textContent='累積集計の取得に失敗しました。';$('v588Days').textContent='データ未取得';}
+if(status&&status.days?.length){$('v588Days').insertAdjacentHTML('beforeend','<p class="v588warn">直近保存日：'+esc(status.days[0].race_date)+' ／ 保存時刻：'+esc(status.days[0].generated_at_utc||'不明')+' UTC</p>');}
+if(runs){$('v588Runs').innerHTML='<p>記録された実行：'+num((runs.runs||[]).length)+'件。履歴0件でもCron未実行とは断定できません。</p>'+table(['開始UTC','終了UTC','状態','エラー'],(runs.runs||[]).map(r=>[r.started_at_utc,r.finished_at_utc,r.status,r.error_message||'なし']));}else $('v588Runs').textContent='実行履歴を取得できません。';
+if(cancel){$('v588Cancel').innerHTML='<p>開催場全体の確認済み中止：'+num(cancel.verified_venue_days)+'日 ／ 中止として除外した保存ログ：'+num(cancelStatus?.excluded_snapshots)+'件</p>'+table(['再試行理由','件数'],(cancel.cancellation_retry_reasons||[]).map(x=>[x.last_reason,num(x.n)]))+'<p class="v588warn">再試行理由は履歴上の分類であり、現在の公式確認を証明しません。</p>';}else $('v588Cancel').textContent='中止診断を取得できません。';
+$('v588Status').textContent=(errors.length?'一部取得失敗：'+errors.join(' ／ '):'更新完了')+' ／ Worker '+esc(summary?.build_id||status?.build_id||'不明')+' ／ '+new Date().toLocaleString('ja-JP');busy=false;$('v588Load').disabled=false;}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
