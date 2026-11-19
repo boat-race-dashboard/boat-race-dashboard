@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v5.8.1 | Detailed AI</title>
+  <title>BOAT RACE AI Dashboard v5.9.0 | Mobile usability</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -3632,6 +3632,63 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   reset();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
+
+<!-- v5.9.0 mobile usability enhancement: presentation only; preserves existing API, predictions and storage -->
+<style id="v590-mobile-usability">
+:root{--v590-gold:#f5d078;--v590-purple:#35254f}
+html{scroll-behavior:smooth;scroll-padding-top:18px;-webkit-text-size-adjust:100%}
+body{overflow-x:hidden}main,section,.panel,.card{min-width:0}
+button,a,summary,[role="tab"]{touch-action:manipulation;-webkit-tap-highlight-color:rgba(245,208,120,.16)}
+button:focus-visible,a:focus-visible,summary:focus-visible,[role="tab"]:focus-visible{outline:3px solid var(--v590-gold);outline-offset:3px}
+button{transition:background-color .15s,border-color .15s}
+.venue-board .venue-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.venue-board .venue-tile{min-width:0;min-height:72px;padding:12px;border-radius:15px}
+#v570Desk .v570-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;gap:8px}
+#v570Desk .v570-actions button{min-width:0;white-space:normal;line-height:1.35;min-height:45px;padding:9px 5px;font-size:12px}
+#v570Desk .v570-actions button:last-child:nth-child(3n+2){grid-column:span 2}
+#v570Desk .v570-cell{min-width:0}
+#v570Desk .v570-cell b{overflow-wrap:anywhere}
+#heroRaceStatus.v445-clock{gap:4px;white-space:normal;overflow-wrap:anywhere}
+#heroRaceStatus.v445-clock strong{display:block;font-variant-numeric:tabular-nums;letter-spacing:.3px}
+#v590QuickNav{display:none}
+@media(max-width:600px){
+ main{padding-left:11px!important;padding-right:11px!important}
+ header{padding-left:15px;padding-right:15px}
+ h1{line-height:1.2}
+ button,select,input{min-height:42px}
+ details>summary{cursor:pointer;padding-top:10px;padding-bottom:10px;line-height:1.5}
+ .venue-board{padding:15px!important}
+ .venue-board .venue-tile{min-height:69px}
+ .venue-board .venue-tile strong{font-size:15px}
+ #v590QuickNav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:30;background:rgba(17,24,46,.97);padding:8px 3px;margin:0 -3px 12px;border-bottom:1px solid #755b93;overscroll-behavior-x:contain}
+ #v590QuickNav::-webkit-scrollbar{display:none}
+ #v590QuickNav button{flex:0 0 auto;min-height:39px;background:#332747;color:#f7e6ae;border:1px solid #8769a2;border-radius:999px;padding:8px 13px;font-weight:700;font-size:12px}
+ #v590QuickNav button:active{background:#5d437a}
+ #v570Desk .v570-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .grid{gap:7px}
+ .metric{min-width:0}
+ table{max-width:100%}
+}
+@media(max-width:360px){#v570Desk .v570-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.venue-board .venue-tile{padding:9px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}button{transition:none}}
+</style>
+<script id="v590-mobile-usability-js">
+(function(){
+ 'use strict';
+ function setup(){
+  if(document.getElementById('v590QuickNav'))return;
+  const main=document.querySelector('main');if(!main)return;
+  const nav=document.createElement('nav');nav.id='v590QuickNav';nav.setAttribute('aria-label','画面内のクイック移動');
+  const items=[['レース・締切','v570Desk'],['全国24場','venueBoard'],['上へ',null]];
+  items.forEach(function(item){const b=document.createElement('button');b.type='button';b.textContent=item[0];b.addEventListener('click',function(){
+   const target=item[1]?document.getElementById(item[1]):document.body;
+   if(target)target.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+  });nav.appendChild(b)});
+  main.insertBefore(nav,main.firstChild);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup,{once:true});else setup();
 })();
 </script>
 </body>
