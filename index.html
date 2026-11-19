@@ -3559,6 +3559,40 @@ setInterval(()=>{if(!document.hidden)update()},1000);update();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();</script>
+<script id="official-exhibition-v585">
+// Read-only official exhibition overlay; never writes D1 or modifies existing prediction objects.
+(()=>{
+ const API='https://boat-race-api.7phr5nzkbt.workers.dev';
+ const get=id=>document.getElementById(id);
+ let lastKey='',seq=0;
+ function selection(){return {date:get('scheduleDate')?.value||'',venue:get('heroVenue')?.value||'',race:get('heroRace')?.value||''};}
+ function key(s){return [s.date,s.venue,s.race].join('/');}
+ function install(){
+  const pane=get('cockpitPreview');if(!pane)return;
+  const panel=document.createElement('section');panel.id='officialExhibitionPanel';panel.style.cssText='margin-top:14px;padding:14px;border:1px solid #9b87c3;border-radius:12px;background:#182b40;color:#fff';
+  const heading=document.createElement('strong');heading.textContent='BOAT RACE公式・展示タイム（読み取り専用）';
+  const status=document.createElement('p');status.id='officialExhibitionStatus';status.textContent='未取得。公式データを確認してください。';
+  const details=document.createElement('div');details.id='officialExhibitionValues';
+  const btn=document.createElement('button');btn.type='button';btn.textContent='公式展示タイムを取得';btn.style.cssText='padding:9px 14px;border-radius:8px;background:#604b85;color:#fff;border:1px solid #b4a3da';
+  panel.append(heading,status,details,btn);pane.append(panel);
+  function reset(){const k=key(selection());if(k!==lastKey){lastKey=k;seq++;status.textContent='レース変更：公式展示タイム未取得';details.replaceChildren();}}
+  async function load(){reset();const s=selection(),k=key(s),id=++seq;btn.disabled=true;status.textContent='公式直前情報を確認中…';details.replaceChildren();
+   try{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),11000);let r;try{r=await fetch(API+'/official-exhibition?'+new URLSearchParams(s),{cache:'no-store',signal:controller.signal})}finally{clearTimeout(timer)}
+    if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();if(id!==seq||k!==key(selection()))return;
+    if(j.status!=='verified_table'||j.exhibition_count!==6||!Array.isArray(j.values)||j.values.length!==6){status.textContent='公式展示タイム未検証：'+(j.reason||j.status||'unknown')+'。非公式の値で代用しません。';return;}
+    status.textContent='公式展示タイム6/6艇取得（'+new Date(j.checked_at_utc).toLocaleTimeString('ja-JP')+'確認）。展示ST・進入は未検証。AI採点への反映は未実施。';
+    const table=document.createElement('div');table.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0';
+    for(const x of j.values){const cell=document.createElement('div');cell.style.cssText='padding:8px;border:1px solid #65758b;border-radius:8px;text-align:center';cell.textContent=x.boat+'号艇：'+Number(x.exhibition_time).toFixed(2)+'秒';table.append(cell)}details.append(table);
+   }catch(e){if(id===seq&&k===key(selection()))status.textContent='公式取得失敗：'+String(e.message).slice(0,100)+'。AIの既存予想は変更しません。';}finally{btn.disabled=false;}
+  }
+  btn.addEventListener('click',load);
+  for(const name of ['scheduleDate','heroVenue','heroRace'])get(name)?.addEventListener('change',reset);
+  const mo=new MutationObserver(reset);for(const name of ['heroRaceTitle','heroRaceSub'])if(get(name))mo.observe(get(name),{childList:true,subtree:true,characterData:true});
+  reset();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
 </body>
 </html>
 
