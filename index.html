@@ -3559,7 +3559,7 @@ setInterval(()=>{if(!document.hidden)update()},1000);update();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();</script>
-<script id="official-exhibition-v585">
+<script id="official-exhibition-v586">
 // Read-only official exhibition overlay; never writes D1 or modifies existing prediction objects.
 (()=>{
  const API='https://boat-race-api.7phr5nzkbt.workers.dev';
@@ -3579,7 +3579,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   async function load(){reset();const s=selection(),k=key(s),id=++seq;btn.disabled=true;status.textContent='公式直前情報を確認中…';details.replaceChildren();
    try{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),11000);let r;try{r=await fetch(API+'/official-exhibition?'+new URLSearchParams(s),{cache:'no-store',signal:controller.signal})}finally{clearTimeout(timer)}
     if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();if(id!==seq||k!==key(selection()))return;
-    if(j.status!=='verified_table'||j.exhibition_count!==6||!Array.isArray(j.values)||j.values.length!==6){status.textContent='公式展示タイム未検証：'+(j.reason||j.status||'unknown')+'。非公式の値で代用しません。';return;}
+    if(j.status!=='verified_table'||j.exhibition_count!==6||!Array.isArray(j.values)||j.values.length!==6){status.textContent='公式展示タイム未検証：'+(j.reason||j.status||'unknown')+'。非公式の値で代用しません。';if(j.parser_diagnostics){const pre=document.createElement('pre');pre.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;padding:8px;border:1px solid #65758b;border-radius:8px';pre.textContent='解析診断（コピーして共有）：\n'+JSON.stringify({build_id:j.build_id,table_count:j.table_count,parser_diagnostics:j.parser_diagnostics},null,2);details.append(pre);}return;}
     status.textContent='公式展示タイム6/6艇取得（'+new Date(j.checked_at_utc).toLocaleTimeString('ja-JP')+'確認）。展示ST・進入は未検証。AI採点への反映は未実施。';
     const table=document.createElement('div');table.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0';
     for(const x of j.values){const cell=document.createElement('div');cell.style.cssText='padding:8px;border:1px solid #65758b;border-radius:8px;text-align:center';cell.textContent=x.boat+'号艇：'+Number(x.exhibition_time).toFixed(2)+'秒';table.append(cell)}details.append(table);
