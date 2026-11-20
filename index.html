@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.2.0 | Four-screen navigation</title>
+  <title>BOAT RACE AI Dashboard v6.4.8</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -5305,7 +5305,7 @@ body.v620-ready #outcomes{padding-bottom:90px}
 </style>
 
 
-<!-- v6.4.7: cockpit diagnostics compact integration; presentation only -->
+<!-- v6.4.8: cockpit diagnostics compact integration; prevent self-triggered mutation loops -->
 <style id="v647-compact-style">
 #v570Desk #v647Summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:9px 0}
 #v570Desk .v647-chip{border:1px solid #6c6689;background:#2b3150;border-radius:9px;padding:7px 3px;text-align:center;min-width:0}
@@ -5327,7 +5327,7 @@ function init(){const desk=$('v570Desk');if(!desk||$('v647Details'))return false
  const reference=desk.querySelector('.v570-grid');if(reference)reference.after(grid);else desk.append(grid);
  desk.append(details);
  function relocate(){for(const id of ['exLatencyPanel','officialReadOnlyPanel']){const p=$(id);if(p&&p.parentNode!==details)details.append(p)}}
- function sync(){const mapping=[['v630Race','v647Race'],['v630Exhibition','v647Ex'],['v630Odds','v647Odds']];for(const [source,dest] of mapping){const text=$(source)?.textContent?.trim();$(dest).textContent=text||'確認待ち'}
+ function sync(){const mapping=[['v630Race','v647Race'],['v630Exhibition','v647Ex'],['v630Odds','v647Odds']];for(const [source,dest] of mapping){const text=$(source)?.textContent?.trim();const next=text||'確認待ち';if($(dest)&&$(dest).textContent!==next)$(dest).textContent=next}
  // The diagnostic panel is separate from the regular display. Never infer official verification from visible odds or exhibition.
  }
  const observer=new MutationObserver(()=>{relocate();sync()});observer.observe(document.body,{childList:true,subtree:true,characterData:true});relocate();sync();
