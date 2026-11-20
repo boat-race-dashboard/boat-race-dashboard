@@ -2080,7 +2080,13 @@ loadAutoPredictions();
     for(let n=1;n<=12;n++)board.append(el('span',String(n),'v433-matrix-col'));
     const byKey=new Map();
     for(const r of dated){byKey.set(Number(r.venue)+'-'+Number(r.race),r);}
+    // Only hide a venue when the returned schedule/result feed establishes
+    // which venues are running. On feed failure, retain venues with saved snapshots.
+    const activeVenueIds=new Set(dayRaces.map(x=>Number(x.venue)).filter(v=>v>=1&&v<=24));
+    const snapshotVenueIds=new Set(dated.map(x=>Number(x.venue)).filter(v=>v>=1&&v<=24));
+    const visibleVenueIds=activeVenueIds.size?activeVenueIds:snapshotVenueIds;
     VENUES.forEach((name,i)=>{
+      if(!visibleVenueIds.has(i+1))return;
       board.append(el('span',name,'v433-matrix-label'));
       for(let n=1;n<=12;n++){
         const r=byKey.get((i+1)+'-'+n),daily=dayRaces.find(x=>Number(x.venue)===i+1&&Number(x.race)===n);
@@ -2098,7 +2104,7 @@ loadAutoPredictions();
       }
     });
     matrix.append(board);
-    const coverage=el('p','開催データ '+dayRaces.length+'R／事前予想 '+byKey.size+'R（現在ページ）。未保存は不的中扱いしません。','v433-coverage');matrix.append(coverage);
+    const coverage=el('p',(activeVenueIds.size?'開催データに含まれる '+activeVenueIds.size+'場':'開催データ未取得：保存記録のある '+snapshotVenueIds.size+'場を暫定表示')+'／開催データ '+dayRaces.length+'R／事前予想 '+byKey.size+'R（現在ページ）。未保存は不的中扱いしません。','v433-coverage');matrix.append(coverage);
     const target=document.getElementById('outcomeList');target.replaceChildren();
     document.getElementById('outcomeStatus').textContent=selectedDate+'：レース単位 '+shown.length+'件表示（元記録 '+allDated.length+'件、同一レースは最初の保存予想を代表表示）／'+(Math.floor(offset/200)+1)+'ページ目（200件／ページ）。全レース結果は開催データから表示。';
     if(!shown.length){target.append(el('div','該当する事前予想・照合記録がありません','empty'));return;}
@@ -2123,10 +2129,12 @@ loadAutoPredictions();
     document.getElementById('outcomeStatus').textContent='事前予想の結果を取得中…';
     try{
       const qs=new URLSearchParams({date:date.value,limit:'200',offset:String(offset)});
-      const [snapshotResponse,dailyResponse]=await Promise.all([
-        fetch(API+'/snapshot-checks?'+qs,{cache:'no-store'}),
-        fetch(API+'/daily-results?date='+encodeURIComponent(date.value),{cache:'no-store'})
-      ]);
+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+      let snapshotResponse,dailyResponse;
+      try{[snapshotResponse,dailyResponse]=await Promise.all([
+        fetch(API+'/snapshot-checks?'+qs,{cache:'no-store',signal:ctrl.signal}),
+        fetch(API+'/daily-results?date='+encodeURIComponent(date.value),{cache:'no-store',signal:ctrl.signal})
+      ]);}finally{clearTimeout(timer)}
       if(!snapshotResponse.ok)throw Error('履歴取得 HTTP '+snapshotResponse.status);
       const obj=await snapshotResponse.json();if(!Array.isArray(obj.results))throw Error('履歴のデータ形式が異なります');
       rows=obj.results;hasMore=Boolean(obj.pagination?.has_more);
@@ -2136,7 +2144,7 @@ loadAutoPredictions();
       if(prev)prev.disabled=offset===0;if(next)next.disabled=!hasMore;
       const page=document.getElementById('v497PageLabel');if(page)page.textContent=(Math.floor(offset/200)+1)+'ページ目';
       paintResults();
-    }catch(e){document.getElementById('outcomeStatus').textContent='結果を取得できませんでした：'+e.message;}
+    }catch(e){document.getElementById('outcomeStatus').textContent='結果を取得できませんでした：'+(e.name==='AbortError'?'12秒でタイムアウト':e.message);}
     finally{busy=false;document.getElementById('outcomeRefresh').disabled=false;}
   }
   document.getElementById('outcomeRefresh').onclick=refresh;
@@ -3104,9 +3112,13 @@ async function load(force=false){
  if(!force&&date===loadedDay&&Date.now()-last<55000)return;
  busy=true;last=Date.now();loadedDay=date;$('v483Status').textContent='全レース結果を取得中…';
  try{
-  const res=await fetch(API+'/daily-results?date='+encodeURIComponent(date),{cache:'no-store'});
-  const j=await res.json();if(!res.ok)throw Error(j.error||'HTTP '+res.status);
-  const venues=[...new Set(j.races.map(x=>x.venue))].sort((a,b)=>a-b),map=new Map(j.races.map(x=>[x.venue+'|'+x.race,x]));
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);
+  let res,j;
+  try{res=await fetch(API+'/daily-results?date='+encodeURIComponent(date),{cache:'no-store',signal:ctrl.signal});j=await res.json();}
+  finally{clearTimeout(timer)}
+  if(!res.ok)throw Error(j.error||'HTTP '+res.status);
+  if(!Array.isArray(j.races))throw Error('結果APIの形式が不正です（races配列なし）');
+  const venues=[...new Set(j.races.map(x=>Number(x.venue)).filter(v=>Number.isInteger(v)&&v>=1&&v<=24))].sort((a,b)=>a-b),map=new Map(j.races.map(x=>[Number(x.venue)+'|'+Number(x.race),x]));
   const table=document.createElement('table'),thead=document.createElement('thead'),tr=document.createElement('tr');
   for(const label of ['場',...Array.from({length:12},(_,i)=>(i+1)+'R')]){const th=document.createElement('th');th.textContent=label;tr.append(th)}thead.append(tr);table.append(thead);
   const body=document.createElement('tbody');
@@ -3120,7 +3132,7 @@ async function load(force=false){
   table.append(body);$('v483Table').replaceChildren(table);
   const cv=j.coverage||{};const verified=j.races.filter(x=>x.officially_verified===true).length;
   $('v483Status').textContent=date+'｜掲載 '+j.races.length+'R／結果 '+j.settled+'R（公式確認 '+verified+'R・その他 '+(j.settled-verified)+'R）／未確定 '+j.pending+'R／中止 '+(j.cancelled||0)+'R／要確認 '+j.nonstandard+'R'+(j.coverage?'｜締切20分超で未取得 '+cv.overdue_unresolved+'R・時刻不明 '+cv.unknown_time_unresolved+'R':'')+'｜取得 '+new Date(j.fetched_at_utc).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo'})+'（公式結果優先・未検証結果を含む）';
- }catch(e){$('v483Status').textContent='結果取得失敗：'+e.message+'（前回の表は残しています）'}finally{busy=false}
+ }catch(e){$('v483Status').textContent='結果取得失敗：'+(e.name==='AbortError'?'12秒でタイムアウト':e.message)+'（前回の表は残しています）'}finally{busy=false}
 }
 $('v483Refresh').addEventListener('click',()=>load(true));$('outcomeDate')?.addEventListener('change',()=>load(true));
 document.querySelector('[data-tab="outcomes"]')?.addEventListener('click',()=>setTimeout(()=>load(true),80));
@@ -3722,9 +3734,9 @@ body.v620-ready #raceView{padding-bottom:25px}
 </style>
 <script id="v620-script">(()=>{'use strict';
 const $=id=>document.getElementById(id);
-const screens={races:'home',detail:'raceView',analysis:'stats',admin:'manageView'};
+const screens={races:'home',detail:'raceView',outcomes:'outcomes',analysis:'stats',admin:'manageView'};
 let current='races',busy=false,lastAttempt=0,serial=0;
-const labels=[['races','レース一覧'],['detail','レース詳細'],['analysis','分析・成績'],['admin','管理・診断']];
+const labels=[['races','レース一覧'],['detail','レース詳細'],['outcomes','全国結果'],['analysis','分析・成績'],['admin','管理・診断']];
 function state(msg){const e=$('v620State');if(e)e.textContent=msg;}
 function go(key,scroll=true){const id=screens[key];if(!id||!$(id))return;
  current=key;
@@ -3733,6 +3745,7 @@ function go(key,scroll=true){const id=screens[key];if(!id||!$(id))return;
  if(button)button.click();else if(typeof tab==='function')tab(id);
  // Explicitly reconcile visibility after legacy handlers, without deleting their sections.
  for(const [k,target] of Object.entries(screens))$(target)?.classList.toggle('hidden',k!==key);
+ if(key==='outcomes'){const date=$('outcomeDate');if(date&&!date.value){date.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}setTimeout(()=>{$('outcomeRefresh')?.click();$('v483Refresh')?.click();},100);}
  $('v620Nav')?.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.screen===key?'page':'false'));
  if(scroll)window.scrollTo(0,0);
 }
@@ -5212,3 +5225,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 
 
+
+<!-- v6.4.1: restore the existing nationwide result view as a first-class screen. -->
+<style id="v641-navigation-style">
+#v620Nav{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important;padding:7px 5px calc(7px + env(safe-area-inset-bottom))!important}
+#v620Nav button{min-width:0!important;font-size:clamp(9px,2.6vw,13px)!important;padding:7px 1px!important;white-space:normal!important;line-height:1.3!important}
+body.v620-ready #outcomes{padding-bottom:90px}
+#v483Panel .v483-scroll{max-width:100%;-webkit-overflow-scrolling:touch}
+#v483Panel table{min-width:650px}
+</style>
