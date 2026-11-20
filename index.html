@@ -1545,13 +1545,13 @@ loadAutoPredictions();
     <div class="hero-choose"><div><label for="heroVenue">競艇場</label><select id="heroVenue"></select></div><div class="hero-race-label">レースは下の1R〜12Rから選択<select id="heroRace" aria-label="選択中のレース" hidden></select></div></div>
     <div class="race-dots" id="heroRaceDots"></div>
     <div class="cockpit-tabs" role="tablist" aria-label="レース情報の切替"><button type="button" data-cockpit-tab="entries" class="active" aria-selected="true">出走表</button><button type="button" data-cockpit-tab="preview" aria-selected="false">直前情報</button><button type="button" data-cockpit-tab="prediction" aria-selected="false">AI予想</button><button type="button" data-cockpit-tab="odds" aria-selected="false">オッズ</button><button type="button" data-cockpit-tab="result" aria-selected="false">結果</button></div>
-    <div class="cockpit-pane" id="cockpitEntries"><div class="linked-entry"><h3 id="linkedEntryTitle">📋 出走表</h3><div class="linked-status" id="linkedEntryStatus" aria-live="polite">選択中のレースを取得しています…</div><div id="linkedEntryBody"></div><div class="linked-note">非公式APIの参考データです。締切・展示などは公式情報を確認してください。</div></div></div>
+    <div class="cockpit-pane" id="cockpitEntries"><div class="linked-entry"><h3 id="linkedEntryTitle">📋 出走表</h3><div class="linked-status" id="linkedEntryStatus" aria-live="polite">選択中のレースを取得しています…</div><div id="linkedEntryBody"></div><div class="linked-note">出走表は非公式補完を含みます。展示・オッズは公式優先。項目別の取得元を確認してください。</div></div></div>
     <div class="cockpit-pane" id="cockpitPreview" hidden><div class="linked-entry"><h3>直前情報</h3><div id="cockpitPreviewBody" class="linked-status">データを取得中…</div></div></div>
     <div class="cockpit-pane" id="cockpitPrediction" hidden><div class="hero-reco"><strong>✧ AI予想（試作ルール型）</strong><div class="tickets v40-tickets" id="heroTickets">選択すると予想を取得します</div><div class="meta" id="heroPredictionMeta">評価点は的中確率ではありません</div><div id="cockpitRanking"></div><button type="button" class="primary" id="heroPredict">予想を更新</button></div></div>
-    <div class="cockpit-pane" id="cockpitOdds" hidden><div class="linked-entry"><h3>3連単オッズ（非公式・約30分更新）</h3><div class="odds-notice" id="oddsNotice">選択中のレースのオッズを取得します</div><div class="odds-head"><label>1着固定 <select id="oddsFirst"><option value="1">1号艇</option><option value="2">2号艇</option><option value="3">3号艇</option><option value="4">4号艇</option><option value="5">5号艇</option><option value="6">6号艇</option></select></label><button type="button" id="oddsRefresh">オッズを更新</button></div><div id="oddsTable"></div><p class="muted">オッズは確定値ではありません。100円購入時の払戻見込みです。実際の購入前に公式情報を確認してください。</p></div></div>
+    <div class="cockpit-pane" id="cockpitOdds" hidden><div class="linked-entry"><h3>3連単オッズ（公式優先・取得元を確認）</h3><div class="odds-notice" id="oddsNotice">選択中のレースのオッズを取得します</div><div class="odds-head"><label>1着固定 <select id="oddsFirst"><option value="1">1号艇</option><option value="2">2号艇</option><option value="3">3号艇</option><option value="4">4号艇</option><option value="5">5号艇</option><option value="6">6号艇</option></select></label><button type="button" id="oddsRefresh">オッズを更新</button></div><div id="oddsTable"></div><p class="muted">オッズは確定値ではありません。100円購入時の払戻見込みです。実際の購入前に公式情報を確認してください。</p></div></div>
     <div class="cockpit-pane" id="cockpitResult" hidden><div class="linked-entry"><h3>レース結果</h3><div id="cockpitResultBody" class="linked-status">結果を取得中…</div></div></div>
     <button type="button" id="heroLoadDetail" hidden>旧詳細画面</button>
-    <div class="hero-caption">Boatrace Open APIによる非公式参考情報。的中確率や期待値を保証しません。締切・開催・投票可否は公式情報で確認してください。</div>`;
+    <div class="hero-caption">公式優先・非公式補完の参考情報。AI予想への公式データ反映は未検証です。締切・開催・投票可否は公式情報で確認してください。</div>`;
   home.insertBefore(hero,home.firstChild);
   const hv=document.getElementById('heroVenue'),hr=document.getElementById('heroRace'),dots=document.getElementById('heroRaceDots');
   VENUES.forEach((name,i)=>hv.add(new Option(String(i+1).padStart(2,'0')+' '+name,String(i+1))));
@@ -1639,13 +1639,13 @@ loadAutoPredictions();
   }
   async function loadOdds(){
     const id=++oddsRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
-    oddsCache=null;oddsNotice.textContent='非公式オッズを取得中…';renderOdds();
+    oddsCache=null;oddsNotice.textContent='公式オッズを確認中…';renderOdds();
     try{
       const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
       if(!res.ok)throw Error('HTTP '+res.status);
       const data=await res.json();if(id!==oddsRequestId)return;oddsCache=data;
       const time=data.source_updated_at?'元データ更新 '+data.source_updated_at:'元データ更新時刻は未確認';
-      oddsNotice.textContent='取得 '+data.count+'/120通り ／ '+time+' ／ 画面取得 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+'（約30分更新・非公式）';
+      oddsNotice.textContent='取得 '+data.count+'/120通り ／ '+time+' ／ 画面取得 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+'（公式オッズ・最終値とは限りません）';
       if(!data.count)oddsNotice.textContent+=' ／ 未配信または形式未対応';
       renderOdds();
     }catch(e){if(id!==oddsRequestId)return;oddsNotice.textContent='オッズを取得できません：'+e.message+'。架空の数値は表示しません。';}
@@ -3809,6 +3809,35 @@ $('v620Nav')?.querySelector('[data-screen="detail"]')?.addEventListener('click',
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();</script>
 
+
+<style id="v640-style">
+#v640Source,#v640Results{border:1px solid rgba(202,169,99,.4);background:linear-gradient(145deg,#201a37,#131d32);border-radius:15px;padding:15px;margin:14px 0;color:#f4edff;box-sizing:border-box}
+#v640Source h3,#v640Results h2{margin:0 0 10px;color:#e7c987}#v640Source .v640chips,#v640Results .v640metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+.v640chip{border:1px solid #5b5274;border-radius:9px;padding:9px;background:#25233e;font-size:12px}.v640chip strong{display:block;font-size:14px;margin-top:4px}.v640muted{color:#bcb7ce;font-size:12px;line-height:1.65}
+#v640Results .v640controls{display:flex;flex-wrap:wrap;gap:9px;align-items:end;margin:12px 0}#v640Results input,#v640Results button{background:#302747;color:#fff;border:1px solid #8e78aa;border-radius:8px;padding:8px}
+#v640Results button{cursor:pointer;color:#f4d991}#v640Results button:disabled{opacity:.5}#v640Results .v640scroll{overflow-x:auto}#v640Results table{border-collapse:collapse;width:100%;min-width:620px;font-size:12px}#v640Results th,#v640Results td{padding:9px;border-bottom:1px solid #4d4562;text-align:right}#v640Results th:first-child,#v640Results td:first-child{text-align:left}
+</style>
+<script id="v640-script">(()=>{'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev',by=id=>document.getElementById(id);
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=x=>x==null?'—':Number(x).toLocaleString('ja-JP'),pct=x=>x==null?'—':Number(x).toFixed(2)+'%';
+const jst=(shift=0)=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Date.now()+shift*86400000));
+async function get(path,ms=12000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(API+path,{signal:c.signal,cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'HTTP '+r.status);return d;}finally{clearTimeout(t)}}
+function init(){const cockpit=by('raceCockpit'),stats=by('stats');if(!cockpit||!stats||by('v640Source'))return;
+const source=document.createElement('section');source.id='v640Source';source.innerHTML='<h3>📡 選択レースのデータ取得元</h3><div class="v640muted" id="v640SourceState">レース選択後に確認します。</div><div class="v640chips" id="v640SourceChips"></div><div class="v640muted" id="v640SourceTimes"></div><button type="button" id="v640SourceReload">取得元を再確認</button><p class="v640muted">公式取得が失敗した項目のみ非公式で補完。公式出走表の取得は不安定です。これは表示用の確認であり、AI予想入力の変更ではありません。</p>';
+cockpit.append(source);const state=by('v640SourceState'),chips=by('v640SourceChips'),times=by('v640SourceTimes');
+const selected=()=>({date:by('scheduleDate')?.value,venue:by('heroVenue')?.value,race:by('heroRace')?.value});const key=s=>[s.date,s.venue,s.race].join('/');let seq=0,lastKey='',lastAt=0;
+const chip=(title,v)=>'<div class="v640chip">'+esc(title)+'<strong>'+esc(v)+'</strong></div>';
+const label=o=>o?.source==='official'?'公式 ✓':o?.source==='unofficial_fallback'?'非公式補完':o?.status==='not_checked'?'未照合':'未取得／未検証';
+async function loadSource(force=false){const s=selected(),k=key(s);if(!/^\d{4}-\d{2}-\d{2}$/.test(s.date)||!s.venue||!s.race)return;if(!force&&k===lastKey&&Date.now()-lastAt<90000)return;lastKey=k;lastAt=Date.now();const id=++seq;state.textContent='公式・非公式の取得元を確認中…';chips.replaceChildren();times.textContent='';try{const d=await get('/race-source-unified?'+new URLSearchParams({...s,odds:'1'}),11000);if(id!==seq||k!==key(selected()))return;chips.innerHTML=chip('出走表',label(d.entries))+chip('展示タイム',label(d.exhibition))+chip('3連単オッズ',label(d.odds))+chip('結果', '既存の公式照合を参照');const v=d.exhibition?.values;if(Array.isArray(v)&&v.length===6)times.textContent='展示タイム：'+v.map(x=>x.boat+'号艇 '+x.exhibition_time).join(' ／ ');state.textContent='取得元の確認完了 ／ '+new Date().toLocaleTimeString('ja-JP')+' ／ '+(d.build_id||'Worker不明');}catch(e){if(id===seq)state.textContent='取得元を確認できません：'+e.message+'。既存画面は引き続き利用できます。';}}
+by('v640SourceReload').addEventListener('click',()=>loadSource(true));for(const id of ['scheduleDate','heroVenue','heroRace'])by(id)?.addEventListener('change',()=>loadSource(true));by('heroRaceDots')?.addEventListener('click',()=>setTimeout(()=>loadSource(true),0));
+const panel=document.createElement('section');panel.id='v640Results';panel.innerHTML='<h2>📊 全期間・全会場の予想結果</h2><p class="v640muted">D1保存済みの事前予想を対象に、公式照合済みの結果から集計します。実購入の収支ではなく、保存方式による仮想成績です。</p><div class="v640controls"><label>開始日 <input type="date" id="v640From"></label><label>終了日 <input type="date" id="v640To"></label><button type="button" id="v640All">全期間</button><button type="button" id="v640Month">直近30日</button><button type="button" id="v640Load">結果を集計</button></div><p class="v640muted" id="v640ResultState">集計ボタンで全体結果を取得します。</p><div class="v640metrics" id="v640Metrics"></div><div class="v640scroll" id="v640Daily"></div><p class="v640muted" id="v640Foot">未照合・無効データは的中率の分母に含めないよう、照合済みと区別して表示します。</p>';
+stats.prepend(panel);by('v640From').value=jst(-29);by('v640To').value=jst();const stateR=by('v640ResultState'),metrics=by('v640Metrics'),daily=by('v640Daily'),foot=by('v640Foot'),btn=by('v640Load');let busy=false;
+async function loadResults(){if(busy)return;const from=by('v640From').value,to=by('v640To').value;if(!from||!to||from>to){stateR.textContent='日付の範囲を確認してください。';return;}busy=true;btn.disabled=true;stateR.textContent='全体結果を集計中…';try{const d=await get('/learning-history?'+new URLSearchParams({from,to}),22000),o=d.overall;if(!o||!o.active)throw Error('集計形式が異なります');const a=o.active;metrics.innerHTML=chip('保存レース',num(o.snapshots))+chip('公式照合済み',num(o.settled))+chip('未照合',num(o.pending))+chip('無効',num(o.invalid))+chip('保存時方式の的中',num(a.hits)+' / '+num(a.races))+chip('的中率',pct(a.hit_rate_percent))+chip('回収率',pct(a.roi_percent))+chip('仮想収支',num(a.profit_yen)+'円');const rows=Object.entries(d.daily||{}).sort((x,y)=>y[0].localeCompare(x[0]));daily.innerHTML='<h3>日別の結果（全会場合算）</h3><table><thead><tr><th>日付</th><th>保存</th><th>照合</th><th>未照合</th><th>的中</th><th>回収率</th></tr></thead><tbody>'+rows.map(([day,v])=>'<tr><td>'+esc(day)+'</td><td>'+num(v.snapshots)+'</td><td>'+num(v.settled)+'</td><td>'+num(v.pending)+'</td><td>'+num(v.active?.hits)+'/'+num(v.active?.races)+'</td><td>'+pct(v.active?.roi_percent)+'</td></tr>').join('')+'</tbody></table>';stateR.textContent=from+' ～ '+to+' ／ '+rows.length+'日 ／ '+(d.build_id||'Worker不明')+' ／ '+new Date().toLocaleString('ja-JP');foot.textContent=(d.truncated?'⚠ 取得件数上限に達しており全件集計ではありません。 ':'')+'保存時の方式は旧12点方式を含む場合があります。6点600円の仮想方式と混同しないでください。';}catch(e){stateR.textContent='集計できません：'+e.message;metrics.replaceChildren();daily.replaceChildren();}finally{busy=false;btn.disabled=false;}}
+btn.addEventListener('click',loadResults);by('v640All').onclick=()=>{by('v640From').value='2000-01-01';by('v640To').value=jst();loadResults()};by('v640Month').onclick=()=>{by('v640From').value=jst(-29);by('v640To').value=jst();loadResults()};
+loadSource();}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();})();
+</script>
 </body>
 </html>
 
@@ -5180,4 +5209,6 @@ $('v588Status').textContent=(errors.length?'一部取得失敗：'+errors.join('
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+
+
 
