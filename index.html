@@ -3763,6 +3763,52 @@ function init(){if($('v620Nav')||!$('home')||!$('raceView')||!$('stats')||!$('ma
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();</script>
+
+<style id="v630-style">
+#v630Bar{position:relative;background:#261e3b;border:1px solid #a080ad;border-radius:14px;padding:12px;margin:10px 0;color:#f4eaf8}
+#v630Bar strong{color:#f2d17a}#v630Bar .v630grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0}
+#v630Bar .v630cell{background:#342849;border:1px solid #66527f;border-radius:9px;padding:9px;font-size:12px;line-height:1.6}
+#v630Bar button{width:100%;min-height:46px;border:0;border-radius:10px;background:#e9c675;color:#241b35;font-weight:800;font-size:15px}
+#v630Bar small{display:block;margin-top:8px;color:#cbbbd6;line-height:1.5;overflow-wrap:anywhere}
+body.v630-ready #v620Refresh,body.v630-ready #oddsRefresh,body.v630-ready #v620HomeHeader .v620-state{display:none!important}
+#v630Results{background:#241d38;border:1px solid #79618c;border-radius:14px;padding:12px;margin:12px 0}
+#v630Results h3{color:#f2d17a;margin:0 0 8px}#v630Results .v630row{display:flex;justify-content:space-between;gap:12px;padding:9px 2px;border-top:1px solid #57456b;font-size:12px}
+#v630Results select{max-width:190px}#v630Results .v630warning{font-size:11px;color:#cbbbd6;line-height:1.6}
+</style>
+<script id="v630-script">(()=>{'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev', $=id=>document.getElementById(id);
+const jp=(x)=>x==='available_unofficial'?'取得済（非公式）':x==='partial_unofficial'?'一部取得（非公式）':x==='unverified_unofficial'?'取得あり・未検証':x==='verified_table'?'公式表解析済':x==='available_official'?'公式取得済':x==='not_available'?'データなし':x==='fetch_failed'?'取得失敗':x==='not_checked'?'未照合':x==='checking'?'取得中':'未確認';
+let sequence=0,busy=false,last=0,lastKey='',resultsBusy=false;
+function selection(){const date=$('scheduleDate')?.value,venue=Number($('heroVenue')?.value||$('raceVenue')?.value),race=Number($('heroRace')?.value||$('raceNumber')?.value||1);return {date,venue,race};}
+function key(s){return [s.date,s.venue,s.race].join('/');}
+function label(id,status,count){const e=$(id);if(e)e.textContent=jp(status)+(Number.isFinite(count)?' '+count+'/6':'');}
+function msg(s){if($('v630Note'))$('v630Note').textContent=s;}
+async function get(url){const r=await fetch(url,{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);return j;}
+async function refresh(force=false){if(busy||document.hidden||!navigator.onLine)return;const s=selection(),k=key(s);if(!s.date||s.venue<1||s.venue>24||s.race<1||s.race>12){msg('日付・会場・レースを選択してください');return;}
+if(!force&&k===lastKey&&Date.now()-last<90000)return;lastKey=k;last=Date.now();busy=true;const n=++sequence;const btn=$('v630Refresh');if(btn)btn.disabled=true;
+for(const id of ['v630Race','v630Exhibition','v630Odds','v630Result'])label(id,'checking');msg('取得中…（公式と非公式は区別して表示します）');
+const qs=new URLSearchParams({date:s.date,venue:String(s.venue),race:String(s.race)});
+const tasks=[get(API+'/race-data-status?'+qs),get(API+'/official-exhibition?'+qs),get(API+'/odds?'+qs)];
+const res=await Promise.allSettled(tasks);if(n!==sequence||key(selection())!==k){busy=false;if(btn)btn.disabled=false;return;}
+const value=i=>res[i].status==='fulfilled'?res[i].value:null;const a=value(0),b=value(1),c=value(2);
+label('v630Race',a?.race?.status||'fetch_failed',a?.race?.count);
+const ex=b?.status==='verified_table'?'verified_table':a?.exhibition?.status||'fetch_failed';label('v630Exhibition',ex,b?.status==='verified_table'?b.exhibition_count:a?.exhibition?.count);
+label('v630Odds',c?.available&&c?.count===120?'available_official':c?'not_available':'fetch_failed');
+label('v630Result',a?.results?.status||'fetch_failed');
+const failed=res.filter(x=>x.status==='rejected').length;msg('確認 '+new Date().toLocaleTimeString('ja-JP')+' ／ '+(failed?failed+'件の取得に失敗。':'取得処理完了。')+' 結果の公式照合は別途必要です。');busy=false;if(btn)btn.disabled=false;
+}
+async function results(){if(resultsBusy)return;resultsBusy=true;const day=$('v630Day')?.value||$('scheduleDate')?.value;const out=$('v630Rows');if(!out){resultsBusy=false;return;}out.textContent='結果を取得中…';try{const j=await get(API+'/daily-results?date='+encodeURIComponent(day));const rows=(j.races||[]).filter(r=>r.status==='settled'&&r.officially_verified===true);const all=j.races||[];out.replaceChildren();const info=document.createElement('p');info.className='v630warning';info.textContent='公式確認済み '+rows.length+'件 ／ 取得レース '+all.length+'件。未照合・中止は確定結果として表示しません。';out.append(info);if(!rows.length){const p=document.createElement('p');p.textContent='公式確認済み結果はありません。';out.append(p);}for(const r of rows){const div=document.createElement('div');div.className='v630row';const a=document.createElement('span');a.textContent=(r.venue_name||r.venue)+' '+r.race+'R';const b=document.createElement('strong');b.textContent=(r.winning||'未確認')+' / '+(r.payout_per_100==null?'払戻未確認':Number(r.payout_per_100).toLocaleString('ja-JP')+'円');div.append(a,b);out.append(div);}}catch(e){out.textContent='結果取得失敗：'+String(e.message||e);}finally{resultsBusy=false;}}
+function init(){if($('v630Bar')||!$('raceView'))return;const bar=document.createElement('section');bar.id='v630Bar';bar.innerHTML='<strong>データ取得・確認</strong><div class="v630grid"><div class="v630cell">出走表<br><b id="v630Race">未確認</b></div><div class="v630cell">展示<br><b id="v630Exhibition">未確認</b></div><div class="v630cell">公式オッズ<br><b id="v630Odds">未確認</b></div><div class="v630cell">レース結果<br><b id="v630Result">未照合</b></div></div><button type="button" id="v630Refresh">選択レースを一括再取得</button><small id="v630Note">画面表示中に90秒間隔で状態を再確認。公式結果は独立して照合します。</small>';
+$('raceView').prepend(bar);$('v630Refresh').onclick=()=>refresh(true);
+const host=$('stats');if(host){const panel=document.createElement('section');panel.id='v630Results';panel.innerHTML='<h3>全国レース結果（公式確認済みのみ）</h3><label>対象日 <input type="date" id="v630Day"></label><button class="secondary" id="v630ResultRefresh" type="button">結果を表示</button><div id="v630Rows" aria-live="polite"></div>';host.prepend(panel);$('v630Day').value=$('scheduleDate')?.value||new Date().toLocaleDateString('sv-SE');$('v630ResultRefresh').onclick=results;}
+for(const id of ['scheduleDate','heroVenue','heroRace'])$(id)?.addEventListener('change',()=>{sequence++;lastKey='';setTimeout(()=>refresh(true),150)});
+document.body.classList.add('v630-ready');setInterval(()=>{if(!$('raceView')?.classList.contains('hidden'))refresh(false)},90000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!$('raceView')?.classList.contains('hidden'))refresh(false)});
+$('v620Nav')?.querySelector('[data-screen="detail"]')?.addEventListener('click',()=>setTimeout(()=>refresh(false),150));
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
+
 </body>
 </html>
 
@@ -5134,3 +5180,4 @@ $('v588Status').textContent=(errors.length?'一部取得失敗：'+errors.join('
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+
