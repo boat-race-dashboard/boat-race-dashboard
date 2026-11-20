@@ -456,11 +456,11 @@ button.secondary,.secondary{padding:7px 9px!important;font-size:12px!important}
 @media(max-width:380px){#v434Purchase .v434-purchase{padding:9px!important}#v434Purchase .v434-choices{gap:3px}}
 </style>
 <script id="v643-shared-results">
-// v6.4.3: one shared read-only nationwide result source, persistent per-day last success,
+// v6.4.4: one shared read-only nationwide result source, persistent per-day last success,
 // independently timed requests, and local diagnostic timings. No Worker/D1/Cron mutation.
 window.BoatDailyResults642=(()=>{
  const API='https://boat-race-api.7phr5nzkbt.workers.dev';
- const cache=new Map(),inflight=new Map(),metrics=new Map();
+ const cache=new Map(),inflight=new Map(),metrics=new Map(),retryAfter=new Map();
  const valid=d=>d&&Array.isArray(d.races)&&d.races.every(r=>r&&Number.isInteger(Number(r.venue))&&Number.isInteger(Number(r.race)));
  const key=d=>'br643:daily:'+d;
  function cached(date){
@@ -473,6 +473,8 @@ window.BoatDailyResults642=(()=>{
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('日付が不正です');
   const old=cached(date),meta=cache.get(date);
   if(!force&&old&&meta&&Date.now()-meta.at<60000)return old;
+  // After a failed fetch, avoid a new expensive upstream request on every screen repaint.
+  if(!force&&old&&Date.now()<(retryAfter.get(date)||0))return old;
   if(inflight.has(date))return inflight.get(date);
   const task=(async()=>{
    const started=performance.now(),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
@@ -485,11 +487,13 @@ window.BoatDailyResults642=(()=>{
     if(!valid(data)||data.date!==date)throw Error('全国結果の形式または日付が不正です');
     const item={at:Date.now(),data};cache.set(date,item);
     try{sessionStorage.setItem(key(date),JSON.stringify(item));}catch(_){}
+    retryAfter.delete(date);
     metrics.set(date,{ok:true,headers_ms:headersMs,total_ms:Math.round(performance.now()-started),http,at:Date.now(),races:data.races.length});
     return data;
    }catch(error){
     const message=error.name==='AbortError'?'25秒でタイムアウト（'+stage+'）':String(error.message||error);
     metrics.set(date,{ok:false,stage,http,total_ms:Math.round(performance.now()-started),message,at:Date.now(),cached:!!cached(date)});
+    retryAfter.set(date,Date.now()+45000);
     // Return a clearly labelled last-success snapshot rather than blanking the table.
     const fallback=cached(date);if(fallback)return fallback;
     throw Error(message);
@@ -2183,7 +2187,7 @@ loadAutoPredictions();
       if(previous){dayRaces=previous.races;paintResults();}
       const updatePage=()=>{const prev=document.getElementById('v497Prev'),next=document.getElementById('v497Next');if(prev)prev.disabled=offset===0;if(next)next.disabled=!hasMore;const page=document.getElementById('v497PageLabel');if(page)page.textContent=(Math.floor(offset/200)+1)+'ページ目';};
       const snapDone=snapTask.then(j=>{if(date.value!==selectedDay)return;rows=j.results;hasMore=Boolean(j.pagination?.has_more);updatePage();paintResults();},e=>{if(date.value===selectedDay){paintResults();document.getElementById('outcomeStatus').textContent+=' ／ 予想履歴の更新失敗：'+String(e.message||e);}});
-      const dailyDone=dailyTask.then(j=>{if(date.value!==selectedDay)return;dayRaces=j.races;paintResults();},e=>{if(date.value===selectedDay){const old=window.BoatDailyResults642.cached(selectedDay);if(old)dayRaces=old.races;paintResults();const m=window.BoatDailyResults642.diag(selectedDay);document.getElementById('outcomeStatus').textContent+=' ／ 全国結果の更新失敗：'+String(e.message||e)+(m?'（'+m.total_ms+'ms、前回成功分を維持）':'');}});
+      const dailyDone=dailyTask.then(j=>{if(date.value!==selectedDay)return;dayRaces=j.races;paintResults();const m=window.BoatDailyResults642.diag(selectedDay);if(m&&m.ok===false)document.getElementById('outcomeStatus').textContent+=' ／ 全国結果は前回成功分（最新未確認：'+m.message+'）';},e=>{if(date.value===selectedDay){const old=window.BoatDailyResults642.cached(selectedDay);if(old)dayRaces=old.races;paintResults();const m=window.BoatDailyResults642.diag(selectedDay);document.getElementById('outcomeStatus').textContent+=' ／ 全国結果の更新失敗：'+String(e.message||e)+(m?'（'+m.total_ms+'ms、前回成功分を維持）':'');}});
       await Promise.allSettled([snapDone,dailyDone]);
     }catch(e){document.getElementById('outcomeStatus').textContent='結果を取得できませんでした：'+(e.name==='AbortError'?'12秒でタイムアウト':e.message);}
     finally{busy=false;document.getElementById('outcomeRefresh').disabled=false;}
