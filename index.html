@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.7 | Three-candidate comparison</title>
+  <title>BOAT RACE AI Dashboard v6.5.8 | Three-candidate comparison</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -5164,6 +5164,9 @@ stats.insertBefore(hub,stats.firstChild);
 const roiComparison=document.getElementById('v651Comparison');
 const summaryPage=hub.querySelector('[data-ah-page="overview"]');
 if(roiComparison&&summaryPage)summaryPage.insertBefore(roiComparison,summaryPage.firstChild.nextSibling);
+// v6.5.8: keep the first-place miss panel visible in Summary, directly after ROI comparison.
+const missPanel=document.getElementById('v657MissPanel');
+if(missPanel&&summaryPage)summaryPage.insertBefore(missPanel,roiComparison&&roiComparison.parentElement===summaryPage?roiComparison.nextSibling:summaryPage.firstChild.nextSibling);
 const page=k=>hub.querySelector('[data-ah-page="'+k+'"]');
 function move(id,k){const n=document.getElementById(id);if(n&&n!==hub&& !hub.contains(n))page(k).appendChild(n);return n}
 function fold(node,k,label,open=false){if(!node)return;const d=document.createElement('details');d.className='ah-fold';d.open=open;const title=document.createElement('summary');title.textContent=label;const content=document.createElement('div');content.className='ah-content';d.append(title,content);page(k).appendChild(d);content.appendChild(node);return d}
@@ -5297,6 +5300,3 @@ $('v588Status').textContent=(errors.length?'一部取得失敗：'+errors.join('
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
-
-
-
