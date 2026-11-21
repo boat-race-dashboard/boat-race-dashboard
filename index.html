@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.5 | Three-candidate comparison</title>
+  <title>BOAT RACE AI Dashboard v6.5.6 | Three-candidate comparison</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -3732,8 +3732,8 @@ button{transition:background-color .15s,border-color .15s}
 :root{--v620gold:#f2d17a;--v620purple:#4d3a65}
 html{scroll-padding-top:12px}body{padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
 body.v620-ready .tabs{display:none!important}
-#v620Nav{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#151b30f7;border-top:1px solid #85669d;box-shadow:0 -5px 22px #0008}
-#v620Nav button{border:0;border-radius:12px;min-height:50px;background:transparent;color:#e4d8ef;font-size:clamp(11px,2.9vw,14px);font-weight:750;padding:8px 2px}
+#v620Nav{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:8px 4px calc(8px + env(safe-area-inset-bottom));background:#151b30f7;border-top:1px solid #85669d;box-shadow:0 -5px 22px #0008}
+#v620Nav button{border:0;border-radius:12px;min-width:0;min-height:50px;background:transparent;color:#e4d8ef;font-size:clamp(9px,2.55vw,13px);font-weight:750;padding:8px 0;white-space:nowrap}
 #v620Nav button[aria-current="page"]{background:var(--v620purple);color:var(--v620gold)}
 #v620HomeHeader,#v620DetailHeader{background:#241d38;border:1px solid #79618c;border-radius:14px;padding:12px;margin:10px 0}
 #v620HomeHeader h2,#v620DetailHeader h2{color:var(--v620gold);margin:0 0 6px;font-size:17px}
@@ -3758,9 +3758,9 @@ body.v620-ready #raceView{padding-bottom:25px}
 </style>
 <script id="v620-script">(()=>{'use strict';
 const $=id=>document.getElementById(id);
-const screens={races:'home',detail:'raceView',analysis:'stats',admin:'manageView'};
+const screens={races:'home',detail:'raceView',outcomes:'outcomes',analysis:'stats',admin:'manageView'};
 let current='races',busy=false,lastAttempt=0,serial=0;
-const labels=[['races','レース一覧'],['detail','レース詳細'],['analysis','分析・成績'],['admin','管理・診断']];
+const labels=[['races','レース一覧'],['detail','レース詳細'],['outcomes','全国結果'],['analysis','分析・成績'],['admin','管理・診断']];
 function state(msg){const e=$('v620State');if(e)e.textContent=msg;}
 function go(key,scroll=true){const id=screens[key];if(!id||!$(id))return;
  current=key;
@@ -3769,6 +3769,7 @@ function go(key,scroll=true){const id=screens[key];if(!id||!$(id))return;
  if(button)button.click();else if(typeof tab==='function')tab(id);
  // Explicitly reconcile visibility after legacy handlers, without deleting their sections.
  for(const [k,target] of Object.entries(screens))$(target)?.classList.toggle('hidden',k!==key);
+ if(key==='outcomes'){const date=$('outcomeDate');if(date&&!date.value){date.value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}}
  $('v620Nav')?.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.screen===key?'page':'false'));
  if(scroll)window.scrollTo(0,0);
 }
