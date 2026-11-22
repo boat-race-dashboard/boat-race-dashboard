@@ -1085,29 +1085,70 @@ function detailValue(value, suffix=''){
   return String(value)+suffix;
 }
 function raceCell(value){return el('td',detailValue(value));}
+// v6.5.9: racecard-only resilience. Keep existing UI, sources and prediction logic.
+const raceDetailCache=new Map();
+let raceDetailRequestSerial=0;
+let raceDetailAbort=null;
+async function fetchRaceDetailReliable(endpoint, signal){
+  let lastError;
+  for(let attempt=0;attempt<2;attempt++){
+    if(signal.aborted)throw new DOMException('取得が中断されました','AbortError');
+    const timeout=new AbortController();
+    const timer=setTimeout(()=>timeout.abort(),attempt===0?6500:9500);
+    const cancel=()=>timeout.abort();signal.addEventListener('abort',cancel,{once:true});
+    try{
+      const response=await fetch(endpoint,{cache:'no-store',signal:timeout.signal});
+      if(!response.ok){
+        const err=new Error(response.status===404?'このレースのデータはまだ公開されていません（中止とは限りません）':'HTTP '+response.status);
+        if(response.status===404||response.status>=400&&response.status<500)throw err;
+        lastError=err;
+      }else{
+        const payload=await response.json();
+        if(!Array.isArray(payload.racers)||payload.racers.length!==6)throw new Error('出走表のデータが不完全です');
+        return payload;
+      }
+    }catch(e){
+      if(signal.aborted)throw e;
+      lastError=e;
+      if(e.message?.includes('まだ公開')||e.message?.includes('HTTP 4')||e.message?.includes('不完全'))break;
+    }finally{clearTimeout(timer);signal.removeEventListener('abort',cancel)}
+  }
+  throw lastError||new Error('取得に失敗しました');
+}
 async function loadRaceDetail(){
+  const serial=++raceDetailRequestSerial;
+  if(raceDetailAbort)raceDetailAbort.abort();
+  raceDetailAbort=new AbortController();
   const btn=$('loadRaceDetail');
   const status=$('raceDetailStatus');
   const content=$('raceDetailContent');
   const date=scheduleDate.value;
   const venue=Number(raceVenueSelect.value);
   const race=Number(raceNumberSelect.value);
-  content.replaceChildren();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isInteger(venue)||!Number.isInteger(race)){
     status.textContent='日付・競艇場・レースを確認してください。';return;
   }
+  const cacheKey=[date,venue,race].join('/');
+  const cached=raceDetailCache.get(cacheKey);
   status.textContent='レース詳細を取得中…';
   btn.disabled=true;
   try{
     const endpoint='https://boat-race-api.7phr5nzkbt.workers.dev/race?'+new URLSearchParams({date,venue:String(venue),race:String(race)});
-    const response=await fetch(endpoint,{cache:'no-store'});
-    if(!response.ok){
-      if(response.status===404)throw new Error('このレースのデータは見つかりません（中止とは限りません）');
-      throw new Error('HTTP '+response.status);
+    let payload;
+    try{
+      // Reuse a recent successful racecard instantly; avoid redundant upstream calls.
+      if(cached&&Date.now()-cached.at<45000)payload=cached.payload;
+      else payload=await fetchRaceDetailReliable(endpoint,raceDetailAbort.signal);
+    }catch(error){
+      if(cached&&Date.now()-cached.at<300000){
+        payload=cached.payload;
+        status.textContent='通信不安定のため、以前取得した出走表を表示しています（'+new Date(cached.at).toLocaleTimeString('ja-JP')+'取得）。';
+      }else throw error;
     }
-    const payload=await response.json();
-    if(!Array.isArray(payload.racers))throw new Error('レースデータ形式が異なります');
-    status.textContent=detailValue(payload.venue_name)+' '+detailValue(payload.race)+'R ・ '+date+' の取得結果';
+    if(serial!==raceDetailRequestSerial)return;
+    if(!cached||payload!==cached.payload)raceDetailCache.set(cacheKey,{payload,at:Date.now()});
+    content.replaceChildren();
+    if(!(cached&&payload===cached.payload&&Date.now()-cached.at>=45000))status.textContent=detailValue(payload.venue_name)+' '+detailValue(payload.race)+'R ・ '+date+' の取得結果';
     const title=el('h2',detailValue(payload.title));
     title.style.marginTop='14px';
     content.appendChild(title);
@@ -1149,8 +1190,8 @@ async function loadRaceDetail(){
     note.style.fontSize='11px';note.style.marginTop='12px';
     content.append(note);
   }catch(error){
-    status.textContent='取得できませんでした：'+error.message;
-  }finally{btn.disabled=false;}
+    if(serial===raceDetailRequestSerial&&error.name!=='AbortError')status.textContent='取得できませんでした：'+error.message;
+  }finally{if(serial===raceDetailRequestSerial)btn.disabled=false;}
 }
 $('loadRaceDetail').addEventListener('click',loadRaceDetail);
 
@@ -5300,3 +5341,6 @@ $('v588Status').textContent=(errors.length?'一部取得失敗：'+errors.join('
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+
+
+
