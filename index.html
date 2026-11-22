@@ -3660,74 +3660,8 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();</script>
-<style id="v570-css">
-#v570Desk{background:linear-gradient(145deg,#192a40,#251d3b);border:1px solid #8b77a7;border-radius:16px;padding:13px;margin:10px 0;color:#f8f2ff}
-#v570Desk *{box-sizing:border-box}#v570Desk .v570-line{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap}#v570Desk .v570-kicker{font-size:11px;color:#c9c1da}#v570Desk .v570-title{font-size:18px;font-weight:800}#v570Desk .v570-timer{font-size:21px;font-weight:900;font-variant-numeric:tabular-nums;color:#f3d58b}#v570Desk .v570-status{font-size:12px;line-height:1.6;color:#d9d0e7}#v570Desk .v570-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:11px 0}#v570Desk .v570-cell{background:#2b3150;border:1px solid #6c6689;border-radius:9px;padding:9px 5px;text-align:center}#v570Desk .v570-cell b{display:block;font-size:13px}#v570Desk .v570-cell small{display:block;font-size:10px;color:#d0c8dd;margin-top:4px}#v570Desk .v570-actions{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}#v570Desk button{flex:0 0 auto;background:#45365f;border:1px solid #9b86b6;border-radius:9px;color:#fff;padding:9px 11px;min-height:40px;font-size:12px;font-weight:700}#v570Desk button:disabled{opacity:.6}#v570Desk .v570-warning{font-size:12px;line-height:1.6;padding:9px;background:#423548;border-left:3px solid #e6c478;border-radius:5px;margin-top:9px}#v570Desk details{margin-top:9px;border-top:1px solid #6b6080;padding-top:9px}#v570Desk summary{font-size:12px;font-weight:700;cursor:pointer}#v570Desk .v570-mini{font-size:11px;color:#d4cce2;line-height:1.6}#v570Desk .v570-tag{font-size:11px;padding:3px 7px;border-radius:7px;background:#3d4d5f}#v570Desk .v570-timer.past{color:#e7aeb0}
-@media(max-width:390px){#v570Desk{padding:10px}#v570Desk .v570-title{font-size:16px}#v570Desk .v570-timer{font-size:18px}}
-</style>
-<script id="v570-js">(()=>{'use strict';
-const API='https://boat-race-api.7phr5nzkbt.workers.dev';
-const by=id=>document.getElementById(id);
-function init(){if(by('v570Desk'))return;const dock=by('v560Dock'),hero=by('raceCockpit');if(!dock||!hero)return;
-const root=document.createElement('section');root.id='v570Desk';root.innerHTML=`<div class="v570-line"><div><div class="v570-kicker">予想コックピット・選択中</div><div class="v570-title" id="v570Race">レースを確認中</div></div><div style="text-align:right"><div class="v570-kicker">予定締切まで</div><div class="v570-timer" id="v570Timer">--:--</div></div></div><div class="v570-status" id="v570State">データ取得状況を確認しています</div><div class="v570-grid"><div class="v570-cell"><b id="v570Ex">未確認</b><small>展示データ</small></div><div class="v570-cell"><b id="v570Odds">未確認</b><small>オッズ</small></div><div class="v570-cell"><b id="v570Decision">要確認</b><small>見送り判定</small></div></div><div class="v570-actions"><button type="button" id="v570Check">展示を確認</button><button type="button" id="v570Prediction">AI予想へ</button><button type="button" id="v570OddsBtn">オッズへ</button><button type="button" id="v570Analysis">分析へ</button><button type="button" id="v570History">履歴・診断へ</button></div><div class="v570-warning" id="v570Reason">予想を表示しても、展示・公式オッズ・締切を確認するまでは購入判断を確定しないでください。</div><details><summary>予想の比較・品質チェック・週間分析</summary><div class="v570-mini">展示前後の予想差・モデル別成績・6点/8点/12点の仮想収支・保存漏れ・未照合は既存の分析タブで確認できます。自動学習や期待値の算出は、検証済みの確率モデルがない限り実施済みとは表示しません。</div><div class="v570-actions"><button type="button" id="v570Compare">モデル・買い方比較</button><button type="button" id="v570System">保存・照合診断</button></div></details><p class="v570-mini">締切予定・展示は非公式情報を含みます。中止・変更・実際の投票締切は公式で最終確認してください。</p>`;
-dock.parentNode.insertBefore(root,dock);
-let key='',ex=null,checking=false,closing=null;
-let deadlineDay='',deadlineRows=new Map(),deadlineLoadedAt=0,deadlinePending=null;
-const deadlineMs=s=>{if(!s)return NaN;const t=String(s).trim().replace(' ','T');return Date.parse(t+(/(?:Z|[+-]\d{2}:?\d{2})$/.test(t)?'':'+09:00'));};
-async function loadDeadlines(){
- const day=selected().date;if(!day)return;
- if(day===deadlineDay&&Date.now()-deadlineLoadedAt<120000)return;
- if(deadlinePending)return deadlinePending;
- deadlinePending=(async()=>{try{
-  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),9000);let r;
-  try{r=await fetch(API+'/schedule-fast?date='+encodeURIComponent(day),{cache:'no-store',signal:ctrl.signal})}finally{clearTimeout(timer)}
-  if(!r.ok)throw Error('schedule HTTP '+r.status);
-  const j=await r.json();if(!Array.isArray(j.venues))throw Error('schedule invalid');
-  const next=new Map();for(const v of j.venues){if(v.cancellation_verified===true&&v.cancellation_status==='cancelled')continue;
-   for(const t of v.race_closing_times||[]){const ms=deadlineMs(t.closing_at);if(Number.isFinite(ms))next.set(Number(v.number)+'/'+Number(t.race),ms);}}
-  if(selected().date===day){deadlineDay=day;deadlineRows=next;deadlineLoadedAt=Date.now();update();}
- }catch(e){/* retain previously fetched deadlines; never invent times */}finally{deadlinePending=null;}})();
- return deadlinePending;
-}
 
-const selected=()=>({date:by('scheduleDate')?.value||'',venue:by('heroVenue')?.value||'',race:by('heroRace')?.value||''});
-function goTab(id){const target=document.querySelector('[data-tab="'+id+'"]');if(target)target.click();else by(id)?.scrollIntoView({behavior:'smooth',block:'start'});}
-function cockpit(name){const b=document.querySelector('[data-cockpit-tab="'+name+'"]');if(b)b.click();hero.scrollIntoView({behavior:'smooth',block:'start'});}
-function analysis(k){goTab('stats');setTimeout(()=>{const b=document.querySelector('[data-ah="'+k+'"]');b?.click();by('analysisHub')?.scrollIntoView({behavior:'smooth',block:'start'})},80)}
-by('v570Prediction').onclick=()=>cockpit('prediction');by('v570OddsBtn').onclick=()=>cockpit('odds');by('v570Analysis').onclick=()=>analysis('overview');by('v570Compare').onclick=()=>analysis('tickets');by('v570System').onclick=()=>analysis('system');by('v570History').onclick=()=>analysis('system');
-function update(){const s=selected(),nextKey=[s.date,s.venue,s.race].join('/');if(nextKey!==key){key=nextKey;ex=null;by('v570Ex').textContent='未確認';by('v570Odds').textContent='要確認';}
-const name=by('heroVenue')?.selectedOptions?.[0]?.textContent?.replace(/^\d+\s*/,'')||'競艇場';by('v570Race').textContent=name+' '+(s.race||'?')+'R';
-const status=by('heroRaceStatus')?.textContent||'';by('v570State').textContent=status.trim().replace(/\s+/g,' ').slice(0,100)||'締切予定を確認中';
-const raw=by('heroRaceStatus')?.dataset?.closingAt||by('heroRaceStatus')?.getAttribute('data-deadline')||'';
-const scheduleMs=deadlineDay===s.date?deadlineRows.get(Number(s.venue)+'/'+Number(s.race)):null;const parsed=Number.isFinite(scheduleMs)?new Date(scheduleMs):(raw?new Date(deadlineMs(raw)):null);closing=parsed&&Number.isFinite(parsed.getTime())?parsed:null;
-const raceText=by('heroRaceStatus')?.textContent||'';
-if(!closing){const m=raceText.match(/(?:締切予定|締切)\s*(\d{1,2}):(\d{2})/);if(m&&s.date){const d=new Date(s.date+'T'+m[1].padStart(2,'0')+':'+m[2]+':00+09:00');if(Number.isFinite(d.getTime()))closing=d}}
-const left=closing?Math.floor((closing.getTime()-Date.now())/1000):null;
-const timer=by('v570Timer');timer.classList.toggle('past',left!==null&&left<=0);timer.textContent=left===null?'時刻未確認':left<=0?'予定時刻経過':Math.floor(left/60)+':'+String(left%60).padStart(2,'0');
-const stale=left!==null&&left<=0;let decision='要確認',why='展示・公式オッズ・締切を確認してから判断してください。';
-if(stale){decision='見送り候補';why='予定締切時刻を経過しています。公式情報で変更が確認できるまで投票しないでください。'}
-else if(ex?.count===6){decision='オッズ確認';why='展示タイム6艇分の取得を確認。ただし予想への反映・公式オッズ・投票可否は未確認です。'}
-else if(ex?.count>=0){decision='見送り候補';why='展示タイムが'+ex.count+'/6艇です。データ不足のため購入判断は保留してください。'}
-by('v570Decision').textContent=decision;by('v570Reason').textContent=why;
-}
-// Share verified exhibition diagnostics with the separate cockpit panel.
-window.addEventListener('boat-exhibition-diagnostic',event=>{
- const d=event.detail||{},s=selected();
- if(String(d.date)!==s.date||String(d.venue)!==s.venue||String(d.race)!==s.race)return;
- const n=Number(d.count);
- if(!Number.isInteger(n)||n<0||n>6)return;
- ex={count:n,checkedAt:d.checkedAt||null};
- by('v570Ex').textContent=n+'/6艇';
- update();
-});
-by('v570Check').onclick=async()=>{if(checking)return;const s=selected();if(!s.date||!s.venue||!s.race)return;checking=true;by('v570Check').disabled=true;by('v570Ex').textContent='取得中';const q=new URLSearchParams(s);try{const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),12000);let r;try{r=await fetch(API+'/exhibition-diagnostics?'+q,{cache:'no-store',signal:ctrl.signal})}finally{clearTimeout(timer)}if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();if([s.date,s.venue,s.race].join('/')!==key)return;const n=Number(j.valid_exhibition_times_now);if(!Number.isInteger(n)||n<0||n>6)throw Error('展示件数不正');ex={count:n};by('v570Ex').textContent=n+'/6艇';}catch(e){if([s.date,s.venue,s.race].join('/')===key){ex=null;by('v570Ex').textContent='取得失敗';by('v570Reason').textContent='展示データの取得に失敗しました（'+String(e.message).slice(0,90)+'）。未取得を取得済みとして扱いません。'}}finally{checking=false;by('v570Check').disabled=false;update()}};
-for(const id of ['scheduleDate','heroVenue','heroRace'])by(id)?.addEventListener('change',()=>{update();loadDeadlines();});
-by('heroRaceDots')?.addEventListener('click',()=>setTimeout(update,50));
-// Countdown only while page is visible; no polling of the prediction API.
-setInterval(()=>{if(!document.hidden)update()},1000);setInterval(()=>{if(!document.hidden)loadDeadlines()},120000);update();loadDeadlines();
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();</script>
+
 <script id="official-exhibition-v586">
 // Read-only official exhibition overlay; never writes D1 or modifies existing prediction objects.
 (()=>{
@@ -3773,11 +3707,6 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[role="tab"]:focus-vi
 button{transition:background-color .15s,border-color .15s}
 .venue-board .venue-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .venue-board .venue-tile{min-width:0;min-height:72px;padding:12px;border-radius:15px}
-#v570Desk .v570-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;gap:8px}
-#v570Desk .v570-actions button{min-width:0;white-space:normal;line-height:1.35;min-height:45px;padding:9px 5px;font-size:12px}
-#v570Desk .v570-actions button:last-child:nth-child(3n+2){grid-column:span 2}
-#v570Desk .v570-cell{min-width:0}
-#v570Desk .v570-cell b{overflow-wrap:anywhere}
 #heroRaceStatus.v445-clock{gap:4px;white-space:normal;overflow-wrap:anywhere}
 #heroRaceStatus.v445-clock strong{display:block;font-variant-numeric:tabular-nums;letter-spacing:.3px}
 #v590QuickNav{display:none}
@@ -3794,12 +3723,12 @@ button{transition:background-color .15s,border-color .15s}
  #v590QuickNav::-webkit-scrollbar{display:none}
  #v590QuickNav button{flex:0 0 auto;min-height:39px;background:#332747;color:#f7e6ae;border:1px solid #8769a2;border-radius:999px;padding:8px 13px;font-weight:700;font-size:12px}
  #v590QuickNav button:active{background:#5d437a}
- #v570Desk .v570-actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+ 
  .grid{gap:7px}
  .metric{min-width:0}
  table{max-width:100%}
 }
-@media(max-width:360px){#v570Desk .v570-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.venue-board .venue-tile{padding:9px}}
+@media(max-width:360px){.venue-board .venue-tile{padding:9px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}button{transition:none}}
 </style>
 <script id="v590-mobile-usability-js">
@@ -3809,7 +3738,7 @@ button{transition:background-color .15s,border-color .15s}
   if(document.getElementById('v590QuickNav'))return;
   const main=document.querySelector('main');if(!main)return;
   const nav=document.createElement('nav');nav.id='v590QuickNav';nav.setAttribute('aria-label','画面内のクイック移動');
-  const items=[['レース・締切','v570Desk'],['全国24場','venueBoard'],['上へ',null]];
+  const items=[['レース・締切','raceCockpit'],['全国24場','venueBoard'],['上へ',null]];
   items.forEach(function(item){const b=document.createElement('button');b.type='button';b.textContent=item[0];b.addEventListener('click',function(){
    const target=item[1]?document.getElementById(item[1]):document.body;
    if(target)target.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
@@ -5293,62 +5222,7 @@ const miss=(d.features||[]).filter(x=>x.missing_count>0);if(miss.length)h+='<det
 $('shload').addEventListener('click',load);$('shpredict').addEventListener('click',predict);$('ahRefresh')?.addEventListener('click',()=>{if(page.classList.contains('ah-active'))load()});load();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();})();</script>
 
-<script id="v584-odds-and-official-safety">(()=>{'use strict';
-const API='https://boat-race-api.7phr5nzkbt.workers.dev';
-const el=id=>document.getElementById(id);
-const selected=()=>({date:el('scheduleDate')?.value||'',venue:el('heroVenue')?.value||'',race:el('heroRace')?.value||''});
-const key=s=>[s.date,s.venue,s.race].join('/');
-function init(){
- const desk=el('v570Desk'),notice=el('oddsNotice');if(!desk||!notice)return;
- let current=key(selected()),requesting=false,validOddsKey='',oddsAt='';
- const odds=el('v570Odds');
- const panel=document.createElement('section');panel.id='officialReadOnlyPanel';
- panel.style.cssText='margin:12px 0;padding:12px;border:1px solid #7d7199;border-radius:12px;background:#19283d;color:#f0ebff;font-size:12px;line-height:1.7';
- const title=document.createElement('strong');title.textContent='公式データ取得・安全診断（読み取り専用）';
- const state=document.createElement('p');state.textContent='公式サイトの接続可否は未確認。公式値への切り替えは検証完了まで保留します。';
- const button=document.createElement('button');button.type='button';button.textContent='公式データの接続を診断';button.style.cssText='padding:8px 12px;border-radius:8px;background:#51436c;color:white;border:1px solid #8c7eae';
- const links=document.createElement('div');links.style.cssText='display:flex;gap:12px;flex-wrap:wrap;margin-top:8px';
- panel.append(title,state,button,links);desk.append(panel);
- function refreshLinks(){const s=selected();links.replaceChildren();if(!/^\d{4}-\d{2}-\d{2}$/.test(s.date)||!/^\d+$/.test(s.venue)||!/^\d+$/.test(s.race))return;
- const q='hd='+s.date.replace(/-/g,'')+'&jcd='+String(s.venue).padStart(2,'0')+'&rno='+s.race;
- for(const [name,path] of [['公式出走表','racelist'],['公式直前情報','beforeinfo'],['公式オッズ','odds3t']]){const a=document.createElement('a');a.href='https://www.boatrace.jp/owpc/pc/race/'+path+'?'+q;a.target='_blank';a.rel='noopener noreferrer';a.textContent=name;a.style.color='#f2d17f';links.append(a)} }
- function sync(){const k=key(selected());if(k!==current){current=k;validOddsKey='';oddsAt='';odds.textContent='要確認';state.textContent='レースが変わりました。公式データは未確認です。';refreshLinks();return}
- const t=notice.textContent||'';const m=t.match(/取得\s*(\d+)\/120通り/);
- if(m&&Number(m[1])===120){ // Confirm current race through a newly initiated fetch, not stale DOM contents.
-  if(validOddsKey===k){odds.textContent='120/120取得';odds.title='公式掲載オッズを取得（最終オッズとは限りません）。'+oddsAt;}
- }else if(validOddsKey===k){validOddsKey='';odds.textContent='要確認'}
- }
- // Record the active race when a refresh is initiated; ignore old odds responses after selection changes.
- const refresh=el('oddsRefresh');
- function markRequest(){requesting=true;const requestKey=key(selected());validOddsKey='';odds.textContent='取得中';
- const mo=new MutationObserver(()=>{const t=notice.textContent||'';if(!t.includes('取得中')&&!t.includes('取得します')){mo.disconnect();requesting=false;if(requestKey===key(selected())&&/取得\s*120\/120通り/.test(t)){validOddsKey=requestKey;oddsAt=new Date().toLocaleString('ja-JP');}sync()}});
- mo.observe(notice,{childList:true,subtree:true,characterData:true});setTimeout(()=>{mo.disconnect();requesting=false;sync()},16000);
- }
- refresh?.addEventListener('click',markRequest,{capture:true});
- // Also capture automatic/tab-triggered odds fetches from the existing dashboard.
- let pendingKey='',sawLoading=false;
- const oddsObserver=new MutationObserver(()=>{
-   const t=notice.textContent||'',k=key(selected());
-   if(/オッズを取得中|非公式オッズを取得中|取得中…/.test(t)){
-     if(!sawLoading){pendingKey=k;sawLoading=true;validOddsKey='';odds.textContent='取得中';}
-   }else if(sawLoading){
-     sawLoading=false;
-     if(pendingKey===k&&/取得\s*120\/120通り/.test(t)){
-       validOddsKey=k;oddsAt=new Date().toLocaleString('ja-JP');
-     }
-     sync();
-   }
- });
- oddsObserver.observe(notice,{childList:true,subtree:true,characterData:true});
- // Clicking the odds tab can initiate a fetch as well; do not assert current-race validity without an explicit refresh.
- for(const id of ['scheduleDate','heroVenue','heroRace'])el(id)?.addEventListener('change',sync);
- button.addEventListener('click',async()=>{const s=selected(),k=key(s);button.disabled=true;state.textContent='公式サイトへの接続を確認中…';try{const r=await fetch(API+'/official-source-diagnostics?'+new URLSearchParams(s),{cache:'no-store'});const j=await r.json();if(k!==key(selected()))return;if(!r.ok)throw Error('HTTP '+r.status);const names={racelist:'出走表',exhibition:'直前情報',odds:'オッズ'};
- state.textContent=Object.entries(j.official_sources||{}).map(([n,v])=>names[n]+': '+(v.reachable?'HTML接続成功（項目未検証）':'取得未確認')).join(' ／ ')+'。AI入力の公式切替は未実施・D1変更なし。';
- }catch(e){if(k===key(selected()))state.textContent='公式診断を取得できません：'+String(e.message).slice(0,90)+'。既存AIへの影響はありません。'}finally{button.disabled=false}});
- refreshLinks();sync();
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();</script>
+
 
 
 <style id="v588-analysis-style">
@@ -5378,3 +5252,9 @@ $('v588Status').textContent=(errors.length?'一部取得失敗：'+errors.join('
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+
+
+
+
+<!-- v6.5.15: Hide only the redundant prediction cockpit panel. All existing data logic and deadline UI remain unchanged. -->
+
