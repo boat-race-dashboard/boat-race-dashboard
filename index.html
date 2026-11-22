@@ -456,13 +456,13 @@ button.secondary,.secondary{padding:7px 9px!important;font-size:12px!important}
 @media(max-width:380px){#v434Purchase .v434-purchase{padding:9px!important}#v434Purchase .v434-choices{gap:3px}}
 </style>
 <script id="v495-network-optimizer">
-/* v4.9.5: read-only GET request coalescing + brief response reuse.
-   No auth, POST, DELETE, predictions, odds, race or purchase data is cached. */
+/* v6.5.13: share successful read-only GET responses across dashboard panels.
+   Racecard 45s; schedule-fast 120s. No auth, POST, DELETE, predictions, odds or purchase data is cached. */
 (()=>{'use strict';
 const nativeFetch=window.fetch.bind(window),api='https://boat-race-api.7phr5nzkbt.workers.dev';
 const inflight=new Map(),memo=new Map();
 const stats={network:0,coalesced:0,reused:0};
-const policy={'/schedule':15000,'/learning-history':45000,'/analytics-suite':30000,'/ticket-layout-lab':30000,'/ticket-backtest':30000,'/data-quality':15000,'/analytics':30000,'/prediction-audit':30000,'/rank-diagnostics':30000,'/miss-diagnostics':30000};
+const policy={'/race':45000,'/schedule-fast':120000,'/schedule':15000,'/learning-history':45000,'/analytics-suite':30000,'/ticket-layout-lab':30000,'/ticket-backtest':30000,'/data-quality':15000,'/analytics':30000,'/prediction-audit':30000,'/rank-diagnostics':30000,'/miss-diagnostics':30000};
 function eligible(input,init){
  try{
   const request=input instanceof Request?input:null;
@@ -3148,7 +3148,7 @@ async function refresh(force=false){
  if(!force&&loaded&&day===fetchDay&&now()-fetchTime<120000){drawClock();return;}
  if(inflight)return inflight;
  inflight=(async()=>{try{
- const response=await fetch(API+'/schedule?date='+encodeURIComponent(day),{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);
+ const response=await fetch(API+'/schedule-fast?date='+encodeURIComponent(day),{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);
  const json=await response.json();if(!Array.isArray(json.venues))throw Error('invalid schedule');
  const cancelledVenues=json.venues.filter(v=>v.cancellation_status==='cancelled'&&v.cancellation_verified===true).map(v=>v.name);
  const next=[];for(const v of json.venues){if(v.cancellation_status==='cancelled'&&v.cancellation_verified===true)continue;for(const x of v.race_closing_times||[]){const n=Number(v.number),r=Number(x.race??x.race_number??x.rno),time=parse(x.closing_at);if(n>=1&&n<=24&&r>=1&&r<=12&&Number.isFinite(time))next.push({v:n,r,time,raw:x.closing_at});}}
@@ -3640,7 +3640,7 @@ function init(){
   const id=++seq;if(controller)controller.abort();controller=new AbortController();const signal=controller.signal;
   const timer=setTimeout(()=>controller.abort(),12000);
   try{
-   const res=await fetch(API+'/schedule?date='+encodeURIComponent(d),{cache:'no-store',signal});if(!res.ok)throw Error('HTTP '+res.status);
+   const res=await fetch(API+'/schedule-fast?date='+encodeURIComponent(d),{cache:'no-store',signal});if(!res.ok)throw Error('HTTP '+res.status);
    const data=await res.json();if(!Array.isArray(data.venues))throw Error('invalid schedule');
    const next=[];for(const v of data.venues){if(v.cancellation_status==='cancelled'&&v.cancellation_verified===true)continue;for(const t of v.race_closing_times||[]){const n=Number(v.number),r=Number(t.race??t.race_number??t.rno),ms=parseJst(t.closing_at);if(n>=1&&n<=24&&r>=1&&r<=12&&Number.isFinite(ms))next.push({v:n,r,ms});}}
    if(id!==seq)return;rows=next;loadedDay=d;loadedAt=Date.now();failed=false;
@@ -3680,7 +3680,7 @@ async function loadDeadlines(){
  if(deadlinePending)return deadlinePending;
  deadlinePending=(async()=>{try{
   const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),9000);let r;
-  try{r=await fetch(API+'/schedule?date='+encodeURIComponent(day),{cache:'no-store',signal:ctrl.signal})}finally{clearTimeout(timer)}
+  try{r=await fetch(API+'/schedule-fast?date='+encodeURIComponent(day),{cache:'no-store',signal:ctrl.signal})}finally{clearTimeout(timer)}
   if(!r.ok)throw Error('schedule HTTP '+r.status);
   const j=await r.json();if(!Array.isArray(j.venues))throw Error('schedule invalid');
   const next=new Map();for(const v of j.venues){if(v.cancellation_verified===true&&v.cancellation_status==='cancelled')continue;
