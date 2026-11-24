@@ -4,7 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.27 | Home overview</title>
+  <title>BOAT RACE AI Dashboard v6.5.28 | Home overview</title>
+
+<script id="br6528-quota-awareness">
+(()=>{'use strict';
+ const api='https://boat-race-api.7phr5nzkbt.workers.dev',native=window.fetch.bind(window),key='br6528-d1-pause-v1';
+ // Only explicit quota responses block DB routes; external/display traffic stays available.
+ const display=new Set(['/','/diagnostics','/display-data','/schedule-fast','/race','/odds','/official-exhibition','/official-entries','/display-source-status','/result-diagnostics','/runtime-status']);
+ let until=0;try{const x=Number(localStorage.getItem(key));if(Number.isFinite(x)&&x>Date.now()&&x<=Date.now()+86400000)until=x;}catch{}
+ function paint(){let n=document.getElementById('br6528QuotaNotice');const active=until>Date.now();if(!active){if(n)n.hidden=true;return;}if(!n){const h=document.querySelector('header');if(!h)return;n=document.createElement('div');n.id='br6528QuotaNotice';n.setAttribute('role','status');n.style.cssText='margin:10px 0 0;padding:9px 10px;border:1px solid #a57e48;border-radius:8px;background:#342a30;color:#f6dcad;font-size:12px;line-height:1.6';h.append(n);}n.hidden=false;n.textContent='D1の日次上限に到達：予想保存・成績集計などは一時停止。出走表・展示・オッズは取得可能な範囲で継続。中止情報は公式で確認してください。再開目安 '+new Date(until).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+' JST';}
+ function mark(value){const t=Date.parse(value||'');if(!Number.isFinite(t)||t<=Date.now()||t>Date.now()+86400000)return;until=t;try{localStorage.setItem(key,String(t));}catch{}paint();}
+ function paused(){return until>Date.now();}
+ function reply(){return new Response(JSON.stringify({status:'ERROR',error:'D1日次上限により一時停止中',error_code:'d1_daily_quota',reset_at_utc:new Date(until).toISOString()}),{status:503,headers:{'Content-Type':'application/json','X-D1-Quota-Reset':new Date(until).toISOString()}});}
+ window.fetch=async function(input,init){let u;try{u=new URL(input instanceof Request?input.url:String(input),location.href);}catch{return native(input,init);}if(u.origin!==api)return native(input,init);const method=String(init?.method||(input instanceof Request?input.method:'GET')).toUpperCase(),safe=method==='GET'&&display.has(u.pathname);const signal=init?.signal||(input instanceof Request?input.signal:null);if(signal?.aborted)throw new DOMException('Aborted','AbortError');if(paused()&&!safe&&method!=='OPTIONS')return reply();
+ const r=await native(input,init);const reset=r.headers.get('X-D1-Quota-Reset');if(reset)mark(reset);else if(r.status===503){try{const j=await r.clone().json();if(j.error_code==='d1_daily_quota')mark(j.reset_at_utc);}catch{}}return r;};
+ function tick(){if(until&&until<=Date.now()){until=0;try{localStorage.removeItem(key);}catch{}}paint();}
+ function status(){if(document.hidden||paused())return;native(api+'/runtime-status',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j?.d1_quota_paused===true)mark(j.reset_at_utc);}).catch(()=>{});}
+ function init(){tick();status();setInterval(tick,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){tick();status();}});window.addEventListener('pageshow',()=>{tick();status();});}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -471,7 +491,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  window.dispatchEvent(new CustomEvent('br6515-odds',{detail:{key:k}}));return true;}
  const stamp=d=>d?new Date(d.fetched_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
  window.__br6515Odds={key,get,put,stamp,validate};
- // v6.5.27: display-only official exhibition store shared by gateway, preview and warmup.
+ // v6.5.28: display-only official exhibition store shared by gateway, preview and warmup.
  const exPrefix='br6524:official-exhibition:',exMem=new Map(),exMaxAge=48*3600000;
  function exValid(k,d){
   if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.status!=='verified_table'||d.exhibition_count!==6||!Array.isArray(d.values)||d.values.length!==6)return false;
@@ -857,7 +877,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v6.5.27<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v6.5.28<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -2923,7 +2943,7 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
    });
  }
  // Ensure top-level header does not misrepresent an older release.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.27';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.28';
  const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
  // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
@@ -3015,7 +3035,7 @@ if(watch){
 // Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
 // Replace old footer version text without changing legacy model labels.
 document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.27';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.28';
 })();
 </script>
 
@@ -3068,7 +3088,7 @@ window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
 setTimeout(()=>refresh(true),900);
 // Diagnose pending vs absent snapshot; neither is automatically a losing bet.
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.27';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.28';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -4826,7 +4846,7 @@ function boot(){
  const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
  body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
  // Version label describes dashboard UI, not Worker deployment.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.27';}
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.28';}
  document.title='BOAT RACE AI | Dashboard';
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -5009,7 +5029,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    }
   });obs.observe(status,{childList:true,characterData:true,subtree:true});}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.27';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.28';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -5303,9 +5323,9 @@ function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)re
  const globalMetrics=document.querySelector('main > .grid');if(globalMetrics){const stats=$('stats');if(stats)stats.prepend(globalMetrics);}
  const legacyHome=$('v620HomeHeader');if(legacyHome)legacyHome.hidden=true;
  const topQuick=$('v590QuickNav');if(topQuick)topQuick.hidden=true;
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.27';document.title='BOAT RACE AI Dashboard v6.5.27';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.28';document.title='BOAT RACE AI Dashboard v6.5.28';
  const oldHomeLink=[...manage.querySelectorAll('button')].find(b=>b.textContent==='全国24場を開く');if(oldHomeLink){oldHomeLink.textContent='全国24場・レース詳細を開く';oldHomeLink.onclick=e=>{e.stopImmediatePropagation();nav('detail');};oldHomeLink.addEventListener('click',e=>{e.stopImmediatePropagation();nav('detail');},true);}
- const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.27');
+ const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.28');
  render();refresh();new MutationObserver(()=>{if(visible())refresh();}).observe(home,{attributes:true,attributeFilter:['class']});setInterval(()=>{if(visible()){refresh();}},30000);document.addEventListener('visibilitychange',()=>{if(visible())refresh();});window.addEventListener('pageshow',()=>{if(visible())refresh();});window.addEventListener('online',()=>{if(visible())refresh(true);});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
