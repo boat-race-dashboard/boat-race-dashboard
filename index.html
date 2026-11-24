@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.17 | Compact prediction analysis</title>
+  <title>BOAT RACE AI Dashboard v6.5.18 | Prediction 4 history coverage</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -1893,7 +1893,7 @@ loadAutoPredictions();
     panel.append(el('p','取得項目率 '+br6517Pct(p.feature_coverage_ratio)+' ／ 未校正の計算上の参考値です。実際の的中率ではありません。','muted'));
     if(Array.isArray(p.rows)&&p.rows.length){const fold=el('details',undefined,'br6517-fold');fold.append(el('summary','予想4の過去実績・取得項目'));
       for(const r of p.rows){const section=el('div',undefined,'v492-break');section.append(el('strong',String(r.boat)+'号艇 ／ 想定進入 '+(r.lane??'未取得')+' ／ 取得 '+(r.feature_count??'未取得')+'/15項目'));
-        for(const [id,label] of [['course_win','コース1着評価'],['course_place','コース連対評価'],['st_consistency','ST安定性評価'],['meet_st_proxy','今節ST代理評価'],['course_tactics','コース戦法評価'],['recent30_form','直近30走評価'],['recent60_form','直近60走評価'],['venue_form','当地実績評価']]){const value=r.features?.[id];section.append(el('div',label+'：'+(br6517Finite(value)?Number(value).toFixed(3)+'（正規化評価）':'未取得'),'muted'));}fold.append(section);}panel.append(fold);}
+        for(const [id,label] of [['course_win','コース1着評価'],['course_place','コース連対評価'],['st_consistency','ST安定性評価'],['meet_st_proxy','今節ST代理評価'],['course_tactics','コース戦法評価'],['recent30_form','直近30走評価'],['recent60_form','直近60走評価'],['venue_form','当地実績評価'],['exhibition','展示タイム評価'],['exhibition_start','展示ST評価']]){const value=r.features?.[id],d=r.feature_diagnostics?.[id];const reasons={insufficient_sample:'対象走数不足',identity_missing:'登録番号未確認',profile_unavailable:'履歴取得なし',query_failed:'履歴検索失敗',technique_incomplete:'決まり手記録不足',exhibition_time_unavailable:'展示タイム未取得',exhibition_st_unavailable:'展示ST未取得',flying_exhibition_st_excluded:'展示Fは評価対象外',missing_or_invalid_input:'入力なし・範囲外'};const sample=br6517Finite(d?.sample_size)?' ／ '+d.sample_size+'走'+(br6517Finite(d?.minimum_sample)?'（必要'+d.minimum_sample+'走）':''):'';const reason=br6517Finite(value)?'': '（'+(d?reasons[d.status]||'理由未判定':'保存時の理由記録なし')+'）';section.append(el('div',label+'：'+(br6517Finite(value)?Number(value).toFixed(3)+'（正規化評価）':'未取得'+reason)+sample,'muted'));}fold.append(section);}panel.append(fold);}
     if(phase==='final'){
       const fold=el('details',undefined,'br6517-fold');fold.append(el('summary','展示前・展示後の保存済み評価を比較'));const out=el('div','開くと展示前の保存済み予想を確認します。','muted');fold.append(out);let busy=false,done=false;
       fold.addEventListener('toggle',async()=>{if(!fold.open||busy||done||!sameSelection())return;busy=true;out.textContent='展示前の保存済み予想を確認中…';try{const resp=await fetch(API+'/prediction4?'+new URLSearchParams({date,venue,race,phase:'pre'}),{cache:'no-store'});if(!sameSelection()||!panel.isConnected)return;if(resp.status===404){out.textContent='展示前の保存済み予想はありません。';done=true;return;}if(!resp.ok)throw Error('HTTP '+resp.status);const body=await resp.json();if(!sameSelection()||!panel.isConnected)return;const pre=body.prediction,preDist=br6517Distribution(pre);if(!preDist||!dist){out.textContent='比較に必要な120通りの保存データが揃いません。';done=true;return;}out.replaceChildren();const t=el('table',undefined,'br6517-positions'),h=el('tr');['艇','展示前1着','展示後1着'].forEach(x=>h.append(el('th',x)));const th=el('thead');th.append(h);t.append(th);const tb=el('tbody');for(let n=1;n<=6;n++){const tr=el('tr');tr.append(el('td',n+'号艇'),el('td',br6517Pct(preDist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))),el('td',br6517Pct(dist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))));tb.append(tr);}t.append(tb);out.append(t,el('p','保存時点の推定値の比較です。変化の原因を展示だけに限定できません。','muted'));done=true;}catch(e){if(sameSelection()&&panel.isConnected)out.textContent='取得失敗：'+String(e.message||e)+'（閉じて開くと再試行）';}finally{busy=false;}});panel.append(fold);
@@ -5206,7 +5206,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    }
   });obs.observe(status,{childList:true,characterData:true,subtree:true});}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.17';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.18';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
