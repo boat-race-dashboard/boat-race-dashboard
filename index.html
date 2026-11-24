@@ -1058,7 +1058,7 @@ async function loadSchedule(){
       if(first) selected=first;
     }
     totals.append(scheduleSummary('データあり',count+'場'),scheduleSummary('レースデータ',races+'R'),scheduleSummary('対象',date));
-    status.textContent='取得完了。'+($('onlyDataVenues').checked?'データありの場だけ表示しています。':'全国24場を表示しています。')+' 開催確定の判定ではありません。';
+    status.textContent=(payload.display_fallback?'非公式の予備データを表示中。締切・中止は未確認です。':'取得完了。')+($('onlyDataVenues').checked?'データありの場だけ表示しています。':'全国24場を表示しています。')+' 開催確定の判定ではありません。';
   }catch(error){
     status.textContent='データを取得できませんでした（'+error.message+'）。日付またはAPIの状態を確認してください。';
   }finally{
@@ -1085,7 +1085,7 @@ function detailValue(value, suffix=''){
   return String(value)+suffix;
 }
 function raceCell(value){return el('td',detailValue(value));}
-// v6.5.10: racecard-only resilience. Keep existing UI, sources and prediction logic.
+// v6.5.11: racecard source-aware resilience. Keep existing UI, sources and prediction logic.
 const raceDetailCache=new Map();
 let raceDetailRequestSerial=0;
 let raceDetailAbort=null;
@@ -1094,12 +1094,12 @@ async function fetchRaceDetailReliable(endpoint, signal){
   for(let attempt=0;attempt<2;attempt++){
     if(signal.aborted)throw new DOMException('取得が中断されました','AbortError');
     const timeout=new AbortController();
-    const timer=setTimeout(()=>timeout.abort(),attempt===0?6500:9500);
+    const timer=setTimeout(()=>timeout.abort(),attempt===0?18000:22000);
     const cancel=()=>timeout.abort();signal.addEventListener('abort',cancel,{once:true});
     try{
       const response=await fetch(endpoint,{cache:'no-store',signal:timeout.signal});
       if(!response.ok){
-        const err=new Error(response.status===404?'このレースのデータはまだ公開されていません（中止とは限りません）':'HTTP '+response.status);
+        const info=await response.json().catch(()=>null);const err=new Error(response.status===404?'出走表データを確認できません（未公開・取得元欠落・非開催の区別は未確認）':'HTTP '+response.status+(info?.error?'：'+info.error:''));
         if(response.status===404||response.status>=400&&response.status<500)throw err;
         lastError=err;
       }else{
@@ -1110,7 +1110,7 @@ async function fetchRaceDetailReliable(endpoint, signal){
     }catch(e){
       if(signal.aborted)throw e;
       lastError=e;
-      if(e.message?.includes('まだ公開')||e.message?.includes('HTTP 4'))break;
+      if(e.message?.includes('出走表データを確認できません')||e.message?.includes('HTTP 4'))break;
     }finally{clearTimeout(timer);signal.removeEventListener('abort',cancel)}
   }
   throw lastError||new Error('取得に失敗しました');
@@ -1186,7 +1186,7 @@ async function loadRaceDetail(){
       body.append(tr);
     }
     table.append(body);wrap.append(table);content.append(wrap);
-    const note=el('p','取得元：Boatrace Open API（非公式）。選手名など一部の文字が文字化けする場合があります。公式の出走表・直前情報を最終確認してください。','muted');
+    const note=el('p','取得元：'+(payload.display_fallback?'BoatraceCSV（非公式・補完表示のみ）':'Boatrace Open API（非公式）')+'。公式の出走表・直前情報を最終確認してください。','muted');
     note.style.fontSize='11px';note.style.marginTop='12px';
     content.append(note);
   }catch(error){
@@ -2061,7 +2061,7 @@ loadAutoPredictions();
         tbody.append(line);
       }
       table.append(tbody);wrap.append(table);renderEntryViews(body,payload.racers,wrap);
-      const note=el('p',payload.result_available?'このレースは終了後の情報です。事前予想の検証には保存済みスナップショットを使ってください。':'取得元は非公式です。展示情報の公表時刻は検証できません。','muted');note.style.fontSize='11px';body.append(note);
+      const note=el('p',payload.result_available?'このレースは終了後の情報です。事前予想の検証には保存済みスナップショットを使ってください。':(payload.display_fallback?'取得元：BoatraceCSV（非公式の補完表示）。予想・保存には使用しません。締切・展示・中止は公式で確認してください。':'取得元は非公式です。展示情報の公表時刻は検証できません。'),'muted');note.style.fontSize='11px';body.append(note);
     }catch(e){if(id===entryRequestId)status.textContent='取得できませんでした：'+e.message+(linkedKey===key?'（前回取得した同じレースの情報を表示中）':'');}
   }
   hv.onchange=syncToDetail;hr.onchange=syncToDetail;
