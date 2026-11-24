@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.29 | Home overview</title>
+  <title>BOAT RACE AI Dashboard v6.5.30 | Home overview</title>
 
 <script id="br6528-quota-awareness">
 (()=>{'use strict';
  const api='https://boat-race-api.7phr5nzkbt.workers.dev',native=window.fetch.bind(window),key='br6528-d1-pause-v1';
  // Only explicit quota responses block DB routes; external/display traffic stays available.
- const display=new Set(['/','/diagnostics','/display-data','/schedule-fast','/race','/odds','/official-exhibition','/official-entries','/display-source-status','/result-diagnostics','/runtime-status']);
+ const display=new Set(['/','/diagnostics','/display-data','/schedule-fast','/race','/odds','/official-exhibition','/official-entries','/display-source-status','/result-diagnostics','/runtime-status','/system-overview']);
  let until=0;try{const x=Number(localStorage.getItem(key));if(Number.isFinite(x)&&x>Date.now()&&x<=Date.now()+86400000)until=x;}catch{}
  function paint(){let n=document.getElementById('br6528QuotaNotice');const active=until>Date.now();if(!active){if(n)n.hidden=true;return;}if(!n){const h=document.querySelector('header');if(!h)return;n=document.createElement('div');n.id='br6528QuotaNotice';n.setAttribute('role','status');n.style.cssText='margin:10px 0 0;padding:9px 10px;border:1px solid #a57e48;border-radius:8px;background:#342a30;color:#f6dcad;font-size:12px;line-height:1.6';h.append(n);}n.hidden=false;n.textContent='D1の日次上限に到達：予想保存・成績集計などは一時停止。出走表・展示・オッズは取得可能な範囲で継続。中止情報は公式で確認してください。再開目安 '+new Date(until).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+' JST';}
  function mark(value){const t=Date.parse(value||'');if(!Number.isFinite(t)||t<=Date.now()||t>Date.now()+86400000)return;until=t;try{localStorage.setItem(key,String(t));}catch{}paint();}
@@ -491,7 +491,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  window.dispatchEvent(new CustomEvent('br6515-odds',{detail:{key:k}}));return true;}
  const stamp=d=>d?new Date(d.fetched_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
  window.__br6515Odds={key,get,put,stamp,validate};
- // v6.5.29: display-only official exhibition store shared by gateway, preview and warmup.
+ // v6.5.30: display-only official exhibition store shared by gateway, preview and warmup.
  const exPrefix='br6524:official-exhibition:',exMem=new Map(),exMaxAge=48*3600000;
  function exValid(k,d){
   if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.status!=='verified_table'||d.exhibition_count!==6||!Array.isArray(d.values)||d.values.length!==6)return false;
@@ -877,7 +877,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v6.5.29<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v6.5.30<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -2894,7 +2894,7 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
    });
  }
  // Ensure top-level header does not misrepresent an older release.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.29';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.30';
  const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
  // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
@@ -2986,7 +2986,7 @@ if(watch){
 // Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
 // Replace old footer version text without changing legacy model labels.
 document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.29';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.30';
 })();
 </script>
 
@@ -3039,7 +3039,7 @@ window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
 setTimeout(()=>refresh(true),900);
 // Diagnose pending vs absent snapshot; neither is automatically a losing bet.
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.29';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.30';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -4604,7 +4604,7 @@ function boot(){
  const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
  body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
  // Version label describes dashboard UI, not Worker deployment.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.29';}
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.30';}
  document.title='BOAT RACE AI | Dashboard';
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -4787,7 +4787,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    }
   });obs.observe(status,{childList:true,characterData:true,subtree:true});}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.29';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.30';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -5019,9 +5019,9 @@ function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)re
  const globalMetrics=document.querySelector('main > .grid');if(globalMetrics){const stats=$('stats');if(stats)stats.prepend(globalMetrics);}
  const legacyHome=$('v620HomeHeader');if(legacyHome)legacyHome.hidden=true;
  const topQuick=$('v590QuickNav');if(topQuick)topQuick.hidden=true;
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.29';document.title='BOAT RACE AI Dashboard v6.5.29';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.30';document.title='BOAT RACE AI Dashboard v6.5.30';
  const oldHomeLink=[...manage.querySelectorAll('button')].find(b=>b.textContent==='全国24場を開く');if(oldHomeLink){oldHomeLink.textContent='全国24場・レース詳細を開く';oldHomeLink.onclick=e=>{e.stopImmediatePropagation();nav('detail');};oldHomeLink.addEventListener('click',e=>{e.stopImmediatePropagation();nav('detail');},true);}
- const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.29');
+ const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.30');
  render();refresh();new MutationObserver(()=>{if(visible())refresh();}).observe(home,{attributes:true,attributeFilter:['class']});setInterval(()=>{if(visible()){refresh();}},30000);document.addEventListener('visibilitychange',()=>{if(visible())refresh();});window.addEventListener('pageshow',()=>{if(visible())refresh();});window.addEventListener('online',()=>{if(visible())refresh(true);});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
@@ -5081,6 +5081,50 @@ async function extras(type,button){const q=params(),k=key(q)+'/'+type,id=serial,
 root.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.view){view=b.dataset.view;select('view',view);render();return}if(b.dataset.period){period=b.dataset.period;select('period',period);$('baTo').value=period==='y'?day(-1):day();$('baFrom').value=period==='all'?'2000-01-01':period==='y'?day(-1):day(1-Number(period));load();return}if(b.dataset.phase){phase=b.dataset.phase;select('phase',phase);load();return}if(b.id==='baRefresh'){load(true);return}if(b.dataset.extra)extras(b.dataset.extra,b)});for(const id of ['baFrom','baTo'])$(id).addEventListener('change',()=>{period='';select('period','');load()});
 // No periodic analysis polling. Load once on entry, then reuse exact-condition cache.
 let was=false;function enter(){const v=visible();if(v&&!was)load();was=v}new MutationObserver(enter).observe(host,{attributes:true,attributeFilter:['class','hidden']});document.addEventListener('visibilitychange',enter);enter();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();})();
+</script>
+
+<style id="br6530-admin-style">
+#manageView>#br6530Admin{display:block!important}#manageView>:not(#br6530Admin){display:none!important}
+#br6530Admin{color:#edf1fb;min-width:0;margin:10px 0 20px}#br6530Admin *{box-sizing:border-box}#br6530Admin .sm-card,#br6530Admin>details{background:#14263b;border:1px solid #425971;border-radius:16px;padding:15px;margin:11px 0;min-width:0}#br6530Admin h2{font-size:21px;color:#f2d28a;margin:0 0 7px}#br6530Admin h3{font-size:16px;color:#f2d28a;margin:0 0 10px}#br6530Admin p,#br6530Admin small{font-size:12px;line-height:1.65;color:#b9c9dc;overflow-wrap:anywhere;margin:6px 0}#br6530Admin .sm-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #354a60;font-size:13px}#br6530Admin .sm-row:last-child{border:0}#br6530Admin .sm-row span:last-child{text-align:right}#br6530Admin .sm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#br6530Admin .sm-tile{background:#20354c;border:1px solid #405974;border-radius:11px;padding:12px;min-width:0}#br6530Admin .sm-tile b{display:block;font-size:21px;margin-top:5px;color:#f3d48b}#br6530Admin .sm-good{color:#91dfbd}#br6530Admin .sm-warn{color:#f2c779}#br6530Admin .sm-bad{color:#ffb3ae}#br6530Admin .sm-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}#br6530Admin button,#br6530Admin .sm-link{border:1px solid #66819d;background:#28435f;color:#eef4ff;border-radius:9px;padding:11px 12px;font-size:13px;min-height:40px;white-space:normal}#br6530Admin .sm-link{display:inline-block;text-decoration:none}#br6530Admin summary{color:#f1d38c;font-size:15px;font-weight:700;cursor:pointer;padding:3px 0}#br6530Admin details[open]>summary{margin-bottom:12px}#br6530Admin .sm-legacy>div,#br6530Admin .sm-legacy>section{max-width:100%;min-width:0}#br6530Admin .sm-history{max-height:420px;overflow:auto}#br6530Admin .sm-note{border-left:3px solid #d7b46d;padding-left:9px}#br6530Admin .v540-hidden{display:revert!important}#br6530Admin .v540-nav{display:none!important}
+</style>
+<script id="br6530-admin-js">
+(()=>{'use strict';
+const API='https://boat-race-api.7phr5nzkbt.workers.dev',$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),num=x=>typeof x==='number'&&Number.isFinite(x)?x.toLocaleString('ja-JP'):'—',fmt=x=>x&&Number.isFinite(Date.parse(x))?new Date(x).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未確認';
+function init(){const host=$('manageView');if(!host||$('br6530Admin'))return;
+const root=document.createElement('div');root.id='br6530Admin';root.innerHTML=`<section class="sm-card"><div class="sm-head"><h2>システム管理</h2><button id="smRefresh" type="button">状態を確認</button></div><p id="smStamp" role="status">取得待ち</p><h3 id="smHealth">稼働状況未確認</h3><div id="smStates"></div><p class="sm-note">実行記録に基づく確認です。Cron設定・全機能の正常性を保証するものではありません。</p></section>
+<section class="sm-card"><h3>D1データベース・無料枠</h3><div id="smQuota">未確認</div><div class="sm-row"><span>読み取り上限</span><span>500万行 / 日</span></div><div class="sm-row"><span>書き込み上限</span><span>10万行 / 日</span></div><div class="sm-row"><span>アカウント実使用量</span><span>未連携</span></div><p>毎日9:00 JSTリセット。正確な使用量はCloudflare管理画面で確認してください。</p><a class="sm-link" href="https://dash.cloudflare.com/" target="_blank" rel="noopener noreferrer">Cloudflareで使用量を確認</a></section>
+<section class="sm-card"><h3>データ取得状況</h3><div id="smSources"></div><p id="smSourceNote">選択レースの手動診断結果。全国の取得状況ではありません。</p><button id="smOpenDiagnostics" type="button">選択レースを診断する</button></section>
+<section class="sm-card"><h3>直近の自動処理</h3><div class="sm-grid" id="smMetrics"></div><p>最新の各Cron実行記録の件数。日別合計ではありません。</p></section>
+<section class="sm-card"><h3>エラー・要確認事項</h3><div id="smAlerts">実行記録取得待ち</div></section>
+<details id="smHistory"><summary>自動処理の実行履歴</summary><div class="sm-history" id="smHistoryBody">取得待ち</div></details>
+<details id="smData"><summary>データ蓄積・取得率</summary><p>必要なときだけ診断を取得。データ取得率は精度とは異なります。</p><button data-detail="coverage">予想4の取得率（本日・展示後）</button><div id="smCoverage"></div><button data-detail="history">過去実績の補完状況</button><div id="smImport"></div><button data-detail="technique">決まり手の蓄積状況</button><div id="smTechnique"></div></details>
+<details id="smDiagnostics" class="sm-legacy"><summary>選択レース・通信の詳細診断</summary><p>レース詳細で選択したレースが対象です。再取得は手動のみ。</p></details>
+<details id="smMaintenance" class="sm-legacy"><summary>メンテナンス・旧検証ツール</summary><p>通常運用では操作不要。保存済みデータは削除していません。</p></details>`;
+host.prepend(root);
+// Preserve the existing handlers and forms, but remove duplicated navigation from the ordinary view.
+for(const n of [...host.children]){if(n===root||n.classList.contains('v540-nav'))continue;n.classList.remove('v540-hidden');if(n.tagName==='DETAILS')n.open=false;const target=['exLatencyPanel','v630Bar','v495Monitor'].includes(n.id)?$('smDiagnostics'):$('smMaintenance');target.append(n);}
+let current=null,last=0,busy=false,failure='';const details=new Map(),pending=new Set();
+const visible=()=>!document.hidden&&!host.hidden&&!host.classList.contains('hidden')&&host.getClientRects().length>0;
+const row=(a,b,cls='')=>'<div class="sm-row"><span>'+esc(a)+'</span><span class="'+cls+'">'+esc(b)+'</span></div>',tile=(a,b)=>'<div class="sm-tile"><small>'+esc(a)+'</small><b>'+esc(b)+'</b></div>';
+function fresh(ts,mins){const age=(Date.now()-Date.parse(ts))/60000;return Number.isFinite(age)&&age>=0&&age<=mins;}
+function render(){const j=current,quota=j?.quota,paused=quota?.paused===true;const records=j?.records||{},c=records.cron?.[0],f=records.final?.[0],a=records.analysis?.[0],fs=f?.summary;const cOk=fresh(c?.ran_at_utc,22),fOk=fresh(f?.slot,4),aOk=fresh(a?.finished_at_utc,90),stale=!!failure||!fresh(j?.checked_at_utc,4);const pair=(xs)=>xs?.slice(1).some((v,i)=>{const d=Date.parse(xs[i].slot)-Date.parse(v.slot);return d===60000});const minuteSeen=pair(records.final);const problems=[];
+if(paused)problems.push('D1日次上限に到達。保存・照合・集計は停止。再開目安 '+fmt(quota.reset_at_utc)+' JST');if(failure)problems.push('状態取得失敗：'+failure);if(j&&!paused&&j.database!=='readable')problems.push('D1実行履歴の一部または全部を確認できません。');if(j&&!paused&&!c)problems.push('通常Cronの実行記録なし・未確認。');if(j&&!paused&&!f)problems.push('展示後監視の実行記録なし・未確認。');if(j&&!paused&&!a)problems.push('自動分析の実行記録なし・未確認。');if(a&&!aOk)problems.push('自動分析の最終記録から時間が経過しています。');if(c?.error_message)problems.push('通常Cronの最新記録にエラー・保留があります。');if(c&&!cOk)problems.push('通常Cronの最新記録から時間が経過しています。');if(f&&!fOk)problems.push('展示後監視の最新記録から時間が経過しています。開催時間外・監視対象なしの場合もあります。');if(fOk&&!minuteSeen)problems.push('毎分間隔の連続記録はまだ確認できていません。');if(f&&!f.finished_at)problems.push('展示監視の終了記録がありません。');if(a&&a.status!=='ok')problems.push('自動分析の最新記録に要確認事項があります。');if(fs?.sidecar_incomplete>0)problems.push('展示後予想の追加保存に未完了があります。');
+$('smHealth').textContent=paused?'D1利用制限中':!j||stale?'稼働状況未確認':problems.length?'要確認':'直近の実行記録を確認';$('smHealth').className=paused?'sm-bad':!j||stale||problems.length?'sm-warn':'sm-good';$('smStamp').textContent=j?'確認 '+fmt(j.checked_at_utc)+' JST'+(stale?' ／ 前回記録・鮮度要確認':'')+(j.cache_hit?' ／ キャッシュ':''):'取得待ち';
+$('smStates').innerHTML=row('通常Cron（保存・照合）',c?fmt(c.ran_at_utc):'未確認',!stale&&cOk&&!c.error_message&&!paused?'sm-good':'sm-warn')+row('展示後監視',f?fmt(f.slot):'未確認',!stale&&fOk&&f.finished_at&&!paused?'sm-good':'sm-warn')+row('毎分の連続記録',minuteSeen?'確認あり（設定自体は未確認）':'未確認',!stale&&fOk&&minuteSeen&&!paused?'sm-good':'sm-warn')+row('自動分析',a?fmt(a.finished_at_utc):'未確認',!stale&&aOk&&a.status==='ok'&&!paused?'sm-good':'sm-warn')+row('D1読み取り',paused?'制限中':j?.database==='readable'&&!stale?'診断検索成功':'未確認',paused?'sm-bad':j?.database==='readable'&&!stale?'sm-good':'sm-warn');
+$('smQuota').innerHTML=row('上限の検知',paused?'利用制限中':j&&!stale?'この実行環境では未検知':'未確認',paused?'sm-bad':'')+(paused?'<p>再開目安 '+esc(fmt(quota.reset_at_utc))+' JST</p>':'')+'<p>実使用量は未取得です。上限未検知は余裕があることを意味しません。</p>';
+$('smMetrics').innerHTML=tile('通常保存 / 試行',c?num(c.save_created)+' / '+num(c.save_attempted):'—')+tile('展示後保存 / 試行',fs?num(fs.created)+' / '+num(fs.attempted):'—')+tile('結果照合 / 試行',c?num(c.check_settled)+' / '+num(c.check_attempted):'—')+tile('展示待ち / 保留',fs?num(fs.missing_exhibition)+' / '+num(fs.deferred):'—');
+$('smAlerts').innerHTML=problems.length?problems.map(x=>'<p class="sm-warn">'+esc(x)+'</p>').join(''):j&&!stale?'<p>取得した直近ログに明示的な異常はありません。未確認の機能は含みません。</p>':'<p>未確認</p>';
+$('smHistoryBody').innerHTML='<h3>通常Cron（最大12件）</h3>'+(records.cron||[]).map(x=>row(fmt(x.ran_at_utc), '保存 '+num(x.save_created)+' / 照合 '+num(x.check_settled)+(x.error_message?' / 要確認':''))).join('')+'<h3>展示後監視（最大12件）</h3>'+(records.final||[]).map(x=>row(fmt(x.slot),x.finished_at&&x.summary?'保存 '+num(x.summary.created)+' / 待ち '+num(x.summary.missing_exhibition):'終了・詳細未確認')).join('')+'<p>最新診断で読み取った行数：'+num(j?.diagnostic_rows_read)+'（この診断のみ、D1全体ではない）</p>';
+}
+async function get(path){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const r=await fetch(API+path,{cache:'no-store',signal:controller.signal});const j=await r.json();if(!r.ok||j.error||j.status==='ERROR')throw Error(j.error||j.message||'HTTP '+r.status);return j;}finally{clearTimeout(timer)}}
+async function load(force=false){if(!visible()||busy||(!force&&Date.now()-last<120000))return;busy=true;last=Date.now();$('smRefresh').disabled=true;try{const j=await get('/system-overview');if(!j.quota||!j.checked_at_utc)throw Error('対応Workerの更新を確認してください');current=j;failure='';}catch(e){failure=String(e.message||e);}finally{busy=false;$('smRefresh').disabled=false;render();}}
+async function detail(type,btn){const day=new Date(Date.now()+9*3600000).toISOString().slice(0,10),spec={coverage:['smCoverage','/prediction4-feature-status?date='+day+'&phase=final'],history:['smImport','/history-import-status'],technique:['smTechnique','/prediction4-technique-status']}[type];if(!spec||pending.has(type))return;const out=$(spec[0]),old=details.get(type);if(old&&old.day===day&&Date.now()-old.at<300000){out.innerHTML=old.html;return;}pending.add(type);btn.disabled=true;out.textContent='取得中…';try{const j=await get(spec[1]);let html='';if(type==='coverage'){const a=j.models?.[j.current_model];html=a?row('現行モデル保存数',num(a.snapshots))+row('項目取得率',a.total_items? (100*a.available_items/a.total_items).toFixed(1)+'%':'未集計')+(j.truncated?'<p>部分集計</p>':''):'<p>現行モデルの保存記録なし</p>';}else if(type==='history'){html=row('処理済み日数',num(j.processed_days))+row('データあり日数',num(j.days_with_data))+row('記録された追加行',num(j.rows_added));}else{html=Array.isArray(j.sources)?j.sources.map(x=>row(x.source,num(x.races)+'件')).join(''):'<p>取得元別件数未確認</p>';}html+='<p>取得 '+esc(fmt(new Date().toISOString()))+' JST</p>';details.set(type,{html,day,at:Date.now()});out.innerHTML=html;}catch(e){out.textContent='取得失敗：'+String(e.message||e);}finally{pending.delete(type);btn.disabled=false;}}
+function sourceStatus(){const note=$('v630Note')?.textContent||'未確認';$('smSources').innerHTML=[['出走表','v630Race'],['展示','v630Exhibition'],['公式オッズ','v630Odds'],['結果','v630Result']].map(([label,id])=>row(label,$(id)?.textContent||'未確認')).join('');$('smSourceNote').textContent='選択レースの手動診断結果（全国の状態ではありません）。 '+note;}
+const sourceBar=$('v630Bar');if(sourceBar)new MutationObserver(sourceStatus).observe(sourceBar,{childList:true,subtree:true,characterData:true});sourceStatus();
+root.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='smOpenDiagnostics'){$('smDiagnostics').open=true;$('smDiagnostics').scrollIntoView({block:'start'});return;}if(b.id==='smRefresh')load(true);if(b.dataset.detail)detail(b.dataset.detail,b)});
+render();new MutationObserver(()=>{if(visible())load()}).observe(host,{attributes:true,attributeFilter:['class','hidden']});setInterval(()=>{if(visible())load()},120000);document.addEventListener('visibilitychange',()=>{if(visible())load()});if(visible())load();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();})();
 </script>
