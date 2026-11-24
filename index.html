@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.16 | Display acquisition consolidation</title>
+  <title>BOAT RACE AI Dashboard v6.5.17 | Compact prediction analysis</title>
   <style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;color:#edf4ff;background:#09162a}
     *{box-sizing:border-box}body{margin:0}
@@ -579,7 +579,34 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)memo.clear(
 #outcomes .v498-payout-key summary::-webkit-details-marker{display:none}
 #outcomes .v498-tier-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:7px;padding:0 0 11px}
 #outcomes .v498-tier-list span{display:flex;align-items:center;gap:7px;padding:7px;background:#3b2d52;border-radius:8px;font-size:10px}
-</style></head>
+</style><style>
+/* v6.5.17: compact prediction views, UI only */
+#cockpitPrediction [hidden]{display:none!important}
+#cockpitPrediction .br6517-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:12px 0}
+#cockpitPrediction .br6517-tabs button{min-width:0;min-height:40px;padding:8px 3px;border:1px solid #80669b;border-radius:9px;background:#302342;color:#e5d7f1;font-size:12px;font-weight:700;white-space:nowrap}
+#cockpitPrediction .br6517-tabs button.active{background:#eed07f;color:#251a36;border-color:#eed07f}
+#cockpitPrediction .br6517-compact{font-size:12px;line-height:1.55;margin:8px 0;padding:9px;border-radius:9px;border:1px solid #77628e;background:#302342;color:#d9cce8}
+#cockpitPrediction .br6517-scenario{padding:11px;border:1px solid #77628e;background:#302342;border-radius:12px;margin:9px 0;color:#f5edf9}
+#cockpitPrediction .br6517-scenario h3{margin:0 0 8px;color:#f5d583;font-size:15px}
+#cockpitPrediction .br6517-scenario-row{margin:8px 0}
+#cockpitPrediction .br6517-rowhead{display:flex;justify-content:space-between;gap:8px;font-size:12px;align-items:baseline}
+#cockpitPrediction .br6517-rowhead strong{white-space:nowrap;color:#f5d583}
+#cockpitPrediction .br6517-scenario-track{height:7px;border-radius:6px;background:#59456e;overflow:hidden;margin-top:4px}
+#cockpitPrediction .br6517-scenario-track span{display:block;height:100%;background:linear-gradient(90deg,#a68ad5,#f1d084);border-radius:6px}
+#cockpitPrediction .br6517-picker{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px}
+#cockpitPrediction .br6517-picker select{max-width:100%;min-height:36px;background:#302342;color:#fff;border:1px solid #80669b;border-radius:7px;padding:6px}
+#cockpitPrediction .br6517-single{min-width:0;table-layout:fixed}
+#cockpitPrediction .br6517-single th,#cockpitPrediction .br6517-single td{white-space:normal;overflow-wrap:anywhere;vertical-align:top}
+#cockpitPrediction .br6517-single th:first-child,#cockpitPrediction .br6517-single td:first-child{width:57%;position:static;min-width:0}
+#cockpitPrediction .br6517-positions{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+#cockpitPrediction .br6517-positions td,#cockpitPrediction .br6517-positions th{padding:7px 2px;text-align:center;border-bottom:1px solid #59466c}
+#cockpitPrediction .br6517-positions td:first-child,#cockpitPrediction .br6517-positions th:first-child{text-align:left}
+#cockpitPrediction .br6517-candidate .v433-bet-group{padding:0;border:0;background:transparent}
+#cockpitPrediction .br6517-candidate p{font-size:11px;line-height:1.5;margin:6px 0 0}
+#cockpitPrediction .br6517-fold{margin:10px 0;font-size:12px}
+#cockpitPrediction .br6517-fold summary{color:#f5d583;cursor:pointer;padding:6px 0;font-weight:700}
+</style>
+</head>
 <body>
 <header><div class="eyebrow">BOAT RACE / 24 VENUES · v4.9.10</div><h1>BOAT RACE <span style="color:#50e8c6">AI</span></h1><small>予想・結果・回収率をひとつに</small></header>
 <main>
@@ -1669,7 +1696,7 @@ loadAutoPredictions();
     <div class="cockpit-tabs" role="tablist" aria-label="レース情報の切替"><button type="button" data-cockpit-tab="entries" class="active" aria-selected="true">出走表</button><button type="button" data-cockpit-tab="preview" aria-selected="false">直前情報</button><button type="button" data-cockpit-tab="prediction" aria-selected="false">AI予想</button><button type="button" data-cockpit-tab="odds" aria-selected="false">オッズ</button><button type="button" data-cockpit-tab="result" aria-selected="false">結果</button></div>
     <div class="cockpit-pane" id="cockpitEntries"><div class="linked-entry"><h3 id="linkedEntryTitle">📋 出走表</h3><div class="linked-status" id="linkedEntryStatus" aria-live="polite">選択中のレースを取得しています…</div><div id="linkedEntryBody"></div><div class="linked-note">出走表は非公式補完を含みます。展示・オッズは公式優先。項目別の取得元を確認してください。</div></div></div>
     <div class="cockpit-pane" id="cockpitPreview" hidden><div class="linked-entry"><h3>直前情報</h3><div id="cockpitPreviewBody" class="linked-status">データを取得中…</div></div></div>
-    <div class="cockpit-pane" id="cockpitPrediction" hidden><div class="hero-reco"><strong>✧ AI予想（試作ルール型）</strong><div class="tickets v40-tickets" id="heroTickets">選択すると予想を取得します</div><div class="meta" id="heroPredictionMeta">評価点は的中確率ではありません</div><div id="cockpitRanking"></div><button type="button" class="primary" id="heroPredict">予想を更新</button></div></div>
+    <div class="cockpit-pane" id="cockpitPrediction" hidden><div class="hero-reco"><strong>✧ AI予想（試作ルール型）</strong><div class="br6517-tabs" role="tablist" aria-label="AI予想の表示切替"><button type="button" role="tab" data-br6517-view="tickets" aria-controls="br6517Tickets" aria-selected="true" class="active">予想比較</button><button type="button" role="tab" data-br6517-view="scenario" aria-controls="br6517Scenario" aria-selected="false">展開分析</button><button type="button" role="tab" data-br6517-view="racers" aria-controls="br6517Racers" aria-selected="false">選手評価</button></div><div id="br6517Tickets" role="tabpanel"><div class="tickets v40-tickets" id="heroTickets">選択すると予想を取得します</div><div class="meta" id="heroPredictionMeta">評価点は的中確率ではありません</div></div><div id="cockpitRanking"><div id="br6517Scenario" role="tabpanel" hidden></div><div id="br6517Racers" role="tabpanel" hidden></div></div><button type="button" class="primary" id="heroPredict">予想を更新</button></div></div>
     <div class="cockpit-pane" id="cockpitOdds" hidden><div class="linked-entry"><h3>3連単オッズ（公式優先・取得元を確認）</h3><div class="odds-notice" id="oddsNotice">選択中のレースのオッズを取得します</div><div class="odds-head"><label>1着固定 <select id="oddsFirst"><option value="1">1号艇</option><option value="2">2号艇</option><option value="3">3号艇</option><option value="4">4号艇</option><option value="5">5号艇</option><option value="6">6号艇</option></select></label><button type="button" id="oddsRefresh">オッズを更新</button></div><div id="oddsTable"></div><p class="muted">オッズは確定値ではありません。100円購入時の払戻見込みです。実際の購入前に公式情報を確認してください。</p></div></div>
     <div class="cockpit-pane" id="cockpitResult" hidden><div class="linked-entry"><h3>レース結果</h3><div id="cockpitResultBody" class="linked-status">結果を取得中…</div></div></div>
     <button type="button" id="heroLoadDetail" hidden>旧詳細画面</button>
@@ -1685,8 +1712,8 @@ loadAutoPredictions();
     [...dots.children].forEach((b,i)=>b.classList.toggle('active',i+1===r));
   }
   for(let i=1;i<=12;i++){const b=document.createElement('button');b.type='button';b.textContent=i+'R';b.setAttribute('aria-label',i+'レースを選択');b.onclick=()=>{hr.value=String(i);syncToDetail();requestAnimationFrame(()=>document.querySelector('.cockpit-tabs')?.scrollIntoView({behavior:'smooth',block:'start'}));};dots.append(b);}
-  function syncToDetail(){predictionRequestId++;disposePayouts();raceVenueSelect.value=hv.value;raceNumberSelect.value=hr.value;selected=VENUES[Number(hv.value)-1];renderVenues();updateHero();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';document.getElementById('heroPredictionMeta').textContent='評価点は的中確率ではありません';loadLinkedEntry();if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();if(!document.getElementById('cockpitOdds').hidden)loadOdds();}
-  function syncFromDetail(){const changed=hv.value!==raceVenueSelect.value||hr.value!==raceNumberSelect.value;hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();loadLinkedEntry();if(changed){predictionRequestId++;disposePayouts();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();if(!document.getElementById('cockpitOdds').hidden)loadOdds();}}
+  function syncToDetail(){predictionRequestId++;disposePayouts();br6517ClearAnalysis();br6517Select('tickets');raceVenueSelect.value=hv.value;raceNumberSelect.value=hr.value;selected=VENUES[Number(hv.value)-1];renderVenues();updateHero();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';document.getElementById('heroPredictionMeta').textContent='評価点は的中確率ではありません';loadLinkedEntry();if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();if(!document.getElementById('cockpitOdds').hidden)loadOdds();}
+  function syncFromDetail(){const changed=hv.value!==raceVenueSelect.value||hr.value!==raceNumberSelect.value;hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();loadLinkedEntry();if(changed){predictionRequestId++;disposePayouts();br6517ClearAnalysis();br6517Select('tickets');document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();if(!document.getElementById('cockpitOdds').hidden)loadOdds();}}
   let entryRequestId=0, predictionRequestId=0;
   let linkedAbort=null, linkedKey=null, linkedPayload=null;
   const paneMap={entries:'cockpitEntries',preview:'cockpitPreview',prediction:'cockpitPrediction',odds:'cockpitOdds',result:'cockpitResult'};
@@ -1801,8 +1828,6 @@ loadAutoPredictions();
   function renderTicketPayouts(tickets,date,venue,race,container){
     disposePayouts();const session=++payoutSession,store=window.__br6515Odds,k=store.key(date,venue,race);
     const note=el('p','オッズを確認中…','v433-odds-note');container.append(note);
-    const button=el('button','↻ オッズを更新','v496-odds-refresh');button.type='button';
-    button.style.cssText='margin:8px 0;padding:8px 13px;border-radius:9px;border:1px solid #aa8bce;background:#372950;color:#f8e5aa;cursor:pointer';container.append(button);
     let busy=false,last=0,failures=0,latestOdds=store.get(k),state='前回取得値・最新値確認中';
     const valid=()=>session===payoutSession&&container.isConnected&&store.key(scheduleDate.value,hv.value,hr.value)===k;
     const visible=()=>!document.hidden&&!document.querySelector('#cockpitPrediction')?.hidden&&!document.querySelector('#raceView')?.classList.contains('hidden');
@@ -1811,19 +1836,68 @@ loadAutoPredictions();
       const stale=state.includes('前回')||state.includes('失敗')||state.includes('確認中');const value=good?yen(Math.round(v*stake))+(stale?'※':''):'--円';if(payout.textContent!==value)payout.textContent=value;
       if(good)payout.title=v.toFixed(1)+'倍 ／ 公式取得 '+store.stamp(latestOdds)+'（前回取得値・変動あり、確定払戻ではない）';else payout.removeAttribute('title');
     }const text=latestOdds?'公式オッズ取得 '+store.stamp(latestOdds)+'（JST） ／ '+state+' ／ ※は前回取得値。確定払戻ではありません':state+' ／ 取得済みオッズなし';if(note.textContent!==text)note.textContent=text;}
-    async function update(manual=false){if(!valid()||busy||(!manual&&!visible()))return;busy=true;button.disabled=true;state='最新値確認中（前回取得値を保持）';paint();
+    async function update(manual=false){if(!valid()||busy||(!manual&&!visible()))return;busy=true;state='最新値確認中（前回取得値を保持）';paint();
       try{const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);const d=await res.json();if(!valid())return;
         if(!store.validate(k,d)||!store.get(k)||store.get(k).fetched_at_utc!==d.fetched_at_utc)throw Error('公式120通りを確認できません');
         failures=0;state='取得済み（変動あり）';
       }catch(e){if(valid()){failures=Math.min(failures+1,4);state='最新値取得失敗・自動再試行'+(store.get(k)?'（前回取得値を表示）':'');}}
-      finally{busy=false;button.disabled=false;last=Date.now();if(valid())paint();}}
+      finally{busy=false;last=Date.now();if(valid())paint();}}
     const observer=new MutationObserver(()=>{if(valid())paint();else dispose();});observer.observe(container,{childList:true,subtree:true});
     const receive=e=>{if(valid()&&e.detail?.key===k){state='公式取得値（変動あり）';paint();}};
     const resume=()=>{if(valid()&&visible()){state='前回取得値・最新値確認中';paint();update(true);}};
     window.addEventListener('br6515-odds',receive);window.addEventListener('pageshow',resume);window.addEventListener('online',resume);document.addEventListener('visibilitychange',resume);
     const timer=setInterval(()=>{if(!valid()){dispose();return;}if(visible()&&Date.now()-last>=Math.min(120000,oddsRefreshDelay()*Math.max(1,failures)))update();},5000);
     function dispose(){clearInterval(timer);observer.disconnect();window.removeEventListener('br6515-odds',receive);window.removeEventListener('pageshow',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);}
-    disposePayouts=dispose;button.addEventListener('click',()=>update(true));paint();update(true);
+    disposePayouts=dispose;paint();update(true);
+  }
+  // v6.5.17: view changes never issue a new prediction request.
+  let br6517View='tickets',br6517Boat='1';
+  function br6517Select(view){
+    if(!['tickets','scenario','racers'].includes(view))return;
+    br6517View=view;
+    for(const [key,id] of Object.entries({tickets:'br6517Tickets',scenario:'br6517Scenario',racers:'br6517Racers'})){
+      const panel=document.getElementById(id);if(panel)panel.hidden=key!==view;
+    }
+    hero.querySelectorAll('[data-br6517-view]').forEach(b=>{const active=b.dataset.br6517View===view;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));});
+  }
+  hero.querySelectorAll('[data-br6517-view]').forEach(b=>b.addEventListener('click',()=>br6517Select(b.dataset.br6517View)));
+  function br6517ClearAnalysis(message='選択中のレースの予想を取得中…'){
+    for(const id of ['br6517Scenario','br6517Racers'])document.getElementById(id)?.replaceChildren(el('p',message,'muted'));
+  }
+  const br6517Finite=x=>x!==null&&x!==undefined&&x!==''&&Number.isFinite(Number(x));
+  const br6517Pct=x=>br6517Finite(x)&&Number(x)>=0&&Number(x)<=1?(Number(x)*100).toFixed(1)+'%':'未取得';
+  function br6517Distribution(p){
+    const raw=p?.probabilities;
+    if(!Array.isArray(raw)||raw.length!==120)return null;
+    const seen=new Set(),rows=[];
+    for(const x of raw){const key=String(x?.combination||''),parts=key.split('-');if(!/^[1-6]-[1-6]-[1-6]$/.test(key)||new Set(parts).size!==3||seen.has(key)||!br6517Finite(x?.probability)||Number(x.probability)<0||Number(x.probability)>1)return null;seen.add(key);rows.push({key,parts:parts.map(Number),p:Number(x.probability)});}
+    return Math.abs(rows.reduce((n,x)=>n+x.p,0)-1)<.001?rows:null;
+  }
+  function br6517RenderFourth(panel,p,phase,date,venue,race,sameSelection){
+    panel.replaceChildren(el('h3','予想4｜保存済み展開分析'));
+    panel.append(el('p',(phase==='final'?'展示後':'展示前')+'・保存済み ／ '+(p.model||'モデル名未取得'),'muted'));
+    const scenarios=Array.isArray(p.scenarios)?p.scenarios:[];
+    if(scenarios.length){panel.append(el('p','展開シナリオの仮の配分（実際の発生確率ではありません）','muted'));
+      for(const x of scenarios){const row=el('div',undefined,'br6517-scenario-row'),head=el('div',undefined,'br6517-rowhead');head.append(el('span',String(x.label||x.id||'展開')),el('strong',br6517Pct(x.heuristic_weight)));row.append(head);
+        if(br6517Finite(x.heuristic_weight)&&Number(x.heuristic_weight)>=0&&Number(x.heuristic_weight)<=1){const track=el('div',undefined,'br6517-scenario-track'),fill=el('span');fill.style.width=100*Number(x.heuristic_weight)+'%';track.append(fill);row.append(track);}panel.append(row);}
+    }else panel.append(el('p','この保存予想には展開内訳がありません。','muted'));
+    const dist=br6517Distribution(p);
+    if(dist){
+      panel.append(el('h3','6艇の着順別・参考推定値'));
+      const t=el('table',undefined,'br6517-positions'),head=el('tr');['艇','1着','2着','3着'].forEach(v=>head.append(el('th',v)));const th=el('thead');th.append(head);t.append(th);const tb=el('tbody');
+      for(let n=1;n<=6;n++){const tr=el('tr'),td=el('td');td.append(v433BoatChip(n));tr.append(td);for(let pos=0;pos<3;pos++)tr.append(el('td',br6517Pct(dist.reduce((a,x)=>a+(x.parts[pos]===n?x.p:0),0))));tb.append(tr);}t.append(tb);panel.append(t);
+      const fold=el('details',undefined,'br6517-fold');fold.append(el('summary','予想4の120通りを見る'));
+      const pick=el('select');pick.setAttribute('aria-label','予想4の1着艇を絞る');for(const [v,l] of [['all','全艇'],...Array.from({length:6},(_,i)=>[String(i+1),(i+1)+'号艇'])]){const o=el('option',l);o.value=v;pick.append(o);}
+      const list=el('div');fold.append(pick,list);const draw=()=>{list.replaceChildren();const rows=dist.filter(x=>pick.value==='all'||String(x.parts[0])===pick.value).sort((a,b)=>b.p-a.p);for(const x of rows){const r=el('div',undefined,'br6517-rowhead');r.append(el('span',x.key),el('strong',br6517Pct(x.p)));list.append(r);}};pick.addEventListener('change',draw);fold.addEventListener('toggle',()=>{if(fold.open)draw();});panel.append(fold);
+    }else panel.append(el('p','保存済み120通りの内訳は未取得または形式未対応です。','muted'));
+    panel.append(el('p','取得項目率 '+br6517Pct(p.feature_coverage_ratio)+' ／ 未校正の計算上の参考値です。実際の的中率ではありません。','muted'));
+    if(Array.isArray(p.rows)&&p.rows.length){const fold=el('details',undefined,'br6517-fold');fold.append(el('summary','予想4の過去実績・取得項目'));
+      for(const r of p.rows){const section=el('div',undefined,'v492-break');section.append(el('strong',String(r.boat)+'号艇 ／ 想定進入 '+(r.lane??'未取得')+' ／ 取得 '+(r.feature_count??'未取得')+'/15項目'));
+        for(const [id,label] of [['course_win','コース1着評価'],['course_place','コース連対評価'],['st_consistency','ST安定性評価'],['meet_st_proxy','今節ST代理評価'],['course_tactics','コース戦法評価'],['recent30_form','直近30走評価'],['recent60_form','直近60走評価'],['venue_form','当地実績評価']]){const value=r.features?.[id];section.append(el('div',label+'：'+(br6517Finite(value)?Number(value).toFixed(3)+'（正規化評価）':'未取得'),'muted'));}fold.append(section);}panel.append(fold);}
+    if(phase==='final'){
+      const fold=el('details',undefined,'br6517-fold');fold.append(el('summary','展示前・展示後の保存済み評価を比較'));const out=el('div','開くと展示前の保存済み予想を確認します。','muted');fold.append(out);let busy=false,done=false;
+      fold.addEventListener('toggle',async()=>{if(!fold.open||busy||done||!sameSelection())return;busy=true;out.textContent='展示前の保存済み予想を確認中…';try{const resp=await fetch(API+'/prediction4?'+new URLSearchParams({date,venue,race,phase:'pre'}),{cache:'no-store'});if(!sameSelection()||!panel.isConnected)return;if(resp.status===404){out.textContent='展示前の保存済み予想はありません。';done=true;return;}if(!resp.ok)throw Error('HTTP '+resp.status);const body=await resp.json();if(!sameSelection()||!panel.isConnected)return;const pre=body.prediction,preDist=br6517Distribution(pre);if(!preDist||!dist){out.textContent='比較に必要な120通りの保存データが揃いません。';done=true;return;}out.replaceChildren();const t=el('table',undefined,'br6517-positions'),h=el('tr');['艇','展示前1着','展示後1着'].forEach(x=>h.append(el('th',x)));const th=el('thead');th.append(h);t.append(th);const tb=el('tbody');for(let n=1;n<=6;n++){const tr=el('tr');tr.append(el('td',n+'号艇'),el('td',br6517Pct(preDist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))),el('td',br6517Pct(dist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))));tb.append(tr);}t.append(tb);out.append(t,el('p','保存時点の推定値の比較です。変化の原因を展示だけに限定できません。','muted'));done=true;}catch(e){if(sameSelection()&&panel.isConnected)out.textContent='取得失敗：'+String(e.message||e)+'（閉じて開くと再試行）';}finally{busy=false;}});panel.append(fold);
+    }
   }
   async function loadCockpitPrediction(){
     const id=++predictionRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
@@ -1832,18 +1906,21 @@ loadAutoPredictions();
     const currentKey=window.__br6515Odds.key(date,venue,race);
     const keep=!!currentKey&&renderedPredictionKey===currentKey&&!!tickets.querySelector('.v433-bet-payout');
     if(keep){meta.textContent='予想更新中（同じレースの前回予想を表示）';}
-    else{disposePayouts();renderedPredictionKey=null;tickets.textContent='予想を取得中…';ranking.replaceChildren();meta.textContent='評価点は的中確率ではありません';}
+    else{disposePayouts();renderedPredictionKey=null;tickets.textContent='予想を取得中…';br6517ClearAnalysis();meta.textContent='評価点は的中確率ではありません';}
     try{
       const response=await fetch(API+'/predict?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const data=await response.json();if(!sameSelection())return;
       if(!Array.isArray(data.tickets)||!Array.isArray(data.ranking))throw Error('予想データの形式が異なります');
-      disposePayouts();tickets.replaceChildren();ranking.replaceChildren();renderedPredictionKey=currentKey;
+      disposePayouts();tickets.replaceChildren();br6517ClearAnalysis('');renderedPredictionKey=currentKey;
+      const scenarioView=document.getElementById('br6517Scenario'),racerView=document.getElementById('br6517Racers');scenarioView.replaceChildren();racerView.replaceChildren();
+      const fourthAnalysis=el('section',undefined,'br6517-scenario');fourthAnalysis.append(el('h3','予想4｜保存済み展開分析'),el('p','保存済み予想を取得中…','muted'));scenarioView.append(fourthAnalysis);
+      br6517Select(br6517View);
       const groups=Array.isArray(data.ticket_groups)&&data.ticket_groups.length===2?data.ticket_groups:
         [...new Set(data.tickets.map(t=>String(t.combination).split('-')[0]))].map((head,i)=>({head:Number(head),rank:i+1,tickets:data.tickets.filter(t=>String(t.combination).startsWith(head+'-'))}));
       v433RenderBets(groups,tickets);
       // Independent third candidate; failures never hide the legacy two candidates.
-      const thirdSection=el('div',undefined,'v433-bet-group');
+      const thirdSection=el('div',undefined,'v433-bet-group br6517-candidate');
       thirdSection.append(el('strong','第3候補・新展開AI（検証用）'),el('p','新AIを取得中…'));
       tickets.append(thirdSection);
       (async()=>{
@@ -1873,7 +1950,7 @@ loadAutoPredictions();
       })();
 
       // v6.5.6: Prediction 4 read-only display; independent of existing three candidates.
-      const fourthSection=el('div',undefined,'v433-bet-group');
+      const fourthSection=el('div',undefined,'v433-bet-group br6517-candidate');
       fourthSection.append(el('strong','第4候補・独立確率AI（検証用）'),el('p','保存済み予想を取得中…','muted'));
       tickets.append(fourthSection);
       (async()=>{
@@ -1889,7 +1966,7 @@ loadAutoPredictions();
           }
           if(!sameSelection()||!fourthSection.isConnected)return;
           if(!fourth){
-            fourthSection.replaceChildren(el('strong','第4候補・独立確率AI（検証用）'),el('p','未保存（このレースの保存済み予想4はありません）','muted'));
+            fourthSection.replaceChildren(el('strong','第4候補・独立確率AI（検証用）'),el('p','未保存（このレースの保存済み予想4はありません）','muted'));fourthAnalysis.replaceChildren(el('h3','予想4｜保存済み展開分析'),el('p','このレースの保存済み予想4はありません。','muted'));
             return;
           }
           if(!Array.isArray(fourth.tickets)||fourth.tickets.length!==6||
@@ -1911,10 +1988,12 @@ loadAutoPredictions();
           fourthSection.replaceChildren(...Array.from(holder.children));
           fourthSection.append(el('p',(phaseUsed==='final'?'展示後':'展示前')+'・保存済み ／ 仮想6点600円 ／ 確率は未校正の暫定推定値','muted'));
           fourthSection.append(el('p','オッズ・期待値は未検証。実際の投票推奨ではありません。','muted'));
+          br6517RenderFourth(fourthAnalysis,fourth,phaseUsed,date,venue,race,sameSelection);
         }catch(e){
           if(!sameSelection()||!fourthSection.isConnected)return;
           fourthSection.replaceChildren(el('strong','第4候補・独立確率AI（検証用）'),
             el('p','取得エラー：'+String(e.message||e),'muted'));
+          fourthAnalysis.replaceChildren(el('h3','予想4｜保存済み展開分析'),el('p','取得エラー：'+String(e.message||e),'muted'));
         }
       })();
 
@@ -1922,15 +2001,15 @@ loadAutoPredictions();
       const available=data.ranking.reduce((n,r)=>n+(Number(r.available_fields)||0),0);
       const maximum=Number(data.total_fields)||data.ranking.reduce((n,r)=>n+(Number(r.total_fields)||8),0);
       const gap=Number(data.ranking[0]?.score||0)-Number(data.ranking[1]?.score||0);
-      const insight=el('div',undefined,'v424-insight');
-      insight.append(el('strong','評価差 '+gap.toFixed(1)+'点 ／ 取得状況 '+available+'/'+maximum+'（'+(available/maximum*100).toFixed(1)+'%）'));
+      const insight=el('div',undefined,'br6517-compact');
+      insight.append(el('strong','評価差 '+gap.toFixed(1)+'点 ／ 取得状況 '+available+'/'+maximum+'（'+(maximum>0?(available/maximum*100).toFixed(1)+'%':'未集計')+'）'));
       insight.append(el('div','展示 '+(data.exhibition_times_received||0)+'/6艇 ／ 取得率だけで見送り判定はしません。的中率・信頼度を保証する値ではありません。','muted'));
       tickets.append(insight);
       renderTicketPayouts(data.tickets,date,venue,race,tickets);
       // v4.9.3: Score-derived Plackett-Luce reference distribution, NOT calibrated hit probabilities.
       // All 120 mutually exclusive trifecta outcomes sum to 100%. No model/Worker change.
       const probPanel=el('section',undefined,'v493-panel');
-      probPanel.append(el('h3','🎯 3連単120通り｜出目別の参考推定確率'));
+      probPanel.append(el('h3','既存AI｜3連単120通りの参考推定値'));
       const validScores=data.ranking.filter(r=>Number.isInteger(Number(r.boat))&&Number(r.boat)>=1&&Number(r.boat)<=6&&Number.isFinite(Number(r.score)));
       if(validScores.length===6&&new Set(validScores.map(r=>Number(r.boat))).size===6){
         const scores=validScores.map(r=>({boat:Number(r.boat),score:Number(r.score)}));
@@ -1984,7 +2063,7 @@ loadAutoPredictions();
         const overlap=mainSix.filter(c=>skillSix.includes(c)).length;
         dual.append(el('p','共通買い目 '+overlap+'/6点。順位の不一致はエラーと決めつけず、異なる仮説として検証します。'));
         if(data.retrospective_risk||data.is_result_available)dual.append(el('p','⚠ 結果判明後の表示です。事前予想として集計しないでください。'));
-        probPanel.append(dual);
+        const dualFold=el('details',undefined,'br6517-fold');dualFold.append(el('summary','旧方式の比較：本命予想 vs 実力評価'),dual);probPanel.append(dualFold);
 
         probPanel.append(el('p','AI採点から計算した未校正の参考値です。過去の的中率や統計的に検証された的中確率ではありません。6艇の相対評価を重み付けし、着順を重複なしで選ぶ仮モデル（温度15点）です。'));
         const list=el('div');probPanel.append(list);
@@ -2008,7 +2087,7 @@ loadAutoPredictions();
         select.addEventListener('change',drawAll);all.addEventListener('toggle',()=>{if(all.open)drawAll();});probPanel.append(all);
         probPanel.append(el('p','★はAI推奨買い目。棒の長さは表示中の最大値に対する相対値です。合計100%は計算上の配分であり、実際の的中率を保証しません。結果判明後の評価は事前予想として扱わないでください。'));
       }else probPanel.append(el('p','6艇のAI評価点が揃っていないため推定値を表示できません。'));
-      ranking.append(probPanel);
+      scenarioView.append(probPanel);
       // v5.8.1: Detailed scoring lives in the main AI prediction screen, not just analytics.
       if(Array.isArray(data.ranking)&&data.ranking.some(r=>r.detailed_factors)){
         const detailPanel=el('section',undefined,'v492-panel');
@@ -2032,10 +2111,13 @@ loadAutoPredictions();
           addRow(f.label+' / '+f.max_points+'点',r=>{const x=r?.detailed_factors?.[f.id];return x?.data_available?x.points.toFixed(1):'未取得（中立）'});
         }
         addRow('減点理由',r=>r?.detailed_penalties?.length?r.detailed_penalties.map(x=>x.label+' '+x.points).join(' / '):'なし');
-        table.append(body);scroll.append(table);detailFold.append(scroll);
+        table.append(body);scroll.append(table);
+        const picker=el('div',undefined,'br6517-picker'),select=el('select');select.setAttribute('aria-label','20項目の表示対象');
+        for(const [v,l] of [...Array.from({length:6},(_,i)=>[String(i+1),(i+1)+'号艇']),['all','全6艇（横スクロール）']]){const opt=el('option',l);opt.value=v;select.append(opt);}select.value=br6517Boat;picker.append(el('span','表示する艇'),select);detailFold.append(picker,scroll);
+        const selectBoat=()=>{br6517Boat=select.value;const all=select.value==='all';table.classList.toggle('br6517-single',!all);for(const tr of table.querySelectorAll('tr'))Array.from(tr.children).forEach((cell,i)=>{cell.hidden=i!==0&&!all&&i!==Number(select.value);});};select.addEventListener('change',selectBoat);selectBoat();
         detailFold.append(el('p','コース別・今節ST・風波・戦法などの未取得項目があります。採点と減点の効果は未検証です。','muted'));
         detailPanel.append(detailFold);
-        ranking.append(detailPanel);
+        racerView.append(detailPanel);
       }
       // v4.9.3: 公式展示情報に近い6艇比較表。点数はWorkerから受け取った値をそのまま使用。
       const comparison=el('section',undefined,'v492-panel');
@@ -2063,31 +2145,32 @@ loadAutoPredictions();
       const cmpDetails=el('details');cmpDetails.append(el('summary','艇別の8項目スコアを詳しく見る'));
       for(const n of boats){const r=ranked.get(n);if(!r)continue;const part=el('div',undefined,'v492-break');part.append(el('strong',n+'号艇 '+show(r.name)+' ／ '+Number(r.score).toFixed(1)+'点'));
         for(const [key,b] of Object.entries(r.score_breakdown||{})){part.append(el('div',(b.label||key)+' '+b.points+'/'+b.max_points+'点'+(b.imputed_neutral?'（欠損・中立点）':'')));const bar=el('div',undefined,'v492-bar'),fill=el('span');fill.style.width=Math.max(0,Math.min(100,100*Number(b.points)/Math.max(1,Number(b.max_points))))+'%';bar.append(fill);part.append(bar);}cmpDetails.append(part);}
-      comparison.append(cmpDetails);ranking.append(comparison);
+      comparison.append(cmpDetails);const comparisonFold=el('details',undefined,'br6517-fold');comparisonFold.append(el('summary','6艇比較｜展示・選手情報（横スクロール）'),comparison);racerView.append(comparisonFold);
       // raw race values are fetched separately; do not guess missing values or fabricate update timestamps.
       (async()=>{try{const resp=await fetch(API+'/race?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});if(!resp.ok)throw Error('HTTP '+resp.status);const info=await resp.json();if(!sameSelection()||!comparison.isConnected)return;
         for(const racer of info.racers||[])rawByBoat.set(Number(racer.entry_number),racer);
         const trs=Array.from(tbody.children);
         rawCells.forEach(({getter},i)=>{boats.forEach((n,j)=>{const val=rawByBoat.has(n)?getter(rawByBoat.get(n)):null;const td=trs[i].children[j+1];td.textContent=val==null||val===''?'未取得':String(val);td.classList.toggle('v492-f',i===2&&typeof val==='string'&&/^F[.．]?\d/i.test(val));});});
       }catch(e){if(sameSelection()&&comparison.isConnected)rawCells.forEach((_,i)=>Array.from(tbody.children[i].children).slice(1).forEach(td=>td.textContent='未取得'));}})();
+      const summaryPanel=el('section',undefined,'br6517-scenario');summaryPanel.append(el('h3','6艇の総合評価'),el('p','既存AIの採点順（的中確率ではありません）','muted'));
       data.ranking.forEach((r,i)=>{
         const row=el('div',undefined,'v40-rank');row.append(el('span',String(r.boat),'linked-boat-chip linked-boat-'+r.boat));
         const label=el('div',undefined,'v40-rank-name');label.append(el('strong',(i+1)+'位 '+({1:'A1',2:'A2',3:'B1',4:'B2'}[r.rank_number]||'級別未確認')+' '+show(r.name)));
         const track=el('div',undefined,'v40-rank-track'),fill=el('div',undefined,'v40-rank-fill');
         fill.style.width=Math.max(0,Math.min(100,Number(r.score)||0))+'%';track.append(fill);label.append(track);
-        row.append(label,el('span',Number.isFinite(Number(r.score))?Number(r.score).toFixed(1)+'点':'—','v40-rank-score'));ranking.append(row);
-      });
+        row.append(label,el('span',br6517Finite(r.score)?Number(r.score).toFixed(1)+'点':'—','v40-rank-score'));summaryPanel.append(row);
+      });racerView.prepend(summaryPanel);
       const details=el('details',undefined,'v424-breakdown');details.append(el('summary','8項目の採点根拠を表示'));
       for(const r of data.ranking){
         const section=el('div',undefined,'v424-breakdown-boat');section.append(el('strong',r.boat+'号艇 '+show(r.name)+' ／ '+Number(r.score).toFixed(1)+'点'));
         for(const [key,b] of Object.entries(r.score_breakdown||{}))section.append(el('div',(b.label||key)+'：'+b.points+'/'+b.max_points+'点'+(b.imputed_neutral?'（欠損・中立点）':''),'muted'));
         details.append(section);
       }
-      ranking.append(details);
-      ranking.append(el('p','基本8項目100点＋F/L補正（F1 -2、F2以上 -5、L1につき -1・最大 -3）。F/L未取得なら補正なし。暫定値で検証前、的中確率ではありません。','muted'));
+      racerView.append(details);
+      racerView.append(el('p','基本8項目100点＋F/L補正（F1 -2、F2以上 -5、L1につき -1・最大 -3）。F/L未取得なら補正なし。暫定値で検証前、的中確率ではありません。','muted'));
       // v4.2.6: display only real stored course/technique counts; never fabricate statistics.
       const historyPanel=el('details',undefined,'v424-breakdown');historyPanel.append(el('summary','選手別コース実績・決まり手（蓄積データ）'));
-      const historyBody=el('div','選手履歴を確認中…','muted');historyPanel.append(historyBody);ranking.append(historyPanel);
+      const historyBody=el('div','選手履歴を確認中…','muted');historyPanel.append(historyBody);racerView.append(historyPanel);
       try{
         const raceResp=await fetch(API+'/race?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
         if(!raceResp.ok)throw Error('出走表を取得できません');
@@ -2114,7 +2197,7 @@ loadAutoPredictions();
         historyBody.append(el('p','蓄積できた実進入コースの記録のみ表示。決まり手0件は未取得の可能性があります。現時点では8項目の予想点に加算していません。','muted'));
       }catch(err){if(sameSelection())historyBody.textContent='選手履歴は取得できません：'+err.message;}
 
-    }catch(e){if(sameSelection()){if(keep&&tickets.querySelector('.v433-bet-payout'))meta.textContent='予想更新失敗（同じレースの前回予想を表示）：'+e.message;else tickets.textContent='予想を取得できません：'+e.message;}}
+    }catch(e){if(sameSelection()){if(keep&&tickets.querySelector('.v433-bet-payout'))meta.textContent='予想更新失敗（同じレースの前回予想を表示）：'+e.message;else{tickets.textContent='予想を取得できません：'+e.message;br6517ClearAnalysis('予想を取得できません：'+e.message);}}}
   }
 
   async function loadLinkedEntry(){
@@ -2167,7 +2250,7 @@ loadAutoPredictions();
   const oldSync=syncDetailVenue;
   // Existing venue buttons already update the detail selector; mirror that selection.
   document.getElementById('venues').addEventListener('click',()=>{queueMicrotask(syncFromDetail)});
-  scheduleDate.addEventListener('change',()=>{predictionRequestId++;disposePayouts();document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';updateHero();loadLinkedEntry();if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();if(!document.getElementById('cockpitOdds').hidden)loadOdds();});
+  scheduleDate.addEventListener('change',()=>{predictionRequestId++;disposePayouts();br6517ClearAnalysis();br6517Select('tickets');document.getElementById('heroTickets').textContent='「予想を表示」で買い目を取得';updateHero();loadLinkedEntry();if(!document.getElementById('cockpitPrediction').hidden)loadCockpitPrediction();if(!document.getElementById('cockpitOdds').hidden)loadOdds();});
   window.__br6516RefreshDetail=()=>{const active=document.querySelector('[data-cockpit-tab].active')?.dataset.cockpitTab;if(active==='prediction')loadCockpitPrediction();else if(active==='odds')loadOdds();else loadLinkedEntry();};
   hv.value=raceVenueSelect.value;hr.value=raceNumberSelect.value;updateHero();loadLinkedEntry();
 })();
@@ -5123,7 +5206,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    }
   });obs.observe(status,{childList:true,characterData:true,subtree:true});}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.16';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.17';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
