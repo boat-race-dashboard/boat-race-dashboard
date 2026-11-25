@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.31 | Home overview</title>
+  <title>BOAT RACE AI Dashboard v6.5.32 | Home overview</title>
 
 <script id="br6528-quota-awareness">
 (()=>{'use strict';
@@ -486,12 +486,13 @@ function validate(k,d){if(!k||!d||key(d.date,d.venue,d.race)!==k||d.available!==
  for(let a=1;a<=6;a++)for(let b=1;b<=6;b++)for(let c=1;c<=6;c++)if(a!==b&&a!==c&&b!==c){const v=o[`${a}-${b}-${c}`];if(typeof v!=='number'||!Number.isFinite(v)||v<=0||v>100000)return false;}return true;}
 function get(k){if(!k)return null;let d=mem.get(k);if(!d){try{d=JSON.parse(localStorage.getItem(prefix+k)||'null');}catch{}}if(!validate(k,d)){mem.delete(k);try{localStorage.removeItem(prefix+k);}catch{}return null;}return d;}
 function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.parse(old.fetched_at_utc)>Date.parse(d.fetched_at_utc))return false;
+ if(old&&old.fetched_at_utc===d.fetched_at_utc)return true;
  const clean={date:d.date,venue:d.venue,race:d.race,available:true,count:120,source:d.source,fetched_at_utc:d.fetched_at_utc,odds:d.odds};mem.set(k,clean);if(mem.size>maxEntries)mem.delete(mem.keys().next().value);
  try{localStorage.setItem(prefix+k,JSON.stringify(clean));const records=[];for(let i=0;i<localStorage.length;i++){const n=localStorage.key(i);if(n?.startsWith(prefix)){let t=0;try{t=Date.parse(JSON.parse(localStorage.getItem(n)).fetched_at_utc)||0;}catch{}records.push([n,t]);}}records.sort((a,b)=>b[1]-a[1]);records.forEach(([n,t],i)=>{if(i>=maxEntries||Date.now()-t>maxAge)localStorage.removeItem(n);});}catch{}
  window.dispatchEvent(new CustomEvent('br6515-odds',{detail:{key:k}}));return true;}
  const stamp=d=>d?new Date(d.fetched_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
  window.__br6515Odds={key,get,put,stamp,validate};
- // v6.5.31: display-only official exhibition store shared by gateway, preview and warmup.
+ // v6.5.32: display-only official exhibition store shared by gateway, preview and warmup.
  const exPrefix='br6524:official-exhibition:',exMem=new Map(),exMaxAge=48*3600000;
  function exValid(k,d){
   if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.status!=='verified_table'||d.exhibition_count!==6||!Array.isArray(d.values)||d.values.length!==6)return false;
@@ -510,7 +511,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  // v6.5.16: one flight per part/date/race; caller cancellation does not cancel other subscribers.
  const inflight=new Map(),recent=new Map();
  const parts={'/schedule-fast':'schedule','/race':'race','/official-exhibition':'exhibition','/odds':'odds'};
- const ttl={schedule:60000,race:30000,exhibition:15000,odds:10000};
+ const ttl={schedule:60000,race:30000,exhibition:12000,odds:8000};
  const deadlines=new Map(),knownCancelled=new Set();
  function rememberSchedule(data){for(const v of data.venues||[]){if(v.cancellation_verified===true)for(const r of v.cancelled_races||[]){const k=key(data.date,v.number,r);if(k){knownCancelled.add(k);deadlines.set(k,0);}}for(const r of v.race_closing_times||[]){const k=key(data.date,v.number,r.race),t=Date.parse(String(r.closing_at||'').replace(' ','T')+'+09:00');if(k&&Number.isFinite(t)&&!knownCancelled.has(k))deadlines.set(k,t);}}while(deadlines.size>1000)deadlines.delete(deadlines.keys().next().value);while(knownCancelled.size>1000)knownCancelled.delete(knownCancelled.values().next().value);}
  function delay(part,k,fallback=NaN){if(knownCancelled.has(k))return Infinity;const t=deadlines.get(k)??fallback,ms=t-Date.now();if(!Number.isFinite(ms))return 60000;if(ms<=0)return Infinity;if(part==='exhibition'){if(ms>3600000)return Infinity;if(ms>1800000)return 60000;if(ms>900000)return 20000;return 15000;}if(ms>3600000)return 120000;if(ms>1800000)return 60000;if(ms>900000)return 30000;if(ms>300000)return 15000;return 10000;}
@@ -877,7 +878,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v6.5.31<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v6.5.32<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -2894,7 +2895,7 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
    });
  }
  // Ensure top-level header does not misrepresent an older release.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.31';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.32';
  const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
  // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
@@ -2986,7 +2987,7 @@ if(watch){
 // Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
 // Replace old footer version text without changing legacy model labels.
 document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.31';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.32';
 })();
 </script>
 
@@ -3039,7 +3040,7 @@ window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
 setTimeout(()=>refresh(true),900);
 // Diagnose pending vs absent snapshot; neither is automatically a losing bet.
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.31';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.32';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -4604,7 +4605,7 @@ function boot(){
  const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
  body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
  // Version label describes dashboard UI, not Worker deployment.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.31';}
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.32';}
  document.title='BOAT RACE AI | Dashboard';
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -4787,7 +4788,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    }
   });obs.observe(status,{childList:true,characterData:true,subtree:true});}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.31';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.32';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -5019,9 +5020,9 @@ function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)re
  const globalMetrics=document.querySelector('main > .grid');if(globalMetrics){const stats=$('stats');if(stats)stats.prepend(globalMetrics);}
  const legacyHome=$('v620HomeHeader');if(legacyHome)legacyHome.hidden=true;
  const topQuick=$('v590QuickNav');if(topQuick)topQuick.hidden=true;
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.31';document.title='BOAT RACE AI Dashboard v6.5.31';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.32';document.title='BOAT RACE AI Dashboard v6.5.32';
  const oldHomeLink=[...manage.querySelectorAll('button')].find(b=>b.textContent==='全国24場を開く');if(oldHomeLink){oldHomeLink.textContent='全国24場・レース詳細を開く';oldHomeLink.onclick=e=>{e.stopImmediatePropagation();nav('detail');};oldHomeLink.addEventListener('click',e=>{e.stopImmediatePropagation();nav('detail');},true);}
- const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.31');
+ const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.32');
  render();refresh();new MutationObserver(()=>{if(visible())refresh();}).observe(home,{attributes:true,attributeFilter:['class']});setInterval(()=>{if(visible()){refresh();}},30000);document.addEventListener('visibilitychange',()=>{if(visible())refresh();});window.addEventListener('pageshow',()=>{if(visible())refresh();});window.addEventListener('online',()=>{if(visible())refresh(true);});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
@@ -5040,17 +5041,24 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   try{const r=await fetch(API+(part==='odds'?'/odds?':'/official-exhibition?')+new URLSearchParams({date,venue,race}),{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();const valid=part==='odds'?store.validate(k,d):d?.status==='verified_table'&&d.exhibition_count===6;if(!valid)throw Error('not available');attempts.set(id,{at:Date.now(),fail:0});}catch{attempts.set(id,{at:Date.now(),fail:Math.min(a.fail+1,3)});}finally{pending.delete(id);}}
  async function tick(){if(active||document.hidden||!navigator.onLine||(!shown('home')&&!shown('raceView')))return;active=true;try{
   const day=today(),k=selected(),detail=shown('raceView');
-  if(scheduleDay!==day||Date.now()-lastSchedule>=60000){scheduleDay=day;lastSchedule=Date.now();try{await fetch(API+'/schedule-fast?date='+day,{cache:'no-store'});}catch{}}
-  if(document.hidden)return;
-  // Selected odds pane gets independent updates. Prediction pane already owns its odds timer; do not duplicate it.
-  if(detail&&k&&k.startsWith(day+'/')&&Number.isFinite(g.deadline(k))){
-   if(!shown('cockpitPrediction'))await read('odds',k,g.delay('odds',k));
-   if(!shown('cockpitPreview'))await read('exhibition',k,g.delay('exhibition',k));
+  const scheduleJob=(scheduleDay!==day||Date.now()-lastSchedule>=60000)?(async()=>{scheduleDay=day;lastSchedule=Date.now();try{await fetch(API+'/schedule-fast?date='+day,{cache:'no-store'});}catch{}})():Promise.resolve();
+  if(document.hidden){await scheduleJob;return;}
+  if(detail&&k&&k.startsWith(day+'/')){
+   if(!Number.isFinite(g.deadline(k)))await scheduleJob;
+   if(!document.hidden&&k===selected()&&Number.isFinite(g.deadline(k))){const jobs=[];
+    if(!shown('cockpitPrediction'))jobs.push(read('odds',k,g.delay('odds',k)));
+    if(!shown('cockpitPreview'))jobs.push(read('exhibition',k,g.delay('exhibition',k)));
+    await Promise.allSettled(jobs);
+   }
   }
+  await scheduleJob;
   if(document.hidden||Date.now()-lastWarm<60000)return;lastWarm=Date.now();
+  // When the selected race is within 15 minutes, do not compete with it for background traffic.
+  const selectedClose=g.deadline(k);if(detail&&Number.isFinite(selectedClose)&&selectedClose>Date.now()&&selectedClose-Date.now()<=15*60000)return;
   const next=g.upcoming(day).find(([id,t])=>id!==k&&t-Date.now()<=30*60000);
-  if(next){await read('odds',next[0],60000);if(!document.hidden)await read('exhibition',next[0],60000);}
+  if(next)await Promise.allSettled([read('odds',next[0],60000),read('exhibition',next[0],60000)]);
  }finally{active=false;}}
+ for(const id of ['scheduleDate','heroVenue','heroRace'])$(id)?.addEventListener('change',()=>setTimeout(tick,0));
  setInterval(tick,5000);document.addEventListener('visibilitychange',tick);window.addEventListener('pageshow',tick);window.addEventListener('online',tick);setTimeout(tick,1000);
 })();
 </script>
@@ -5074,7 +5082,7 @@ async function read(q,force=false){const k=key(q),old=cache.get(k);if(!force&&ol
 function status(t){$('baStatus').textContent=t}function select(group,value){root.querySelectorAll('[data-'+group+']').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset[group]===value)))}
 function summary(j){const s=j.strategies,n=j.counters.matched_official;let html=card('4候補の共通成績','<p>公式照合済み '+num(n)+'レース ／ 共通保存 '+num(j.counters.common_saved)+'件</p>'+table(['候補','的中率','回収率','仮想収支'],keys.map((k,i)=>{const a=s[k];return ['予想'+(i+1),pct(a.hit_rate_percent),colored(a.roi_percent==null?null:a.roi_percent-100,pct(a.roi_percent)),colored(a.races?a.profit_yen:null,money(a.races?a.profit_yen:null))]})));const max=Math.max(100,...keys.map(k=>s[k].roi_percent||0));html+=card('回収率比較',keys.map((k,i)=>'<div class="ba-row"><b>予想'+(i+1)+'</b><b>'+pct(s[k].roi_percent)+'</b></div><div class="ba-track"><i style="width:'+Math.min(100,100*(s[k].roi_percent||0)/max)+'%;background:'+colors[i]+'"></i><b style="left:'+Math.min(99.7,10000/max)+'%"></b></div>').join('')+'<p>白線：100%（損益分岐点）</p>');html+='<details><summary>照合状況・投資と払戻</summary>'+table(['候補','的中数','投資','払戻'],keys.map((k,i)=>['予想'+(i+1),num(s[k].exact_hits),num(s[k].stake_yen),num(s[k].returned_yen)]))+'<p>未照合 '+num(j.counters.pending)+' ／ 未検証 '+num(j.counters.unverified)+' ／ 候補不足 '+num(j.counters.missing_candidates)+' ／ 無効 '+num((j.counters.invalid_prediction||0)+(j.counters.invalid_timing||0)+(j.counters.invalid_result||0))+' ／ 重複 '+num(j.counters.duplicates)+'</p></details>';return html}
 function trend(j){const rows=j.breakdowns?.daily;if(!Array.isArray(rows))return card('推移分析','<p>対応Workerの更新が必要です。</p>');if(!rows.length)return card('推移分析','<p>照合済みのデータがありません。</p>');const max=Math.max(100,...rows.flatMap(r=>keys.map(k=>r.strategies[k].roi_percent||0))), xpos=i=>rows.length===1?166:34+i*274/(rows.length-1), ypos=v=>138-v/max*118;let svg='<svg class="ba-chart" viewBox="0 0 320 160" role="img" aria-label="日別回収率の推移">';for(const v of [0,100,max]){svg+='<line x1="34" x2="308" y1="'+ypos(v)+'" y2="'+ypos(v)+'" stroke="#66758e" stroke-dasharray="3 3"/><text x="31" y="'+(ypos(v)+3)+'" text-anchor="end" fill="#c3d1e3" font-size="9">'+Math.round(v)+'%</text>'}keys.forEach((k,i)=>{svg+='<polyline points="'+rows.map((r,n)=>xpos(n)+','+ypos(r.strategies[k].roi_percent)).join(' ')+'" stroke="'+colors[i]+'" stroke-width="2" fill="none"/>';rows.forEach((r,n)=>{svg+='<circle cx="'+xpos(n)+'" cy="'+ypos(r.strategies[k].roi_percent)+'" r="2" fill="'+colors[i]+'"/>'})});svg+='<text x="34" y="153" fill="#c3d1e3" font-size="9">'+esc(rows[0].key.slice(5))+'</text><text x="308" y="153" text-anchor="end" fill="#c3d1e3" font-size="9">'+esc(rows.at(-1).key.slice(5))+'</text></svg>';let html=card('日別回収率',svg+'<p>'+colors.map((c,i)=>'<span style="color:'+c+'">● 予想'+(i+1)+'</span>').join('　')+'</p><p>照合済みデータのある日のみ表示。日付間隔は等間隔表示。</p>');html+=card('累計仮想収支',table(['候補','照合数','収支'],keys.map((k,i)=>['予想'+(i+1),num(j.strategies[k].races),colored(j.strategies[k].races?j.strategies[k].profit_yen:null,money(j.strategies[k].races?j.strategies[k].profit_yen:null))])));html+='<details><summary>日別の回収率・件数</summary>'+table(['日付 / 件数','予想1','予想2','予想3','予想4'],rows.map(r=>[esc(r.key.slice(5))+' / '+num(r.strategies[keys[0]].races),...keys.map(k=>pct(r.strategies[k].roi_percent))]))+'</details>';html+='<details><summary>予想4のモデル世代別成績</summary><p>異なる開催日・レースのため、改修効果を直接証明する比較ではありません。</p>'+ (j.breakdowns.versions||[]).map(r=>'<p>'+esc(r.key)+'</p>'+table(['照合数','的中率','回収率'],[[num(r.strategies.fourth_candidate.races),pct(r.strategies.fourth_candidate.hit_rate_percent),pct(r.strategies.fourth_candidate.roi_percent)]] )).join('')+'</details>';return html}
-function detail(j){const s=j.strategies;let html=card('着順別の外れ方',table(['候補','1着外れ','2着外れ','3着外れ','的中'],keys.map((k,i)=>['予想'+(i+1),num(s[k].first_miss),num(s[k].first_hit_second_miss),num(s[k].first_second_hit_third_miss),num(s[k].exact_hits)]))+'<p>6点のうち該当する着順まで一致した買い目の有無で分類。</p>');html+='<details><summary>競艇場別の回収率</summary>'+table(['会場 / 件数','予想1','予想2','予想3','予想4'],(j.breakdowns?.venues||[]).map(r=>[esc(names[Number(r.key)-1]||r.key)+' / '+num(r.strategies[keys[0]].races),...keys.map(k=>pct(r.strategies[k].roi_percent))]))+'</details><details><summary>展示前・展示後の比較</summary><p>段階ごとに共通レースを集計。展示前と展示後で母数が異なる場合は直接比較できません。</p><button data-extra="phase">もう一方の段階を取得</button><div id="baExtraPhase"></div></details><details><summary>展開・公式決まり手の照合</summary><p>決まり手確認済みの件数を表示。展開ラベルと公式決まり手は一対一ではないため、展開的中率は算出しません。</p><button data-extra="scenario">展開監査を取得</button><div id="baExtraScenario"></div></details><details><summary>予想4のデータ取得率</summary><p>終了日1日分・現行モデルのみ。取得率は予測精度とは別の指標です。</p><button data-extra="coverage">取得率を確認</button><div id="baExtraCoverage"></div></details>';return html}
+function detail(j){const s=j.strategies;let html=card('着順別の外れ方',table(['候補','1着外れ','2着外れ','3着外れ','的中'],keys.map((k,i)=>['予想'+(i+1),num(s[k].first_miss),num(s[k].first_hit_second_miss),num(s[k].first_second_hit_third_miss),num(s[k].exact_hits)]))+'<p>6点のうち該当する着順まで一致した買い目の有無で分類。</p>');html+='<details><summary>競艇場別の回収率</summary>'+table(['会場 / 件数','予想1','予想2','予想3','予想4'],(j.breakdowns?.venues||[]).map(r=>[esc(names[Number(r.key)-1]||r.key)+' / '+num(r.strategies[keys[0]].races),...keys.map(k=>pct(r.strategies[k].roi_percent))]))+'</details><details><summary>展示前・展示後の比較</summary><p>段階ごとに共通レースを集計。展示前と展示後で母数が異なる場合は直接比較できません。</p><button data-extra="phase">もう一方の段階を取得</button><div id="baExtraPhase"></div></details><details><summary>展開・公式決まり手の照合</summary><p>決まり手確認済みの件数を表示。展開ラベルと公式決まり手は一対一ではないため、展開的中率は算出しません。</p><button data-extra="scenario">展開監査を取得</button><div id="baExtraScenario"></div></details><details><summary>予想4のデータ取得率</summary><p>終了日1日分・現行モデルのみ。取得率は予測精度とは別の指標です。</p><button data-extra="coverage">取得率を確認</button><div id="baExtraCoverage"></div></details>';const v=j.prediction4_calibration?.versions;if(Array.isArray(v)){html+='<details><summary>予想4の確率検証（モデル別）</summary><p>保存済み確率と公式結果を比較。未校正の推定値です。Log loss・Brierは小さいほど良好ですが、少数サンプルでモデルの優劣は断定できません。</p>'+v.map(a=>'<p><b>'+esc(a.model)+'</b> ／ '+num(a.samples)+'件・無効 '+num(a.invalid_distributions)+'件</p>'+table(['6点の平均推定','実際の的中率','Log loss','Brier'],[[pct(a.mean_top_six_probability_percent),pct(a.observed_top_six_hit_percent),typeof a.mean_log_loss==='number'?a.mean_log_loss.toFixed(3):'—',typeof a.mean_multiclass_brier==='number'?a.mean_multiclass_brier.toFixed(3):'—']])+table(['推定確率帯','件数','平均推定','実際の的中'],(a.bins||[]).filter(b=>b.samples).map(b=>[num(b.from_percent)+'〜'+num(b.to_percent)+'%',num(b.samples),pct(b.mean_probability_percent),pct(b.observed_hit_percent)]))).join('')+(v.length?'':'<p>照合済みデータなし</p>')+'</details>';}return html}
 function render(){const j=current?.data;if(!j){$('baContent').innerHTML='<section class="ba-card"><p>集計を取得できていません。</p></section>';return}let note=j.limited?'<p class="ba-warning">上限500保存記録に到達。保存IDの新しい側の部分集計であり、選択期間の全件ではありません。</p>':''; $('baContent').innerHTML=note+(view==='summary'?summary(j):view==='trend'?trend(j):detail(j));}
 async function load(force=false){const q=params(),id=++serial;if(!valid(q)){current=null;render();status('日付を確認してください');return}const old=cache.get(key(q));current=old||null;render();status(old?'前回取得値を表示・確認中…':'集計取得中…');try{const r=await read(q,force);if(id!==serial)return;current=r;render();status((r.data.limited?'部分集計':'取得済み')+' ／ '+new Date(r.at).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo'})+' JST');}catch(e){if(id!==serial)return;status('取得失敗：'+e.message+(old?' ／ 同条件の前回取得値を表示':' ／ 未取得'));}}
 async function extras(type,button){const q=params(),k=key(q)+'/'+type,id=serial, target=$('baExtra'+({phase:'Phase',scenario:'Scenario',coverage:'Coverage'}[type]));if(!target||!valid(q))return;button.disabled=true;target.textContent='取得中…';try{let result=extra.get(k);if(!result||Date.now()-result.at>180000){let html;if(type==='phase'){const p=q.phase==='final'?'pre':'final',r=await read({...q,phase:p});html='<p>'+ (p==='pre'?'展示前':'展示後')+' ／ '+num(r.data.counters.matched_official)+'件'+(r.data.limited?'・部分集計':'')+'</p>'+table(['候補','的中率','回収率'],keys.map((x,i)=>['予想'+(i+1),pct(r.data.strategies[x].hit_rate_percent),pct(r.data.strategies[x].roi_percent)]));}else if(type==='scenario'){const r=await get('/prediction4-scenario-audit?'+new URLSearchParams(q)),j=r.data;html='<p>公式決まり手確認済み '+num(j.summary?.actual_technique_verified)+'件'+(j.truncated?' ／ 最大500記録の部分集計':'')+'</p>'+table(['決まり手','件数'],Object.entries(j.actual_technique_counts||{}).map(([x,n])=>[esc(x),num(n)]));}else{const r=await get('/prediction4-feature-status?'+new URLSearchParams({date:q.to,phase:q.phase})),j=r.data,a=j.models?.[j.current_model];html=a?'<p>'+esc(q.to)+' ／ '+num(a.snapshots)+'保存記録 ／ '+pct(a.total_items?100*a.available_items/a.total_items:null)+(j.truncated?' ／ 部分集計':'')+'</p>'+table(['評価項目','取得率'],Object.entries(a.features||{}).map(([x,v])=>[esc(({national:'全国勝率',local:'当地勝率',motor:'モーター',start:'平均ST',exhibition:'展示タイム',exhibition_start:'展示ST',course:'コース',course_win:'コース1着',course_place:'コース連対',st_consistency:'ST安定性',meet_st_proxy:'今節ST代理',course_tactics:'戦法',recent30_form:'直近30走',recent60_form:'直近60走',venue_form:'当地実績'})[x]||x),pct(v.available+v.missing?100*v.available/(v.available+v.missing):null)])):'<p>現行モデルの保存記録なし</p>';}result={html,at:Date.now()};extra.set(k,result);if(extra.size>16)extra.delete(extra.keys().next().value);}if(id===serial&&target.isConnected)target.innerHTML=result.html;}catch(e){if(target.isConnected)target.textContent='取得失敗：'+e.message;}finally{button.disabled=false}}
@@ -5112,7 +5120,7 @@ function fresh(ts,mins){const age=(Date.now()-Date.parse(ts))/60000;return Numbe
 function render(){const j=current,quota=j?.quota,paused=quota?.paused===true;const records=j?.records||{},c=records.cron?.[0],f=records.final?.[0],a=records.analysis?.[0],fs=f?.summary;const cOk=fresh(c?.ran_at_utc,22),fOk=fresh(f?.slot,4),aOk=fresh(a?.finished_at_utc,90),stale=!!failure||!fresh(j?.checked_at_utc,4);const pair=(xs)=>xs?.slice(1).some((v,i)=>{const d=Date.parse(xs[i].slot)-Date.parse(v.slot);return d===60000});const minuteSeen=pair(records.final);const problems=[];
 if(paused)problems.push('D1利用制限を検知。保存・照合・集計は一時停止。次回確認目安 '+fmt(quota.reset_at_utc)+' JST');if(failure)problems.push('状態取得失敗：'+failure);if(j&&!paused&&j.database!=='readable')problems.push('D1実行履歴の一部または全部を確認できません。');if(j&&!paused&&!c)problems.push('通常Cronの実行記録なし・未確認。');if(j&&!paused&&!f)problems.push('展示後監視の実行記録なし・未確認。');if(j&&!paused&&!a)problems.push('自動分析の実行記録なし・未確認。');if(a&&!aOk)problems.push('自動分析の最終記録から時間が経過しています。');if(c?.error_message)problems.push('通常Cronの最新記録にエラー・保留があります。');if(c&&!cOk)problems.push('通常Cronの最新記録から時間が経過しています。');if(f&&!fOk)problems.push('展示後監視の最新記録から時間が経過しています。開催時間外・監視対象なしの場合もあります。');if(fOk&&!minuteSeen)problems.push('毎分間隔の連続記録はまだ確認できていません。');if(f&&!f.finished_at)problems.push('展示監視の終了記録がありません。');const unfinished=(records.final||[]).filter(x=>!x.finished_at&&Date.now()-Date.parse(x.started_at)>120000).length;if(unfinished)problems.push('直近記録に開始から2分超の終了未記録が '+unfinished+' 件。原因は実行ログで確認してください。');if(j?.budget?.mode==='protect')problems.push('月間D1予算の保護運転中。DB処理を停止しています。');if(a&&a.status!=='ok')problems.push('自動分析の最新記録に要確認事項があります。');if(fs?.sidecar_incomplete>0)problems.push('展示後予想の追加保存に未完了があります。');
 if(j&&(!j.budget||['unlinked','unknown'].includes(j.budget.mode)))problems.push('月間使用量が未連携または取得失敗。追加補完は抑制中。');$('smHealth').textContent=paused?'D1利用制限中':!j||stale?'稼働状況未確認':problems.length?'要確認':'直近の実行記録を確認';$('smHealth').className=paused?'sm-bad':!j||stale||problems.length?'sm-warn':'sm-good';$('smStamp').textContent=j?'確認 '+fmt(j.checked_at_utc)+' JST'+(stale?' ／ 前回記録・鮮度要確認':'')+(j.cache_hit?' ／ キャッシュ':''):'取得待ち';
-$('smStates').innerHTML=row('通常Cron（保存・照合）',c?fmt(c.ran_at_utc):'未確認',!stale&&cOk&&!c.error_message&&!paused?'sm-good':'sm-warn')+row('展示後監視',f?fmt(f.slot):'未確認',!stale&&fOk&&f.finished_at&&!paused?'sm-good':'sm-warn')+row('毎分の連続記録',minuteSeen?'確認あり（設定自体は未確認）':'未確認',!stale&&fOk&&minuteSeen&&!paused?'sm-good':'sm-warn')+row('自動分析',a?fmt(a.finished_at_utc):'未確認',!stale&&aOk&&a.status==='ok'&&!paused?'sm-good':'sm-warn')+row('D1読み取り',paused?'制限中':j?.database==='readable'&&!stale?'診断検索成功':'未確認',paused?'sm-bad':j?.database==='readable'&&!stale?'sm-good':'sm-warn');
+$('smStates').innerHTML=row('通常Cron（保存・照合）',c?fmt(c.ran_at_utc):'未確認',!stale&&cOk&&!c.error_message&&!paused?'sm-good':'sm-warn')+row('展示後監視',f?fmt(f.slot):'未確認',!stale&&fOk&&f.finished_at&&!paused?'sm-good':'sm-warn')+row('毎分の連続記録',minuteSeen?'確認あり（設定自体は未確認）':'未確認',!stale&&fOk&&minuteSeen&&!paused?'sm-good':'sm-warn')+row('自動分析',a?fmt(a.finished_at_utc):'未確認',!stale&&aOk&&a.status==='ok'&&!paused?'sm-good':'sm-warn')+row('D1読み取り',paused?'制限中':j?.database==='readable'&&!stale?'診断検索成功':'未確認',paused?'sm-bad':j?.database==='readable'&&!stale?'sm-good':'sm-warn')+row('展示取得（直近実行）',Number.isFinite(f?.summary?.official_probe_wall_ms)?(f.summary.official_probe_wall_ms/1000).toFixed(1)+'秒 / '+num(f.summary.official_probe_parallel)+'件並列':'未計測');
 const b=j?.budget,modeLabels={normal:'通常運転',economy:'節約運転',restrict:'制限運転',protect:'保護運転',unknown:'使用量取得失敗',unlinked:'未連携'};const mode=b?.mode||'unlinked';const usage=(label,v,limit)=>row(label,Number.isFinite(v)?v.toFixed(1)+'% / '+limit:'未取得 / '+limit)+(Number.isFinite(v)?'<div style="height:7px;border-radius:6px;background:#30465d;overflow:hidden;margin:4px 0 9px"><div style="height:100%;background:'+(v>=85?'#dc5555':v>=60?'#d7b46d':'#64b79a')+';width:'+Math.min(100,Math.max(0,v))+'%"></div></div>':'');
 $('smBudget').innerHTML=row('予算制御',modeLabels[mode]||'未確認',mode==='normal'?'sm-good':mode==='protect'?'sm-bad':'sm-warn')+usage('D1読み取り',b?.read_pct,'250億行 / 月')+usage('D1書き込み',b?.write_pct,'5,000万行 / 月')+row('Workerリクエスト','未連携 / 1,000万回')+row('Worker CPU','未連携 / 3,000万ms')+row('D1ストレージ','未連携 / 5GB-month')+(b?.window?'<p>集計期間の近似（UTC）：'+esc(b.window.start)+' 〜 '+esc(b.window.end)+'、取得 '+esc(fmt(b.checked_at_utc))+' JST</p>':'')+'<p>60%で補完停止、75%で追加分析等を抑制、85%でD1保護。未連携・取得失敗時は任意の補完を見送ります。使用率はAnalyticsの推計（遅延あり）。</p>';
 $('smQuota').innerHTML=row('D1実エラーの検知',paused?'利用制限中':j&&!stale?'この実行環境では未検知':'未確認',paused?'sm-bad':'')+(paused?'<p>次回確認目安 '+esc(fmt(quota.reset_at_utc))+' JST</p>':'');
