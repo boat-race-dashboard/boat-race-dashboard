@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.40 | Home overview</title>
+  <title>BOAT RACE AI Dashboard v6.5.41 | Home overview</title>
 
 <script id="br6537-home-watchdog">
 (function(){
@@ -376,6 +376,18 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .v587-card h4{margin:0 0 8px;font-size:1rem}.v587-ticket{display:flex;justify-content:space-between;gap:5px;border-bottom:1px solid rgba(255,255,255,.12);padding:7px 0;font-variant-numeric:tabular-nums}
 .v587-ticket span{font-size:.76rem;opacity:.8;white-space:nowrap}
 @media(max-width:650px){.v587-grid{grid-template-columns:1fr}}
+
+#cockpitPrediction .br41-motion{margin:10px 0 14px;padding:10px;border:1px solid #8069a0;border-radius:12px;background:#241c36;min-width:0}
+#cockpitPrediction .br41-motion canvas{display:block;width:100%;height:auto;aspect-ratio:760/410;border-radius:9px;background:#0d2d39;margin:8px 0}
+#cockpitPrediction .br41-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+#cockpitPrediction .br41-controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#cockpitPrediction .br41-choices button,#cockpitPrediction .br41-controls button,#cockpitPrediction .br41-controls select{min-width:0;font-size:12px;padding:8px 5px;border:1px solid #826b9f;border-radius:8px;background:#342747;color:#e8d9f3;line-height:1.35;min-height:38px;white-space:normal}
+#cockpitPrediction .br41-choices button.active{background:#f0d084;color:#21192f;border-color:#f0d084}
+#cockpitPrediction .br41-controls select{max-width:90px}
+#cockpitPrediction .br41-motion input[type=range]{width:100%;accent-color:#e5c57b;margin:9px 0 2px}
+#cockpitPrediction .br41-description{font-size:.8rem;line-height:1.5;color:#f1e6f7;margin:8px 0}
+#cockpitPrediction .br41-motion .muted{font-size:.73rem;line-height:1.5}
+
 </style>
 <style>
 .v425-controls{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}
@@ -498,7 +510,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  window.dispatchEvent(new CustomEvent('br6515-odds',{detail:{key:k}}));return true;}
  const stamp=d=>d?new Date(d.fetched_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
  window.__br6515Odds={key,get,put,stamp,validate};
- // v6.5.40: display-only official exhibition store shared by gateway, preview and warmup.
+ // v6.5.41: display-only official exhibition store shared by gateway, preview and warmup.
  const exPrefix='br6524:official-exhibition:',exMem=new Map(),exMaxAge=48*3600000;
  function exValid(k,d){
   if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.status!=='verified_table'||d.exhibition_count!==6||!Array.isArray(d.values)||d.values.length!==6)return false;
@@ -893,7 +905,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v6.5.40<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v6.5.41<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -1971,10 +1983,70 @@ loadAutoPredictions();
     for(const x of raw){const key=String(x?.combination||''),parts=key.split('-');if(!/^[1-6]-[1-6]-[1-6]$/.test(key)||new Set(parts).size!==3||seen.has(key)||!br6517Finite(x?.probability)||Number(x.probability)<0||Number(x.probability)>1)return null;seen.add(key);rows.push({key,parts:parts.map(Number),p:Number(x.probability)});}
     return Math.abs(rows.reduce((n,x)=>n+x.p,0)-1)<.001?rows:null;
   }
+  // v6.5.41: illustrative, client-only maneuver animation. No scoring, result or odds input.
+  const motion41Types={inside_hold:{label:'イン逃げ・内残り',description:'内側の艇が小さい旋回半径で回る形。外側の艇は広い弧を描きます。'},inside_sashi:{label:'内差し',description:'内側の艇が先に旋回し、その後ろから2コースの艇が内寄りの軌道へ入る形。'},center_attack:{label:'センターまくり',description:'センターの艇が外側から先行して旋回する形。内側の艇との軌道の違いを示します。'},outside_break:{label:'まくり差し・外伸び',description:'外寄りの艇が旋回中に内側へ寄る形。艇の間を通る動きは模式的な表現です。'}};
+  function motion41Point(lane,kind,t){
+    const r=44+(lane-1)*23, cx=525,cy=205;
+    const shift=kind==='inside_sashi'&&lane===2?-.034:kind==='center_attack'&&lane===3?-.065:kind==='outside_break'&&lane===4?-.045:kind==='inside_hold'&&lane===1?-.022:0;
+    const p=Math.max(0,Math.min(1,t-shift*Math.sin(Math.PI*Math.max(0,Math.min(1,t)))));
+    const a=405,b=Math.PI*r,c=390,L=a+b+c,d=p*L;
+    if(d<=a)return {x:cx-a+d,y:cy+r};
+    if(d<a+b){const q=(d-a)/b,theta=Math.PI/2-Math.PI*q;
+      // On a y-down canvas a decreasing polar angle is counterclockwise.
+      const tuck=kind==='inside_sashi'&&lane===2?-7:kind==='outside_break'&&lane===4?-8:kind==='center_attack'&&lane===3?5:0;
+      const rad=r+tuck*Math.sin(Math.PI*q)**2;return {x:cx+rad*Math.cos(theta),y:cy+rad*Math.sin(theta)};
+    }
+    return {x:cx-(d-a-b),y:cy-r};
+  }
+  function motion41Mount(panel,p,scenarios,sameSelection){
+    const kinds=scenarios.map(x=>x?.id).filter((id,i,a)=>Object.prototype.hasOwnProperty.call(motion41Types,id)&&a.indexOf(id)===i);
+    if(!kinds.length)return;
+    const rows=Array.isArray(p.rows)?p.rows:[],byLane=new Map();let valid=rows.length===6;
+    for(const r of rows){const lane=Number(r?.lane),boat=Number(r?.boat);if(!Number.isInteger(lane)||lane<1||lane>6||!Number.isInteger(boat)||boat<1||boat>6||byLane.has(lane)){valid=false;continue;}byLane.set(lane,boat);}
+    valid=valid&&byLane.size===6&&new Set(byLane.values()).size===6;
+    if(!valid){byLane.clear();for(let i=1;i<=6;i++)byLane.set(i,i);}
+    const wrap=el('section',undefined,'br41-motion'),heading=el('h3','1マーク｜展開アニメーション');wrap.append(heading,el('p',valid?'保存時の想定進入を艇番に反映。動きはシナリオの説明用です。':'想定進入が未確認のため、枠なりの教材用配置です。','muted'));
+    const choices=el('div',undefined,'br41-choices'),canvas=el('canvas');canvas.width=760;canvas.height=410;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','6艇が右へ進み、1マークを反時計回りに旋回する説明アニメーション');
+    const ctx=canvas.getContext('2d');if(!ctx)return;
+    const controls=el('div',undefined,'br41-controls'),play=el('button','▶ 再生'),replay=el('button','↻ 最初から'),speed=el('select'),progress=el('input'),description=el('p',undefined,'br41-description'),stage=el('span','スタート前','muted');
+    play.type=replay.type='button';speed.setAttribute('aria-label','再生速度');for(const [v,l] of [['1','標準'],['0.5','0.5倍'],['1.5','1.5倍']]){const o=el('option',l);o.value=v;speed.append(o);}progress.type='range';progress.min='0';progress.max='1000';progress.value='0';progress.setAttribute('aria-label','アニメーションの再生位置');
+    controls.append(play,replay,speed);wrap.append(choices,canvas,controls,progress,stage,description,el('p','左回り（反時計回り）。艇の軌跡・速度・隊形は模式図で、実測や着順予測ではありません。表示中の仮配分や保存予想は変わりません。','muted'));panel.append(wrap);
+    let kind=kinds[0],position=0,running=false,frame=0,last=0;
+    const colors=['','#f5f5f3','#22242b','#e64b51','#4089df','#f0d15b','#32a773'];
+    const btns=new Map();
+    function stop(){running=false;if(frame)cancelAnimationFrame(frame);frame=0;last=0;play.textContent=position>=1?'▶ 再生':'▶ 再開';}
+    function available(){return wrap.isConnected&&sameSelection()&&!document.hidden&&!wrap.closest('[hidden]')&&!wrap.closest('.hidden');}
+    function draw(){
+      const W=760,H=410,t=position;ctx.clearRect(0,0,W,H);
+      const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#163e4b');g.addColorStop(.6,'#0b2c39');g.addColorStop(1,'#102432');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+      ctx.lineWidth=1.2;for(let y=14;y<H;y+=24){ctx.beginPath();for(let x=0;x<=W;x+=9){const yy=y+Math.sin(x*.027+y*.08+t*2.5)*2.3;x===0?ctx.moveTo(x,yy):ctx.lineTo(x,yy);}ctx.strokeStyle='rgba(159,214,225,.10)';ctx.stroke();}
+      ctx.fillStyle='#10242d';ctx.fillRect(0,0,W,18);ctx.fillRect(0,H-18,W,18);ctx.strokeStyle='#9bb8b644';ctx.beginPath();ctx.moveTo(0,18);ctx.lineTo(W,18);ctx.moveTo(0,H-18);ctx.lineTo(W,H-18);ctx.stroke();
+      ctx.setLineDash([7,6]);ctx.strokeStyle='#f3d187aa';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(210,235);ctx.lineTo(210,369);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='#c3d5de';ctx.font='15px sans-serif';ctx.fillText('スタートライン',163,389);ctx.fillText('1マーク',540,207);ctx.fillText('バックストレッチ  ←',32,36);ctx.fillText('スタート  →',32,389);
+      // Fixed buoy and a subtle guide arrow (not an estimated racing line).
+      ctx.beginPath();ctx.arc(525,205,12,0,Math.PI*2);ctx.fillStyle='#ecf1f2';ctx.fill();ctx.beginPath();ctx.arc(525,205,8,0,Math.PI*2);ctx.fillStyle='#e55d54';ctx.fill();ctx.beginPath();ctx.arc(525,205,3,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+      ctx.strokeStyle='#f0d08466';ctx.lineWidth=2;ctx.beginPath();ctx.arc(525,205,29,Math.PI/2,-Math.PI/2,true);ctx.stroke();ctx.fillStyle='#f0d084aa';ctx.beginPath();ctx.moveTo(525,176);ctx.lineTo(535,170);ctx.lineTo(535,182);ctx.closePath();ctx.fill();
+      const points=[];
+      for(let lane=1;lane<=6;lane++){
+        const q=motion41Point(lane,kind,t),a=motion41Point(lane,kind,Math.max(0,t-.001)),b=motion41Point(lane,kind,Math.min(1,t+.001));const angle=Math.atan2(b.y-a.y,b.x-a.x),boat=byLane.get(lane);points.push({lane,boat,q,angle});
+        // Curved foamy wake follows the actual illustrated path, not a straight tail.
+        for(const sign of [-1,1]){ctx.beginPath();for(let j=0;j<=17;j++){const past=Math.max(0,t-j*.0045),z=motion41Point(lane,kind,past),f=motion41Point(lane,kind,Math.min(1,past+.001)),h=motion41Point(lane,kind,Math.max(0,past-.001)),ang=Math.atan2(f.y-h.y,f.x-h.x),spread=3+j*.45,xx=z.x-Math.sin(ang)*sign*spread,yy=z.y+Math.cos(ang)*sign*spread;j===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy);}ctx.strokeStyle='rgba(200,240,246,.27)';ctx.lineWidth=1.3;ctx.stroke();}
+      }
+      for(const {boat,q,angle} of points){ctx.save();ctx.translate(q.x,q.y);ctx.rotate(angle);ctx.shadowColor='#071822';ctx.shadowBlur=4;ctx.beginPath();ctx.moveTo(17,0);ctx.quadraticCurveTo(7,-7,-4,-7);ctx.lineTo(-14,-6);ctx.lineTo(-17,-3);ctx.lineTo(-17,3);ctx.lineTo(-14,6);ctx.lineTo(-4,7);ctx.quadraticCurveTo(7,7,17,0);ctx.closePath();ctx.fillStyle=colors[boat];ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#e3f2f2aa';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#cfdee1';ctx.fillRect(-15,-4,5,8);ctx.fillStyle='#172b39';ctx.beginPath();ctx.ellipse(-2,0,5,4,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e4e4dc';ctx.beginPath();ctx.arc(-1,0,2.8,0,Math.PI*2);ctx.fill();ctx.restore();ctx.beginPath();ctx.arc(q.x,q.y-15,8.8,0,Math.PI*2);ctx.fillStyle=colors[boat];ctx.fill();ctx.strokeStyle='#d9e6ea88';ctx.stroke();ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=boat===1||boat===5?'#18202a':'#fff';ctx.fillText(String(boat),q.x,q.y-15);ctx.textAlign='start';ctx.textBaseline='alphabetic';}
+      progress.value=String(Math.round(t*1000));stage.textContent=t===0?'スタート前':t<.22?'スタート付近':t<.45?'1マークへ':t<.76?'旋回区間（各艇で異なる）':t<1?'バックストレッチ':'再生終了';
+    }
+    function tick(ts){frame=0;if(!running||!available()){stop();return;}if(last)position=Math.min(1,position+Math.min(50,ts-last)*Number(speed.value)/8500);last=ts;draw();if(position>=1){stop();return;}frame=requestAnimationFrame(tick);}
+    function start(){if(!available())return;if(position>=1)position=0;running=true;last=0;play.textContent='Ⅱ 一時停止';if(!frame)frame=requestAnimationFrame(tick);}
+    function select(id){stop();kind=id;position=0;for(const [k,b] of btns){b.classList.toggle('active',k===id);b.setAttribute('aria-pressed',String(k===id));}description.textContent=motion41Types[kind].description;play.textContent='▶ 再生';draw();}
+    for(const id of kinds){const b=el('button',motion41Types[id].label);b.type='button';b.addEventListener('click',()=>select(id));btns.set(id,b);choices.append(b);}
+    play.addEventListener('click',()=>running?stop():start());replay.addEventListener('click',()=>{stop();position=0;draw();start();});progress.addEventListener('input',()=>{stop();position=Number(progress.value)/1000;draw();});select(kind);
+  }
+
   function br6517RenderFourth(panel,p,phase,date,venue,race,sameSelection){
     panel.replaceChildren(el('h3','予想4｜保存済み展開分析'));
     panel.append(el('p',(phase==='final'?'展示後':'展示前')+'・保存済み ／ '+(p.model||'モデル名未取得'),'muted'));
     const scenarios=Array.isArray(p.scenarios)?p.scenarios:[];
+    motion41Mount(panel,p,scenarios,sameSelection);
     if(scenarios.length){panel.append(el('p','展開シナリオの仮の配分（実際の発生確率ではありません）','muted'));
       for(const x of scenarios){const row=el('div',undefined,'br6517-scenario-row'),head=el('div',undefined,'br6517-rowhead');head.append(el('span',String(x.label||x.id||'展開')),el('strong',br6517Pct(x.heuristic_weight)));row.append(head);
         if(br6517Finite(x.heuristic_weight)&&Number(x.heuristic_weight)>=0&&Number(x.heuristic_weight)<=1){const track=el('div',undefined,'br6517-scenario-track'),fill=el('span');fill.style.width=100*Number(x.heuristic_weight)+'%';track.append(fill);row.append(track);}panel.append(row);}
@@ -1997,7 +2069,7 @@ loadAutoPredictions();
       fold.addEventListener('toggle',async()=>{if(!fold.open||busy||done||!sameSelection())return;busy=true;out.textContent='展示前の保存済み予想を確認中…';try{const prior=await readSaved40(window.__br6515Odds.key(date,venue,race),'pre');if(!sameSelection()||!panel.isConnected)return;if(!prior){out.textContent='展示前の保存済み予想はありません。';done=true;return;}const pre=prior.fourth,preDist=br6517Distribution(pre);if(!preDist||!dist){out.textContent='比較に必要な120通りの保存データが揃いません。';done=true;return;}out.replaceChildren();const t=el('table',undefined,'br6517-positions'),h=el('tr');['艇','展示前1着','展示後1着'].forEach(x=>h.append(el('th',x)));const th=el('thead');th.append(h);t.append(th);const tb=el('tbody');for(let n=1;n<=6;n++){const tr=el('tr');tr.append(el('td',n+'号艇'),el('td',br6517Pct(preDist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))),el('td',br6517Pct(dist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))));tb.append(tr);}t.append(tb);out.append(t,el('p','保存時点の推定値の比較です。変化の原因を展示だけに限定できません。','muted'));done=true;}catch(e){if(sameSelection()&&panel.isConnected)out.textContent='取得失敗：'+String(e.message||e)+'（閉じて開くと再試行）';}finally{busy=false;}});panel.append(fold);
     }
   }
-  // v6.5.40: bounded in-memory saved prediction reads, stable render identity.
+  // v6.5.41: bounded in-memory saved prediction reads, stable render identity.
   const saved40=new Map(),flight40=new Map(),readFlight40=new Map(),checked40=new Map();
   let lastSelection40=null,renderEpoch40=0,renderSignature40=null;
   const selectionKey40=()=>window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);
@@ -2681,7 +2753,7 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
    });
  }
  // Ensure top-level header does not misrepresent an older release.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.40';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.41';
  const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
  // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
@@ -2773,7 +2845,7 @@ if(watch){
 // Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
 // Replace old footer version text without changing legacy model labels.
 document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.40';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.41';
 })();
 </script>
 
@@ -2826,7 +2898,7 @@ window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
 setTimeout(()=>refresh(true),900);
 // Diagnose pending vs absent snapshot; neither is automatically a losing bet.
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.40';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.41';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -4391,7 +4463,7 @@ function boot(){
  const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
  body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
  // Version label describes dashboard UI, not Worker deployment.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.40';}
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.41';}
  document.title='BOAT RACE AI | Dashboard';
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -4574,7 +4646,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    }
   });obs.observe(status,{childList:true,characterData:true,subtree:true});}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.40';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.41';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -4813,9 +4885,9 @@ function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)re
  const globalMetrics=document.querySelector('main > .grid');if(globalMetrics){const stats=$('stats');if(stats)stats.prepend(globalMetrics);}
  const legacyHome=$('v620HomeHeader');if(legacyHome)legacyHome.hidden=true;
  const topQuick=$('v590QuickNav');if(topQuick)topQuick.hidden=true;
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.40';document.title='BOAT RACE AI Dashboard v6.5.40';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.41';document.title='BOAT RACE AI Dashboard v6.5.41';
  const oldHomeLink=[...manage.querySelectorAll('button')].find(b=>b.textContent==='全国24場を開く');if(oldHomeLink){oldHomeLink.textContent='全国24場・レース詳細を開く';oldHomeLink.onclick=e=>{e.stopImmediatePropagation();nav('detail');};oldHomeLink.addEventListener('click',e=>{e.stopImmediatePropagation();nav('detail');},true);}
- const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.40');
+ const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.41');
  }catch(e){console.warn('Home optional layout:',e);}return true;
 }
 function bootHome(){try{if(init())return true;}catch(e){console.warn('Home boot:',e);homeStarted=false;}return false;}
