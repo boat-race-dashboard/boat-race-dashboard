@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.37 | Home overview</title>
+  <title>BOAT RACE AI Dashboard v6.5.38 | Home overview</title>
 
 <script id="br6537-home-watchdog">
 (function(){
@@ -498,7 +498,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  window.dispatchEvent(new CustomEvent('br6515-odds',{detail:{key:k}}));return true;}
  const stamp=d=>d?new Date(d.fetched_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
  window.__br6515Odds={key,get,put,stamp,validate};
- // v6.5.37: display-only official exhibition store shared by gateway, preview and warmup.
+ // v6.5.38: display-only official exhibition store shared by gateway, preview and warmup.
  const exPrefix='br6524:official-exhibition:',exMem=new Map(),exMaxAge=48*3600000;
  function exValid(k,d){
   if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.status!=='verified_table'||d.exhibition_count!==6||!Array.isArray(d.values)||d.values.length!==6)return false;
@@ -507,13 +507,21 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  }
  function exGet(k){if(!k)return null;let d=exMem.get(k);if(!d){try{d=JSON.parse(localStorage.getItem(exPrefix+k)||'null');}catch{}}if(!exValid(k,d)){exMem.delete(k);try{localStorage.removeItem(exPrefix+k);}catch{}return null;}return d;}
  function exPut(k,d){if(!exValid(k,d))return false;const old=exGet(k);if(old&&Date.parse(old.checked_at_utc)>=Date.parse(d.checked_at_utc))return false;
-  const clean={date:d.date,venue:d.venue,race:d.race,source:d.source,status:d.status,exhibition_count:6,checked_at_utc:d.checked_at_utc,values:d.values.map(x=>({boat:x.boat,exhibition_time:x.exhibition_time}))};exMem.set(k,clean);if(exMem.size>200)exMem.delete(exMem.keys().next().value);
+  const clean={date:d.date,venue:d.venue,race:d.race,source:d.source,status:d.status,exhibition_count:6,checked_at_utc:d.checked_at_utc,values:d.values.map(x=>({boat:x.boat,exhibition_time:x.exhibition_time})),official_start_audit:d.official_start_audit,official_weather_audit:d.official_weather_audit};exMem.set(k,clean);if(exMem.size>200)exMem.delete(exMem.keys().next().value);
   try{localStorage.setItem(exPrefix+k,JSON.stringify(clean));const records=[];for(let i=0;i<localStorage.length;i++){const n=localStorage.key(i);if(n?.startsWith(exPrefix)){let t=0;try{t=Date.parse(JSON.parse(localStorage.getItem(n)).checked_at_utc)||0;}catch{}records.push([n,t]);}}records.sort((a,b)=>b[1]-a[1]);records.forEach(([n,t],i)=>{if(i>=200||Date.now()-t>exMaxAge)localStorage.removeItem(n);});}catch{}
   window.dispatchEvent(new CustomEvent('br6524-exhibition',{detail:{key:k}}));return true;
  }
  const exStamp=d=>new Date(d.checked_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
  window.__br6524Exhibition={get:exGet,put:exPut,validate:exValid,stamp:exStamp};
  const native=window.fetch.bind(window);
+ const archiveMemo69=new Map(),archivePending69=new Map();
+ function startValid69(v){return Array.isArray(v)&&v.length===6&&new Set(v.map(x=>x.boat)).size===6&&new Set(v.map(x=>x.course)).size===6&&v.every(x=>Number.isInteger(x.boat)&&x.boat>=1&&x.boat<=6&&Number.isInteger(x.course)&&x.course>=1&&x.course<=6&&['dedicated_table_row_order','explicit_cell'].includes(x.course_source)&&Number.isFinite(x.st)&&Math.abs(x.st)<=.99&&(x.st_status==='numeric'&&x.st>0||x.st_status==='zero'&&x.st===0||x.st_status==='flying'&&x.st<=0));}
+ const archiveGet69=k=>archiveMemo69.get(k)?.data||null;
+ function archiveOdds69(k){const d=archiveGet69(k)?.odds?.observation;return validate(k,d)?d:null;}
+ function displayOdds69(k){const live=get(k),arch=archiveOdds69(k);return !live?arch:!arch||Date.parse(live.fetched_at_utc)>=Date.parse(arch.fetched_at_utc)?live:arch;}
+ function isArchive69(k,d){return !!d&&d===archiveOdds69(k);}
+ async function archiveLoad69(k){if(!k)return null;if(archivePending69.has(k))return archivePending69.get(k);const old=archiveMemo69.get(k);if(old&&Date.now()-old.at<60000)return old.data;const [date,venue,race]=k.split('/');const job=(async()=>{let data=old?.data||null;const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),10000);try{const r=await native(origin+'/race-display-archive?'+new URLSearchParams({date,venue,race}),{cache:'no-store',signal:ctl.signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();if(key(d.date,d.venue,d.race)!==k||d.display_only!==true)throw Error('identity');if(d.status==='reported'){data=d;}}catch{}finally{clearTimeout(timer);}archiveMemo69.set(k,{at:Date.now(),data});while(archiveMemo69.size>100)archiveMemo69.delete(archiveMemo69.keys().next().value);if(data)window.dispatchEvent(new CustomEvent('br69-archive',{detail:{key:k}}));return data;})();archivePending69.set(k,job);try{return await job;}finally{archivePending69.delete(k);}}
+ window.__br69Display={archiveLoad:archiveLoad69,archiveGet:archiveGet69,startValid:startValid69,odds:displayOdds69,isArchive:isArchive69};
  // v6.5.16: one flight per part/date/race; caller cancellation does not cancel other subscribers.
  const inflight=new Map(),recent=new Map();
  const parts={'/schedule-fast':'schedule','/race':'race','/official-exhibition':'exhibition','/odds':'odds'};
@@ -884,7 +892,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v6.5.37<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v6.5.38<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -1838,16 +1846,23 @@ loadAutoPredictions();
   }
   function renderPreview(payload){
     const box=document.getElementById('cockpitPreviewBody');box.replaceChildren();
-    const p=payload.preview||{};const weather=el('div',undefined,'cockpit-metrics');
-    [['風速',show(p.wind_speed,'m/s')],['波高',show(p.wave_height,'cm')],['気温',show(p.air_temperature,'℃')],['水温',show(p.water_temperature,'℃')]].forEach(([k,v])=>{const m=el('div',undefined,'cockpit-metric');m.append(el('small',k),el('strong',v));weather.append(m);});box.append(weather);
-    const currentKey=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);
-    const official=linkedKey===currentKey?window.__br6524Exhibition.get(currentKey):null;
-    const officialTimes=new Map((official?.values||[]).map(x=>[x.boat,x.exhibition_time]));
-    const rows=el('div',undefined,'cockpit-preview-rows');payload.racers.forEach(r=>{const row=el('div',undefined,'cockpit-preview-row'),t=officialTimes.get(Number(r.entry_number));row.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number),el('strong',show(r.name)),el('span',t===undefined?'展示 '+show(r.exhibition_time):'展示 '+t.toFixed(2)+'（公式）'),el('span','進入 '+show(r.exhibition_course)),el('span','展示ST '+show(r.exhibition_start_timing)));rows.append(row);});box.append(rows);
-    if(official)box.append(el('p','展示タイム：公式表の前回取得値 '+window.__br6524Exhibition.stamp(official)+' JST。進入・展示ST・気象は非公式データ。公式値の表示補完のみ（AI入力・保存予想は変更しません）。','muted'));
-    box.append(el('p','展示データの公表時刻は確認できません。取得した時点で結果が判明している場合、事前予想には使用しないでください。','muted'));
+    const k=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value),g=window.__br69Display,official=linkedKey===k?window.__br6524Exhibition.get(k):null,archive=linkedKey===k?g.archiveGet(k)?.start?.observation:null;
+    const archived=archive&&window.__br6515Odds.key(archive.date,archive.venue,archive.race)===k&&g.startValid(archive.values)&&Number.isFinite(Date.parse(archive.received_at_utc))&&Date.parse(archive.received_at_utc)<=Date.now()?archive:null;
+    const liveStart=official?.official_start_audit?.status==='candidate_six_boats'&&g.startValid(official.official_start_audit.values)?official.official_start_audit.values:null;
+    const useArchive=!!archived&&(!liveStart||Date.parse(archived.received_at_utc)>Date.parse(official.checked_at_utc));
+    const stValues=useArchive?archived.values:liveStart||[],stMap=new Map(stValues.map(x=>[x.boat,x]));
+    const timeValues=official?.values||archived?.values||[],officialTimes=new Map(timeValues.map(x=>[x.boat,x.exhibition_time]));
+    const p=payload.preview||{},w=official?.official_weather_audit?.values||{},weather=el('div',undefined,'cockpit-metrics');
+    [['風速','wind_speed','m/s',0,50],['波高','wave_height','cm',0,200],['気温','air_temperature','℃',-20,50],['水温','water_temperature','℃',-5,45]].forEach(([label,field,unit,min,max])=>{const v=w[field],ok=typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;const m=el('div',undefined,'cockpit-metric');m.append(el('small',label+(ok?'（公式候補）':'')),el('strong',ok?show(v,unit):show(p[field],unit)));weather.append(m);});box.append(weather);
+    const rows=el('div',undefined,'cockpit-preview-rows');payload.racers.forEach(r=>{const row=el('div',undefined,'cockpit-preview-row'),n=Number(r.entry_number),t=officialTimes.get(n),s=stMap.get(n),validTime=typeof t==='number'&&Number.isFinite(t)&&t>=5&&t<10;row.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number),el('strong',show(r.name)),el('span',validTime?'展示 '+t.toFixed(2)+'（公式）':'展示 '+show(r.exhibition_time)),el('span','進入 '+(s?s.course+'（展示）':show(r.exhibition_course))),el('span','展示ST '+(s?(s.st_status==='flying'?'F'+Math.abs(s.st).toFixed(2):s.st.toFixed(2)):show(r.exhibition_start_timing))));rows.append(row);});box.append(rows);
+    const stamp=x=>new Date(x).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    if(official||archived)box.append(el('p','展示タイム：公式取得 '+stamp(official?.checked_at_utc||archived.received_at_utc)+' JST。'+(stValues.length?'進入・展示ST：公式解析候補 '+(useArchive?'保存値 ':'取得値 ')+stamp(useArchive?archived.received_at_utc:official.checked_at_utc)+' JST。':'公式進入・展示STは未確認。')+' 表示補完のみ（AI入力・保存予想は変更しません）。','muted'));
+    if(Object.keys(w).length)box.append(el('p','気象の公式候補は直前情報ページの表示値。観測時刻・対象レースとの対応は未確認。','muted'));
+    box.append(el('p','展示の公表時刻・実際の締切は未確認。展示進入は本番進入ではありません。結果判明後の取得値を事前予想には使用しないでください。','muted'));
+    if(linkedKey===k&&(!liveStart||!official)&&!document.hidden&&!document.getElementById('cockpitPreview')?.hidden&&!document.getElementById('raceView')?.classList.contains('hidden'))g.archiveLoad(k);
   }
   window.addEventListener('br6524-exhibition',e=>{const k=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);if(e.detail?.key===k&&linkedKey===k&&linkedPayload)renderPreview(linkedPayload);});
+  window.addEventListener('br69-archive',e=>{const k=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);if(e.detail?.key===k&&linkedKey===k&&linkedPayload)renderPreview(linkedPayload);});
   function renderResult(payload){
     const box=document.getElementById('cockpitResultBody');box.replaceChildren();
     if(!payload.result_available){box.textContent='結果待ち・または結果データ未取得';return;}
@@ -1870,7 +1885,7 @@ loadAutoPredictions();
   }
   async function loadOdds(){
     const id=++oddsRequestId,date=scheduleDate.value,venue=hv.value,race=hr.value;
-    const store=window.__br6515Odds,k=store.key(date,venue,race);oddsCache=store.get(k);oddsNotice.textContent=oddsCache?'前回公式取得 '+store.stamp(oddsCache)+'（JST）／ 最新値確認中':'公式オッズを確認中…';renderOdds();
+    const store=window.__br6515Odds,k=store.key(date,venue,race);oddsCache=window.__br69Display.odds(k);oddsNotice.textContent=oddsCache?'前回公式取得 '+store.stamp(oddsCache)+'（JST）／ 最新値確認中':'公式オッズを確認中…';renderOdds();
     try{
       const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});
       if(!res.ok)throw Error('HTTP '+res.status);
@@ -1879,7 +1894,7 @@ loadAutoPredictions();
       oddsNotice.textContent='取得 '+data.count+'/120通り ／ '+time+' ／ 画面取得 '+new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})+'（公式オッズ・最終値とは限りません）';
       if(!data.count)oddsNotice.textContent+=' ／ 未配信または形式未対応';
       renderOdds();
-    }catch(e){if(id!==oddsRequestId||store.key(scheduleDate.value,hv.value,hr.value)!==k)return;oddsCache=store.get(k);oddsNotice.textContent='最新値取得失敗：'+e.message+(oddsCache?' ／ 前回公式取得 '+store.stamp(oddsCache)+'（JST、確定払戻ではありません）':' ／ 取得済みオッズなし');renderOdds();}
+    }catch(e){if(id!==oddsRequestId||store.key(scheduleDate.value,hv.value,hr.value)!==k)return;await window.__br69Display.archiveLoad(k);if(id!==oddsRequestId||store.key(scheduleDate.value,hv.value,hr.value)!==k)return;oddsCache=window.__br69Display.odds(k);oddsNotice.textContent='最新値取得失敗：'+e.message+(oddsCache?' ／ '+(window.__br69Display.isArchive(k,oddsCache)?'D1保存値 ':'前回公式取得 ')+store.stamp(oddsCache)+'（JST、確定払戻ではありません）':' ／ 取得済みオッズなし・未確認');renderOdds();}
   }
   oddsFirst.addEventListener('change',renderOdds);
   window.addEventListener('br6515-odds',e=>{const store=window.__br6515Odds,k=store.key(scheduleDate.value,hv.value,hr.value);if(e.detail?.key!==k||document.getElementById('cockpitOdds')?.hidden)return;const next=store.get(k);if(!next)return;oddsCache=next;oddsNotice.textContent='公式取得 '+store.stamp(next)+'（JST）／ 最終値とは限りません';renderOdds();});
@@ -1913,23 +1928,23 @@ loadAutoPredictions();
     let busy=false,last=0,failures=0,latestOdds=store.get(k),state='前回取得値・最新値確認中';
     const valid=()=>session===payoutSession&&container.isConnected&&store.key(scheduleDate.value,hv.value,hr.value)===k;
     const visible=()=>!document.hidden&&!document.querySelector('#cockpitPrediction')?.hidden&&!document.querySelector('#raceView')?.classList.contains('hidden');
-    function paint(){if(!valid())return;latestOdds=store.get(k);for(const payout of container.querySelectorAll('.v433-bet-payout')){
+    function paint(){if(!valid())return;latestOdds=window.__br69Display.odds(k);for(const payout of container.querySelectorAll('.v433-bet-payout')){
       const v=latestOdds?.odds?.[payout.dataset.combination],stake=Number(payout.dataset.stake);const good=Number.isFinite(v)&&v>0&&Number.isFinite(stake)&&stake>0;
-      const stale=state.includes('前回')||state.includes('失敗')||state.includes('確認中');const value=good?yen(Math.round(v*stake))+(stale?'※':''):'--円';if(payout.textContent!==value)payout.textContent=value;
+      const stale=window.__br69Display.isArchive(k,latestOdds)||state.includes('前回')||state.includes('失敗')||state.includes('確認中');const value=good?yen(Math.round(v*stake))+(stale?'※':''):'--円';if(payout.textContent!==value)payout.textContent=value;
       if(good)payout.title=v.toFixed(1)+'倍 ／ 公式取得 '+store.stamp(latestOdds)+'（前回取得値・変動あり、確定払戻ではない）';else payout.removeAttribute('title');
-    }const text=latestOdds?'公式オッズ取得 '+store.stamp(latestOdds)+'（JST） ／ '+state+' ／ ※は前回取得値。確定払戻ではありません':state+' ／ 取得済みオッズなし';if(note.textContent!==text)note.textContent=text;}
+    }const text=latestOdds?(window.__br69Display.isArchive(k,latestOdds)?'公式オッズ D1保存値・最新値ではない ':'公式オッズ取得 ')+store.stamp(latestOdds)+'（JST） ／ '+state+' ／ ※は前回取得値。確定払戻ではありません':state+' ／ 取得済みオッズなし';if(note.textContent!==text)note.textContent=text;}
     async function update(manual=false){if(!valid()||busy||(!manual&&(!visible()||!Number.isFinite(oddsRefreshDelay()))))return;busy=true;state='最新値確認中（前回取得値を保持）';paint();
       try{const res=await fetch(API+'/odds?'+new URLSearchParams({date,venue,race}),{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);const d=await res.json();if(!valid())return;
         if(!store.validate(k,d)||!store.get(k)||store.get(k).fetched_at_utc!==d.fetched_at_utc)throw Error('公式120通りを確認できません');
         failures=0;state='取得済み（変動あり）';
-      }catch(e){if(valid()){failures=Math.min(failures+1,4);state='最新値取得失敗・自動再試行'+(store.get(k)?'（前回取得値を表示）':'');}}
+      }catch(e){if(valid()){failures=Math.min(failures+1,4);state='最新値取得失敗・自動再試行';paint();await window.__br69Display.archiveLoad(k);}}
       finally{busy=false;last=Date.now();if(valid())paint();}}
     const observer=new MutationObserver(()=>{if(valid())paint();else dispose();});observer.observe(container,{childList:true,subtree:true});
-    const receive=e=>{if(valid()&&e.detail?.key===k){state='公式取得値（変動あり）';paint();}};
+    const receive=e=>{if(valid()&&e.detail?.key===k){if(e.type==='br6515-odds')state='公式取得値（変動あり）';paint();}};
     const resume=()=>{if(valid()&&visible()){state='前回取得値・最新値確認中';paint();update();}};
-    window.addEventListener('br6515-odds',receive);window.addEventListener('pageshow',resume);window.addEventListener('online',resume);document.addEventListener('visibilitychange',resume);
+    window.addEventListener('br6515-odds',receive);window.addEventListener('br69-archive',receive);window.addEventListener('pageshow',resume);window.addEventListener('online',resume);document.addEventListener('visibilitychange',resume);
     const timer=setInterval(()=>{if(!valid()){dispose();return;}const delay=oddsRefreshDelay();if(visible()&&Number.isFinite(delay)&&Date.now()-last>=Math.min(120000,delay*Math.max(1,failures)))update();},5000);
-    function dispose(){clearInterval(timer);observer.disconnect();window.removeEventListener('br6515-odds',receive);window.removeEventListener('pageshow',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);}
+    function dispose(){clearInterval(timer);observer.disconnect();window.removeEventListener('br6515-odds',receive);window.removeEventListener('br69-archive',receive);window.removeEventListener('pageshow',resume);window.removeEventListener('online',resume);document.removeEventListener('visibilitychange',resume);}
     disposePayouts=dispose;paint();update(true);
   }
   // v6.5.17: view changes never issue a new prediction request.
@@ -2901,7 +2916,7 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
    });
  }
  // Ensure top-level header does not misrepresent an older release.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.37';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.38';
  const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
  // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
@@ -2993,7 +3008,7 @@ if(watch){
 // Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
 // Replace old footer version text without changing legacy model labels.
 document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.37';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.38';
 })();
 </script>
 
@@ -3046,7 +3061,7 @@ window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
 setTimeout(()=>refresh(true),900);
 // Diagnose pending vs absent snapshot; neither is automatically a losing bet.
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.37';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.38';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -3564,7 +3579,7 @@ function init(){
   const btn=document.createElement('button');btn.type='button';btn.textContent='公式展示タイムを取得';btn.style.cssText='padding:9px 14px;border-radius:8px;background:#604b85;color:#fff;border:1px solid #b4a3da';
   panel.append(heading,status,details,btn);pane.append(panel);
   const store=window.__br6524Exhibition;
-  function showStored(d){if(!d)return;const table=document.createElement('div');table.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0';for(const x of [...d.values].sort((a,b)=>a.boat-b.boat)){const cell=document.createElement('div');cell.style.cssText='padding:8px;border:1px solid #65758b;border-radius:8px;text-align:center';cell.textContent=x.boat+'号艇：'+x.exhibition_time.toFixed(2)+'秒';table.append(cell);}details.replaceChildren(table);status.textContent='公式展示タイムの前回取得値 '+store.stamp(d)+' JST。展示ST・進入は未検証。';}
+  function showStored(d){if(!d)return;const table=document.createElement('div');table.style.cssText='display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0';for(const x of [...d.values].sort((a,b)=>a.boat-b.boat)){const cell=document.createElement('div');cell.style.cssText='padding:8px;border:1px solid #65758b;border-radius:8px;text-align:center';cell.textContent=x.boat+'号艇：'+x.exhibition_time.toFixed(2)+'秒';table.append(cell);}details.replaceChildren(table);status.textContent='公式展示タイムの前回取得値 '+store.stamp(d)+' JST。展示ST・進入は直前情報欄の公式解析候補を参照。';}
   function reset(){const k=key(selection());if(k!==lastKey){lastKey=k;lastAttempt=0;seq++;status.textContent='レース変更：公式展示タイム未取得';details.replaceChildren();showStored(store.get(k));}}
   window.addEventListener('br6524-exhibition',e=>{if(e.detail?.key===key(selection())){reset();showStored(store.get(e.detail.key));}});
   async function load(){reset();const s=selection(),k=key(s);if(busyKey===k)return;busyKey=k;lastAttempt=Date.now();const id=++seq;btn.disabled=true;status.textContent=details.childElementCount?'前回公式展示を表示中・最新値確認中…':'公式直前情報を確認中…';
@@ -4611,7 +4626,7 @@ function boot(){
  const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
  body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
  // Version label describes dashboard UI, not Worker deployment.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.37';}
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.38';}
  document.title='BOAT RACE AI | Dashboard';
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -4794,7 +4809,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    }
   });obs.observe(status,{childList:true,characterData:true,subtree:true});}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.37';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.38';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -5033,9 +5048,9 @@ function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)re
  const globalMetrics=document.querySelector('main > .grid');if(globalMetrics){const stats=$('stats');if(stats)stats.prepend(globalMetrics);}
  const legacyHome=$('v620HomeHeader');if(legacyHome)legacyHome.hidden=true;
  const topQuick=$('v590QuickNav');if(topQuick)topQuick.hidden=true;
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.37';document.title='BOAT RACE AI Dashboard v6.5.37';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.38';document.title='BOAT RACE AI Dashboard v6.5.38';
  const oldHomeLink=[...manage.querySelectorAll('button')].find(b=>b.textContent==='全国24場を開く');if(oldHomeLink){oldHomeLink.textContent='全国24場・レース詳細を開く';oldHomeLink.onclick=e=>{e.stopImmediatePropagation();nav('detail');};oldHomeLink.addEventListener('click',e=>{e.stopImmediatePropagation();nav('detail');},true);}
- const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.37');
+ const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.38');
  }catch(e){console.warn('Home optional layout:',e);}return true;
 }
 function bootHome(){try{if(init())return true;}catch(e){console.warn('Home boot:',e);homeStarted=false;}return false;}
