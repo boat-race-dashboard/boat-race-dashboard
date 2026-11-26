@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.49 | Home overview</title>
+  <title>BOAT RACE AI Dashboard v6.5.50 | Home overview</title>
 
 <script id="br6537-home-watchdog">
 (function(){
@@ -515,7 +515,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  window.dispatchEvent(new CustomEvent('br6515-odds',{detail:{key:k}}));return true;}
  const stamp=d=>d?new Date(d.fetched_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
  window.__br6515Odds={key,get,put,stamp,validate};
- // v6.5.49: display-only official exhibition store shared by gateway, preview and warmup.
+ // v6.5.50: display-only official exhibition store shared by gateway, preview and warmup.
  const exPrefix='br6524:official-exhibition:',exMem=new Map(),exMaxAge=48*3600000;
  function exValid(k,d){
   if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.status!=='verified_table'||d.exhibition_count!==6||!Array.isArray(d.values)||d.values.length!==6)return false;
@@ -717,7 +717,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
  <section class="bh-card bh-blue"><div class="bh-head"><strong id="bhRun">実行記録未確認</strong><small id="bhRunStamp"></small></div><div id="bhOps">データ取得待ち</div><button type="button" class="bh-link" data-open="admin">管理・診断へ ›</button></section>
  <section class="bh-card"><div class="bh-head"><h3>本日の開催状況</h3><small id="bhScheduleStamp"></small></div><div class="bh-grid" id="bhSchedule">開催情報を取得中…</div><div id="bhProgress"></div><div class="bh-head" style="margin-top:14px"><h3>直近の締切予定</h3></div><div id="bhNext"></div><button type="button" class="bh-link" data-open="detail">レース詳細・全国24場へ ›</button></section>
  <section class="bh-card bh-blue"><div class="bh-head"><h3>本日の AI CORE 成績</h3><small id="bhCompareStamp"></small></div><small id="bhCompareNote"></small><div id="bhCompare">成績取得待ち</div><button type="button" class="bh-link" data-open="analysis">詳しい成績・比較へ ›</button><button type="button" class="bh-link" data-open="outcomes">全国結果へ ›</button></section>
- <section class="bh-card bh-blue"><div class="bh-head"><h3>AI CORE（エーアイ コア）・データ蓄積状況</h3></div><div id="bhCoverage">取得率の確認待ち</div><div class="bh-line"><strong>決まり手の蓄積</strong></div><small id="bhTechnique"></small><p class="bh-status" id="bhTechStamp"></p><details><summary>取得率・集計の見方</summary><p class="bh-muted">当日の現行モデルで保存した予想の取得率です。展示前後を別集計し、旧モデルや未保存データを混ぜません。取得率は精度ではありません。決まり手件数は蓄積全期間の記録であり、その他の取得元は公式確認済みとは限りません。</p></details></section>
+ <section class="bh-card bh-blue"><details id="br6550HomeCoverage"><summary>AI CORE・入力充足率と決まり手</summary><div id="bhCoverage">取得率の確認待ち</div><div class="bh-line"><strong>決まり手の蓄積</strong></div><small id="bhTechnique"></small><p class="bh-status" id="bhTechStamp"></p><details><summary>取得率・集計の見方</summary><p class="bh-muted">当日の現行モデルで保存した予想の取得率です。展示前後を別集計し、旧モデルや未保存データを混ぜません。取得率は精度ではありません。決まり手件数は蓄積全期間の記録であり、その他の取得元は公式確認済みとは限りません。</p></details></details></section>
  <section class="bh-card" style="border-color:#c9a34e"><details><summary><strong style="color:#e9c775">AI EVOLVE</strong> <small>エーアイ エボルブ ／ 研究用</small></summary><p class="bh-muted">毎日のPDCA・学習理由・数値変更・同一レースでの検証</p><button type="button" class="bh-link" id="ev571Load">学習状況を確認</button><div id="ev571Out" aria-live="polite">必要なときに取得します。</div></details></section>
  <button type="button" class="bh-link" id="bhRefresh">ホームを再取得</button></div>
     <div class="panel">
@@ -911,7 +911,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v6.5.49<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v6.5.50<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -1990,9 +1990,9 @@ loadAutoPredictions();
     for(const x of raw){const key=String(x?.combination||''),parts=key.split('-');if(!/^[1-6]-[1-6]-[1-6]$/.test(key)||new Set(parts).size!==3||seen.has(key)||!br6517Finite(x?.probability)||Number(x.probability)<0||Number(x.probability)>1)return null;seen.add(key);rows.push({key,parts:parts.map(Number),p:Number(x.probability)});}
     return Math.abs(rows.reduce((n,x)=>n+x.p,0)-1)<.001?rows:null;
   }
-  // v6.5.49: illustrative, client-only maneuver animation. No scoring, result or odds input.
+  // v6.5.50: illustrative, client-only maneuver animation. No scoring, result or odds input.
   const motion41Types={inside_hold:{label:'イン逃げ・内残り',description:'内側の艇が小さい旋回半径で回る形。外側の艇は広い弧を描きます。'},inside_sashi:{label:'内差し',description:'内側の艇が先に旋回し、その後ろから2コースの艇が内寄りの軌道へ入る形。'},center_attack:{label:'センターまくり',description:'センターの艇が外側から先行して旋回する形。内側の艇との軌道の違いを示します。'},outside_break:{label:'まくり差し・外伸び',description:'外寄りの艇が旋回中に内側へ寄る形。艇の間を通る動きは模式的な表現です。'}};
-  // v6.5.49: authored illustrative paths, not trajectory inference.
+  // v6.5.50: authored illustrative paths, not trajectory inference.
   function motion41Point(lane,kind,t){
     const r=44+(lane-1)*23,cx=525,cy=205;
     const actor={inside_hold:1,inside_sashi:2,center_attack:3,outside_break:4}[kind];
@@ -2114,7 +2114,7 @@ loadAutoPredictions();
       fold.addEventListener('toggle',async()=>{if(!fold.open||busy||done||!sameSelection())return;busy=true;out.textContent='展示前の保存済み予想を確認中…';try{const prior=await readSaved40(window.__br6515Odds.key(date,venue,race),'pre');if(!sameSelection()||!panel.isConnected)return;if(!prior){out.textContent='展示前の保存済み予想はありません。';done=true;return;}const pre=prior.fourth,preDist=br6517Distribution(pre);if(!preDist||!dist){out.textContent='比較に必要な120通りの保存データが揃いません。';done=true;return;}out.replaceChildren();const t=el('table',undefined,'br6517-positions'),h=el('tr');['艇','展示前1着','展示後1着'].forEach(x=>h.append(el('th',x)));const th=el('thead');th.append(h);t.append(th);const tb=el('tbody');for(let n=1;n<=6;n++){const tr=el('tr');tr.append(el('td',n+'号艇'),el('td',br6517Pct(preDist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))),el('td',br6517Pct(dist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))));tb.append(tr);}t.append(tb);out.append(t,el('p','保存時点の推定値の比較です。変化の原因を展示だけに限定できません。','muted'));done=true;}catch(e){if(sameSelection()&&panel.isConnected)out.textContent='取得失敗：'+String(e.message||e)+'（閉じて開くと再試行）';}finally{busy=false;}});panel.append(fold);
     }
   }
-  // v6.5.49: bounded in-memory saved prediction reads, stable render identity.
+  // v6.5.50: bounded in-memory saved prediction reads, stable render identity.
   const saved40=new Map(),flight40=new Map(),readFlight40=new Map(),checked40=new Map();
   let lastSelection40=null,renderEpoch40=0,renderSignature40=null;
   const selectionKey40=()=>window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);
@@ -2807,7 +2807,7 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
    });
  }
  // Ensure top-level header does not misrepresent an older release.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.49';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.50';
  const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
  // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
@@ -2899,7 +2899,7 @@ if(watch){
 // Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
 // Replace old footer version text without changing legacy model labels.
 document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.49';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.50';
 })();
 </script>
 
@@ -2952,7 +2952,7 @@ window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
 setTimeout(()=>refresh(true),900);
 // Diagnose pending vs absent snapshot; neither is automatically a losing bet.
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.49';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.50';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -3584,7 +3584,7 @@ let current='races',busy=false,lastAttempt=0,serial=0;
 const labels=[['races','ホーム'],['detail','レース詳細'],['outcomes','全国結果'],['analysis','分析・成績'],['admin','管理・診断']];
 function state(msg){const e=$('v620State');if(e)e.textContent=msg;}
 function go(key,scroll=true){const id=screens[key];if(!id||!$(id))return;
- current=key;
+ current=key;try{localStorage.setItem('br6550-screen',key);}catch{}
  // The existing router owns all secondary tabs and their data-loading side effects.
  const button=document.querySelector('.tabs [data-tab="'+id+'"]');
  if(button)button.click();else if(typeof tab==='function')tab(id);
@@ -3614,7 +3614,7 @@ function init(){if($('v620Nav')||!$('home')||!$('raceView')||!$('stats')||!$('ma
  $('v620ToAI').addEventListener('click',()=>{const cockpit=$('raceCockpit');const candidates=[...cockpit?.querySelectorAll('button')||[]];const b=candidates.find(x=>/AI予想/.test(x.textContent||'')&&x.offsetParent!==null);if(b)b.click();cockpit?.scrollIntoView({block:'start',behavior:'smooth'});});
  // Selection is already handled by the original venue router; only mirror its navigation.
  $('venues')?.addEventListener('click',e=>{if(e.target.closest('button[data-venue]'))setTimeout(()=>go('detail'),80)});
- document.body.classList.add('v620-ready');go('races');
+ document.body.classList.add('v620-ready');let initial='races';try{const saved=localStorage.getItem('br6550-screen');if(Object.prototype.hasOwnProperty.call(screens,saved))initial=saved;}catch{}go(initial);
  setInterval(()=>{if(current==='races')refresh(false)},90000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&current==='races')refresh(false)});
  window.addEventListener('online',()=>{if(current==='races')refresh(false)});
@@ -4518,7 +4518,7 @@ function boot(){
  const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
  body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
  // Version label describes dashboard UI, not Worker deployment.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.49';}
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.50';}
  document.title='BOAT RACE AI | Dashboard';
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -4699,7 +4699,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    const normalizeStatus=()=>{const current=status.textContent||'';if(current!==message&&/HTTP 404/.test(current))status.textContent=message;};
    const obs=new MutationObserver(normalizeStatus);obs.observe(status,{childList:true,characterData:true,subtree:true});normalizeStatus();}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.49';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.50';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -4923,14 +4923,15 @@ function homeRetry44(ttl,failures){return Math.min(ttl,30000*2**Math.min(3,Math.
 function homeCacheDelay44(ttl,age){return Math.max(30000,Math.min(ttl,ttl-Math.max(0,age)));}
 function rollover(){const d=today();if(d===currentDay)return;currentDay=d;for(const [k,r] of records){r.controller?.abort();records.delete(k);}render();}
 async function read(k,force=false){const d=currentDay,s=spec[k],r=state(k);if(r.loading||(!force&&r.lastAttempt&&Date.now()-r.lastAttempt<(r.retryAfter??s.ttl)))return;const c=new AbortController(),job={...r,loading:true,lastAttempt:Date.now(),controller:c};records.set(k,job);try{const {res,j}=await boundedHomeRequest(s.path(d),c);if(!res.ok)throw Error(j.error_code==='d1_daily_quota'?'D1日次上限':'HTTP '+res.status);if(!valid(k,j,d))throw Error('データ形式不一致');if(records.get(k)!==job||d!==currentDay)return;job.data=j;const acquired=Date.parse(res.headers.get('X-Display-Cached-At')||j.display_gateway?.acquired_at_utc||'');job.at=Number.isFinite(acquired)?acquired:Date.now();job.retryAfter=(k==='pre'||k==='final')?homeCacheDelay44(s.ttl,Date.now()-job.at):s.ttl;job.error=false;job.failures=0;}catch(e){if(records.get(k)!==job)return;job.error=true;job.errorText=String(e?.message||e);job.failures=(job.failures||0)+1;job.retryAfter=job.errorText==='D1日次上限'?s.ttl:homeRetry44(s.ttl,job.failures);}finally{if(records.get(k)===job){job.loading=false;job.controller=null;job.lastAttempt=Date.now();if(visible())render();}}}
-function refresh(force=false){rollover();if(!visible())return;if(!navigator.onLine){render();return;}for(const k of Object.keys(spec))read(k,force);render();}
+function refresh(force=false){rollover();if(!visible())return;if(!navigator.onLine){render();return;}for(const k of Object.keys(spec)){if(["pre","final","tech"].includes(k)&&!$("br6550HomeCoverage")?.open)continue;read(k,force);}render();}
 function openRace(v,r){const d=$('scheduleDate'),hv=$('heroVenue'),hr=$('heroRace');if(!d||!hv||!hr)return;if(d.value!==currentDay){d.value=currentDay;d.dispatchEvent(new Event('change',{bubbles:true}));}hv.value=String(v);hr.value=String(r);hv.dispatchEvent(new Event('change',{bubbles:true}));nav('detail');}
 let homeStarted=false;
 function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)return false;
  const root=$('br6521Home');if(!root)return false;if(homeStarted)return true;
  // Wire data refresh independently of optional layout relocation.
  homeStarted=true;root.dataset.wired='1';home.prepend(root);document.body.classList.add('br6521-ready');
- root.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='bhRefresh')refresh(true);else if(b.dataset.open)nav(b.dataset.open);else if(b.dataset.venue)openRace(Number(b.dataset.venue),Number(b.dataset.race));});
+ $('br6550HomeCoverage')?.addEventListener('toggle',()=>{if($('br6550HomeCoverage').open&&visible())refresh();});
+ root.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='bhRefresh'){refresh(true);$('refreshSchedule')?.click();}else if(b.dataset.open)nav(b.dataset.open);else if(b.dataset.venue)openRace(Number(b.dataset.venue),Number(b.dataset.race));});
  // Install recovery and refresh before moving optional legacy panels.
  render();refresh();new MutationObserver(()=>{if(visible())refresh();}).observe(home,{attributes:true,attributeFilter:['class','hidden']});setInterval(()=>{if(visible())refresh();},30000);document.addEventListener('visibilitychange',()=>{if(visible())refresh();});window.addEventListener('pageshow',()=>{if(visible())refresh();});window.addEventListener('online',()=>{if(visible())refresh(true);});
  try{
@@ -4940,9 +4941,9 @@ function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)re
  const globalMetrics=document.querySelector('main > .grid');if(globalMetrics){const stats=$('stats');if(stats)stats.prepend(globalMetrics);}
  const legacyHome=$('v620HomeHeader');if(legacyHome)legacyHome.hidden=true;
  const topQuick=$('v590QuickNav');if(topQuick)topQuick.hidden=true;
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.49';document.title='BOAT RACE AI Dashboard v6.5.49';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.50';document.title='BOAT RACE AI Dashboard v6.5.50';
  const oldHomeLink=[...manage.querySelectorAll('button')].find(b=>b.textContent==='全国24場を開く');if(oldHomeLink){oldHomeLink.textContent='全国24場・レース詳細を開く';oldHomeLink.onclick=e=>{e.stopImmediatePropagation();nav('detail');};oldHomeLink.addEventListener('click',e=>{e.stopImmediatePropagation();nav('detail');},true);}
- const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.49');
+ const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.50');
  }catch(e){console.warn('Home optional layout:',e);}return true;
 }
 function bootHome(){try{if(init())return true;}catch(e){console.warn('Home boot:',e);homeStarted=false;}return false;}
@@ -5126,7 +5127,7 @@ function bindPanel(d,out,btn,query,render){let ctl=null,serial=0,lastKey='',last
  btn.addEventListener('click',()=>load(true));d.addEventListener('toggle',()=>{if(d.open)load();else reset();});return {reset,load};}
 function renderRace(j,out){const a=j.items?.[0];if(!a||!Array.isArray(a.core)||!Array.isArray(a.evolve)||a.core.length!==6||a.evolve.length!==6||!a.core.every(fin)||!a.evolve.every(fin)){el('p','確率の記録を確認できません。',out);return;}
  el('p',(a.phase==='final'?'展示後':'展示前')+' ／ 締切前保存 '+time(a.recorded_at_utc)+' ／ モデル '+a.model_id,out);
- table(out,['艇番','CORE','EVOLVE','差分'],a.core.map((v,i)=>[(i+1)+'号艇',pct(v),pct(a.evolve[i]),delta(a.evolve[i]-v)]));
+ const bars=el('div','',out);bars.className='br6550-pair';el('p','紫＝CORE ／ 金＝EVOLVE ／ 差はポイント',bars);for(let i=0;i<6;i++){const r=el('div','',bars);r.className='br6550-pairrow';el('strong',(i+1)+'号',r);const middle=el('div','',r);for(const [v,cls] of [[a.core[i],'core'],[a.evolve[i],'evolve']]){const line=el('div','',middle);line.className='br6550-pairline';const track=el('div','',line);track.className='br6550-pairtrack';const fill=el('div','',track);fill.className=cls;fill.style.width=Math.max(0,Math.min(100,v*100))+'%';el('span',pct(v),line);}el('span',delta(a.evolve[i]-a.core[i]),r);} 
  const changed=a.evolve.some((v,i)=>Math.abs(v-a.core[i])>1e-8);el('p',changed?'なぜ：当日固定済みの学習係数がCOREの1着確率に適用されています。だから：6艇の確率を再配分した記録を保存しました。':'なぜ：このレースでは補正による確率差がありません。だから：COREと同じ確率を記録しています。',out);
  const p=a.params;if(p&&fin(p.scale)&&Array.isArray(p.bias)&&p.bias.length===6&&p.bias.every(fin)){const detail=el('details','',out);el('summary','適用した係数（PDCAと照合）',detail);table(detail,['項目','基準','適用値'],[['確率の強弱','1.0000',fmt(p.scale)],...p.bias.map((x,i)=>[(i+1)+'号艇補正','0.0000',fmt(x)])]);}
  el('p',a.state==='official_settled'?'公式結果：'+a.official_winner+'号艇が1着。':a.state==='cancelled'?'公式中止記録あり。比較対象外。':'公式結果との照合待ち。',out);el('p','研究用の1着確率。COREの事前情報を共有し、独立した評価係数を適用した記録です。3連単・購入提案ではありません。',out);}
@@ -5153,7 +5154,7 @@ function meter(p,a,b){if(!fin(a)||!fin(b)||b<=0)return;const bar=el('div','',p);
 function heading(p,t){const h=el('h3',t,p);h.style.color='#e7c778';}
 const cache=new Map();let busy=false;
 async function get(path,force=false){const old=cache.get(path);if(!force&&old&&Date.now()-old.at<60000)return old.j;const c=new AbortController(),timer=setTimeout(()=>c.abort(),23000);try{const r=await fetch(base+path,{cache:'no-store',signal:c.signal});if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();if(!j||typeof j!=='object'||!j.build_id)throw Error('response');cache.set(path,{at:Date.now(),j});while(cache.size>12)cache.delete(cache.keys().next().value);return j;}finally{clearTimeout(timer);}}
-async function load(out,path,draw,force=true){out.textContent='取得中…';try{const j=await get(path,force);out.replaceChildren();row(out,'状態',status(j));draw(out,j);el('p','確認 '+time(new Date().toISOString())+' JST ／ '+j.build_id,out);}catch(e){out.textContent='取得できませんでした。再確認してください。';}}
+async function load(out,path,draw,force=true){const previous=out.dataset.brPath===path&&out.dataset.brSuccess==='1';const old=out.querySelector('.br6550-readnote');if(old)old.remove();if(!previous)out.textContent='';const note=el('p','取得中…',out);note.className='br6550-readnote';try{const j=await get(path,force);const stage=document.createElement('div');row(stage,'状態',status(j));draw(stage,j);el('p','確認 '+time(new Date(cache.get(path)?.at||Date.now()).toISOString())+' JST ／ '+j.build_id,stage);out.replaceChildren(...stage.childNodes);out.dataset.brPath=path;out.dataset.brSuccess='1';}catch(e){note.textContent=previous?'取得失敗：前回取得値を表示中（上記時刻）。':'取得できませんでした。再確認してください。';}}
 function backfill(p,j){if(j.status!=='reported'&&j.status!=='no_attempts')return;row(p,'保存済み / 対象',n(j.saved_dates)+' / '+n(j.range?.target_days)+'日');meter(p,j.saved_dates,j.range?.target_days);row(p,'未試行',n(j.not_attempted_dates)+'日');row(p,'保存以外の状態',Object.entries(j.states||{}).filter(([k])=>k!=='saved').map(([k,v])=>k+' '+n(v)).join(' / ')||'なし');row(p,'レース数',n(j.totals?.races));row(p,'ST数値ペア',n(j.totals?.numeric_st_pairs));row(p,'保存サイズ',mb(j.stored_bytes));row(p,'追加取得許可',j.expansion_allowed===true?'許可':j.expansion_allowed===false?'停止':'未確認');row(p,'1日の上限',n(j.max_dates_per_jst_day));if(Array.isArray(j.recent)&&j.recent.length){row(p,'最終試行',time(j.recent[0].attempted_at));if(j.recent[0].status!=='saved')el('p','直近試行は '+j.recent[0].status+'。詳細は取得元診断で確認。',p);}el('p','非公式の事後取得。締切前保存・公式照合・学習への利用は未確認。',p);}
 function aggregate(p,j){if(j.status!=='reported')return;row(p,'集約済み / 保存済み',n(j.counts?.aggregated)+' / '+n(j.saved_dates)+'日');meter(p,j.counts?.aggregated,j.saved_dates);row(p,'待機 / 無効',n(j.counts?.pending)+' / '+n(j.counts?.invalid));row(p,'最終集約',time(j.latest_aggregate_utc));const a=j.overall||{};row(p,'数値STペア',n(a.st_pairs));row(p,'平均ST差（本番−展示）',dec(a.mean_delta_seconds)+'秒');row(p,'平均絶対差',dec(a.mean_absolute_delta_seconds)+'秒');row(p,'ST差の標準偏差',dec(a.delta_population_sd_seconds)+'秒');if(Array.isArray(j.windows)){heading(p,'期間別集計');table(p,['対象','集約日 / 対象日','STペア','平均差 秒','絶対差 秒'],j.windows.map(x=>[x.days+'日',n(x.aggregated)+' / '+n(x.available_calendar_days),n(x.overall?.st_pairs),dec(x.overall?.mean_delta_seconds),dec(x.overall?.mean_absolute_delta_seconds)]));el('p','対象期間はアーカイブの最新対象日が基準。欠損日は補完しない。',p);}if(Array.isArray(j.by_venue)){const d=fold(p,'全国24場の集計');table(d,['会場','レース','STペア','平均差 秒','絶対差 秒'],j.by_venue.map(x=>[x.venue_name||String(x.venue),n(x.races),n(x.st_pairs),dec(x.mean_delta_seconds),dec(x.mean_absolute_delta_seconds)]));}el('p','負のST・欠損は数値ペアから除外。記述統計であり予測性能ではありません。',p);}
 function evidence(p,j){const s=j.sections||{},f=s.daily_evaluation?.fourth_coverage,b=j.budget,off=s.official_history_archive,ctx=s.start_linkage?.snapshot_evidence;heading(p,'取得と入力の区別');row(p,'締切前研究メタデータ',n(ctx?.present)+'R');row(p,'展示ST候補',n(ctx?.official_start_boats)+'艇分');row(p,'CORE入力充足率',pct(f?.coverage));if(Array.isArray(f?.features)){const d=fold(p,'COREの15項目');for(const x of f.features){row(d,names[x.id]||x.id,n(x.available)+' / '+n(x.expected));meter(d,x.available,x.expected);}}row(p,'公式結果照合（当日共通レース）',n(s.daily_evaluation?.counters?.matched_official)+'R');row(p,'別保存の公式結果',n(off?.archive?.stored)+'R');row(p,'本番ST全6艇の公式記録',n(off?.actual_result_evidence?.six_st_races)+'R');el('p','各集計の対象が異なるため、差引きや学習反映率には使用できません。',p);heading(p,'使用量・月間着地');row(p,'D1読み取り',pp(b?.read_pct));row(p,'D1書き込み',pp(b?.write_pct));row(p,'CPU',pp(b?.worker_usage?.cpu_pct));row(p,'リクエスト',pp(b?.worker_usage?.request_pct));row(p,'DBピーク',mb(b?.storage_usage?.recent_peak_bytes));const fc=b?.forecast;if(fc?.status==='linear_estimate'){row(p,'月間D1読み取り予測',pp(fc.read_pct));row(p,'月間D1書き込み予測',pp(fc.write_pct));row(p,'月間CPU予測',pp(fc.cpu_pct));row(p,'月間リクエスト予測',pp(fc.request_pct));}else el('p','月間着地は未確定（3日以上の計測・指標が必要）。',p);el('p','請求額ではなく参考内包枠に対する推計。集計遅延あり。',p);}
@@ -5162,13 +5163,54 @@ function quality(p,j){if(j.status!=='reported')return;const q=j.by_quality||{},s
 function cross(p,j){if(j.status!=='reported')return;const c=j.counts||{};for(const [k,l] of Object.entries({archive_races:'アーカイブ対象',official_rows:'公式保存行',matched:'上位3艇一致',conflict:'不一致',official_missing:'公式記録なし',archive_top3_unavailable:'上位3艇判定不能',official_ambiguous:'公式重複'}))row(p,l,n(c[k]));if(j.conflicts?.length)table(p,['会場番号','R','非公式','公式'],j.conflicts.map(x=>[x.venue,x.race,x.archive_top3,x.official_top3]));el('p','既存の公式記録との上位3艇比較のみ。展示・ST・モーター・選手IDの公式照合ではありません。',p);}
 function mount(){const root=$('br6530Admin');if(!root||$('br6548Research'))return;const d=fold(root,'AI RESEARCH ｜ 研究・学習管理');d.id='br6548Research';d.classList.add('sm-card');const h=d.querySelector('summary');h.style.color='#e7c778';el('p','既存の管理画面に追加した研究用表示。閉じている間は通信しません。',d);const main=el('button','取得・集約・学習を確認',d);main.type='button';const a=el('div','取得待ち',d);heading(a,'取得');const b=el('div','',d);const c=el('div','',d);
  function section(title,label,fn){const f=fold(d,title),btn=el('button',label,f);btn.type='button';const out=el('div','取得待ち',f);btn.addEventListener('click',async()=>{if(busy)return;busy=true;btn.disabled=true;try{await fn(out);}finally{busy=false;btn.disabled=false;}});return {f,out};}
- async function refresh(force){if(busy||!d.open)return;busy=true;main.disabled=true;try{for(const [out,path,draw,title] of [[a,'/research-backfill-status',backfill,'過去データ取得'],[b,'/research-aggregate-status?detail=1',aggregate,'差分集約'],[c,'/evolve-status',learn,'EVOLVE学習']]){if(!d.open)break;await load(out,path,(p,j)=>{heading(p,title);draw(p,j);},force);}}finally{busy=false;main.disabled=false;}}
- main.addEventListener('click',()=>refresh(true));d.addEventListener('toggle',()=>{if(d.open)refresh(false);});
+ const shown=()=>d.open&&!document.hidden&&!!d.getClientRects().length;
+ async function refresh(force){if(busy||!shown())return;busy=true;main.disabled=true;try{for(const [out,path,draw,title] of [[a,'/research-backfill-status',backfill,'過去データ取得'],[b,'/research-aggregate-status?detail=1',aggregate,'差分集約'],[c,'/evolve-status',learn,'EVOLVE学習']]){if(!shown())break;await load(out,path,(p,j)=>{heading(p,title);draw(p,j);},force);}}finally{busy=false;main.disabled=false;}}
+ main.addEventListener('click',()=>refresh(true));d.addEventListener('toggle',()=>{if(shown())refresh(false);});const manage=$('manageView');if(manage)new MutationObserver(()=>{if(shown())refresh(false);}).observe(manage,{attributes:true,attributeFilter:['class']});
  section('データ活用・公式記録・使用量','詳細を確認',p=>load(p,'/release-check?date='+today(),evidence));
  section('信頼性・見送り研究（当日）','研究結果を確認',p=>load(p,'/research-quality-review?date='+today()+'&phase=final',quality));
  const x=section('公式結果との照合（保存済み上位3艇）','選択日を照合',p=>load(p,'/research-archive-crosscheck?date='+encodeURIComponent(date.value),cross));const date=el('input','',x.f);date.type='date';date.value=today(-2);date.max=today(-2);date.min='2026-01-01';x.f.insertBefore(date,x.f.querySelector('button'));el('p','選手別長期統計と公式の展示ST照合は今後の課題です。',d);
 }
 function init(){mount();if(!$('br6548Research')){const o=new MutationObserver(()=>{mount();if($('br6548Research'))o.disconnect();});o.observe(document.body,{childList:true,subtree:true});setTimeout(()=>o.disconnect(),15000);}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
+<style>
+#br6550Summary {background:#14263b;border:1px solid #425971;border-radius:14px;padding:12px;margin:10px 0;min-width:0}
+#br6550Summary h3{margin:0 0 8px;color:#e7c778;font-size:15px}#br6550Summary .br6550grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}#br6550Summary .br6550tile{padding:9px;background:#29203a;border:1px solid #4f4164;border-radius:10px;min-width:0}#br6550Summary .br6550tile b{display:block;color:#eee5fa;font-size:14px;overflow-wrap:anywhere}#br6550Summary small{display:block;color:#b8c7db;font-size:11px;line-height:1.5}#br6550Summary .br6550tile:nth-child(2){border-color:#927843}#br6550Summary .br6550tile:nth-child(2) b{color:#e7c778}
+#br6550Controls{display:flex;gap:8px;align-items:center;margin:8px 0}#br6550Controls button{flex:1;min-width:0;font-size:12px;min-height:38px}
+body.br6550-simple #br6521Home .bh-card{padding:10px;margin:8px 0}body.br6550-simple #br6521Home .bh-link{min-height:36px;padding:7px;font-size:12px}body.br6550-simple #bhNext .bh-race{padding:7px 9px;min-height:36px}body.br6550-simple #bhNext .bh-race:nth-of-type(n+4){display:none}body.br6550-simple #br6521Home .bh-card h3{font-size:15px}
+#br6550RaceStrip{position:sticky;top:0;z-index:30;background:#14263b;border:1px solid #425971;border-radius:10px;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:5px;padding:5px;margin:8px 0;touch-action:pan-y}#br6550RaceStrip button{min-height:40px;padding:4px;font-size:19px}#br6550RaceStrip strong,#br6550RaceStrip small{display:block;text-align:center}#br6550RaceStrip small{font-size:10px;color:#b8c7db}#br6550RaceStrip strong{font-size:14px;color:#e7c778}
+.br6550-pairrow{display:grid;grid-template-columns:34px minmax(0,1fr) 65px;gap:6px;align-items:center;margin:8px 0;font-size:11px}.br6550-pairline{display:grid;grid-template-columns:minmax(0,1fr) 50px;gap:5px;align-items:center;margin:3px 0}.br6550-pairtrack{height:8px;background:#443653;border-radius:5px;overflow:hidden}.br6550-pairtrack .core{height:100%;background:#a78bfa}.br6550-pairtrack .evolve{height:100%;background:#e7c778}.br6550-pairrow>span{text-align:right}.br6550-readnote{color:#e7c778;font-size:12px}
+#br6550Offline{color:#e7c778;font-size:12px;line-height:1.5;padding:7px 10px;border:1px solid #927843;border-radius:8px;margin:7px 0}#br6550Offline[hidden]{display:none!important}
+</style>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id), api='https://boat-race-api.7phr5nzkbt.workers.dev', key='br6550-research-v1', prefs='br6550-ui-v1';
+const now=()=>Date.now(), finite=x=>typeof x==='number'&&Number.isFinite(x), n=x=>finite(x)?x.toLocaleString('ja-JP'):'—', date=x=>new Date(x).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+const read=(k,fallback)=>{try{return JSON.parse(localStorage.getItem(k)||'null')||fallback}catch{return fallback}},write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const settings=read(prefs,{}), cached=read(key,{}), jobs=new Map(), attempts=new Map();const cache={}, failures=new Set();for(const k of ['archive','aggregate','evolve']){const x=cached[k];if(x&&finite(x.at)&&now()-x.at>=0&&now()-x.at<7*86400000&&typeof x.value==='string')cache[k]={...x,previous:true};}
+function el(tag,txt,parent,id){const e=document.createElement(tag);e.textContent=txt;if(id)e.id=id;if(parent)parent.append(e);return e;}
+function visible(id){const x=$(id);return !document.hidden&&!!x&&!x.classList.contains('hidden')&&x.getClientRects().length>0;}
+function set(id,t){const x=$(id);if(x&&x.textContent!==t)x.textContent=t;}
+function render(){for(const k of ['archive','aggregate','evolve']){const r=cache[k];set('br6550-'+k,r?.value||'未確認');set('br6550-'+k+'-stamp',r?((r.previous||r.error||!navigator.onLine)?'前回記録・':'確認 ') +date(r.at)+' JST'+(r.error?' ／ 更新失敗':''):(failures.has(k)?'取得失敗・再確認してください':'取得記録なし'));}const run=$('bhRun');set('br6550-core',run?.textContent||'未確認');set('br6550-core-stamp','通常Cronの記録（CORE全機能の確認ではない）');const off=$('br6550Offline');if(off)off.hidden=navigator.onLine;}
+const specs={archive:'/research-backfill-status',aggregate:'/research-aggregate-status',evolve:'/evolve-status'};
+function project(k,j){if(!j||typeof j.build_id!=='string')throw Error('形式不一致');if(j.status!=='reported')return ['not_initialized','not_initialized_or_query_failed'].includes(j.status)?'初期化・読み取り未確認':'記録未確認 ('+String(j.status||'不明')+')';if(k==='archive')return n(j.saved_dates)+' / '+n(j.range?.target_days)+'日';if(k==='aggregate')return n(j.counts?.aggregated)+' / '+n(j.saved_dates)+'日';return j.stale===true?'当日の学習記録未確認':j.latest?'学習記録あり':'学習記録未確認';}
+async function load(k,force){if(jobs.has(k)||(!force&&now()-(attempts.get(k)||0)<300000))return;attempts.set(k,now());const c=new AbortController();jobs.set(k,c);const timer=setTimeout(()=>c.abort(),15000);try{const r=await fetch(api+specs[k],{cache:'no-store',signal:c.signal});if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();cache[k]={at:now(),value:project(k,j)};failures.delete(k);const saved={};for(const [id,x] of Object.entries(cache))saved[id]={at:x.at,value:x.value};write(key,saved);}catch(e){if(c.signal.aborted&&!visible('home')){attempts.delete(k);}else if(cache[k])cache[k].error=true;else failures.add(k);}finally{clearTimeout(timer);jobs.delete(k);render();}}
+function refresh(force=false){render();if(!visible('home')||!navigator.onLine)return;for(const k of Object.keys(specs))load(k,force);}
+function init(){const home=$('br6521Home'),race=$('raceView');if(!home||!race||$('br6550Summary'))return;
+const controls=el('div','',null,'br6550Controls');const mode=el('button','',controls);mode.type='button';const refreshButton=el('button','この画面を更新',controls);refreshButton.type='button';const apply=()=>{const simple=settings.simple!==false;document.body.classList.toggle('br6550-simple',simple);mode.textContent=simple?'詳細表示へ':'シンプル表示へ';mode.setAttribute('aria-pressed',String(!simple));};mode.addEventListener('click',()=>{settings.simple=settings.simple===false;write(prefs,settings);apply();});apply();refreshButton.addEventListener('click',()=>{$('bhRefresh')?.click();refresh(true);});const old=$('bhRefresh');if(old)old.hidden=true;
+const summary=el('section','',null,'br6550Summary');el('h3','AI・研究データの状態',summary);const grid=el('div','',summary);grid.className='br6550grid';for(const [k,label] of [['core','AI CORE'],['evolve','AI EVOLVE（研究用）'],['archive','過去データ取得'],['aggregate','差分集約']]){const t=el('div','',grid);t.className='br6550tile';el('small',label,t);el('b','未確認',t,'br6550-'+k);el('small','取得記録なし',t,'br6550-'+k+'-stamp');}el('small','取得・集約は学習への反映を意味しません。',summary);const link=el('button','研究・学習管理へ ›',summary);link.type='button';link.className='bh-link';link.addEventListener('click',()=>{$('v620Nav')?.querySelector('[data-screen="admin"]')?.click();const d=$('br6548Research');if(d){d.open=true;d.scrollIntoView({block:'start'});}});
+const offline=el('p','オフライン：前回取得した研究情報のみ参照できます。レース情報の最新性は保証されません。',null,'br6550Offline');offline.hidden=navigator.onLine;home.querySelector('.bh-top').after(controls,offline,summary);
+// Restore explicitly chosen fold states only; no auto-opening legacy controls.
+const fold=$('br6550HomeCoverage');if(fold){fold.open=settings.coverage===true;fold.addEventListener('toggle',()=>{settings.coverage=fold.open;write(prefs,settings);});}
+const strip=el('div','',null,'br6550RaceStrip');const prev=el('button','‹',strip),mid=el('div','',strip),next=el('button','›',strip);prev.type=next.type='button';prev.setAttribute('aria-label','前のレース');next.setAttribute('aria-label','次のレース');const title=el('strong','選択中のレース',mid),sub=el('small','前後ボタン・左右スワイプ',mid);race.prepend(strip);
+const update=()=>{const v=$('heroVenue'),r=$('heroRace'),d=$('scheduleDate');if(!v||!r)return;title.textContent=(v.selectedOptions[0]?.textContent||'会場未確認')+' '+r.value+'R';sub.textContent=(d?.value||'日付未確認')+' ／ 左右スワイプ';prev.disabled=Number(r.value)<=1;next.disabled=Number(r.value)>=12;};const step=delta=>{const r=$('heroRace'),x=Number(r?.value)+delta;if(!r||!Number.isInteger(x)||x<1||x>12)return;r.value=String(x);r.dispatchEvent(new Event('change',{bubbles:true}));update();};prev.onclick=()=>step(-1);next.onclick=()=>step(1);let start=null;mid.addEventListener('touchstart',e=>{start=e.touches.length===1?[e.touches[0].clientX,e.touches[0].clientY]:null},{passive:true});mid.addEventListener('touchend',e=>{if(!start||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-start[0],dy=e.changedTouches[0].clientY-start[1];start=null;if(Math.abs(dx)>65&&Math.abs(dx)>2*Math.abs(dy))step(dx<0?1:-1)},{passive:true});mid.addEventListener('touchcancel',()=>{start=null});for(const id of ['heroVenue','heroRace','scheduleDate'])$(id)?.addEventListener('change',update);const ht=$('heroRaceTitle');if(ht)new MutationObserver(update).observe(ht,{childList:true,characterData:true,subtree:true});update();
+// Keep one explicit visible-screen refresh for the race view; legacy handlers remain available.
+const header=$('v620DetailHeader');if(header){const btn=el('button','表示中の情報を更新',header);btn.type='button';btn.className='secondary';btn.onclick=()=>{if(visible('raceView')&&navigator.onLine)window.__br6516RefreshDetail?.();};}
+// Home data refresh independent from navigation. Abort our own requests on departure.
+const host=$('home');new MutationObserver(()=>{if(visible('home'))refresh();else for(const c of jobs.values())c.abort();}).observe(host,{attributes:true,attributeFilter:['class','hidden']});const run=$('bhRun');if(run)new MutationObserver(render).observe(run,{childList:true,characterData:true,subtree:true});document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();else for(const c of jobs.values())c.abort();});window.addEventListener('online',()=>refresh(true));window.addEventListener('offline',render);setInterval(()=>{if(visible('home'))refresh();},300000);refresh();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
 
