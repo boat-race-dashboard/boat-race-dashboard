@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.53 | Home overview</title>
+  <title>BOAT RACE AI Dashboard v6.5.54 | Home overview</title>
 
 <script id="br6537-home-watchdog">
 (function(){
@@ -515,7 +515,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  window.dispatchEvent(new CustomEvent('br6515-odds',{detail:{key:k}}));return true;}
  const stamp=d=>d?new Date(d.fetched_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
  window.__br6515Odds={key,get,put,stamp,validate};
- // v6.5.53: display-only official exhibition store shared by gateway, preview and warmup.
+ // v6.5.54: display-only official exhibition store shared by gateway, preview and warmup.
  const exPrefix='br6524:official-exhibition:',exMem=new Map(),exMaxAge=48*3600000;
  function exValid(k,d){
   if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.status!=='verified_table'||d.exhibition_count!==6||!Array.isArray(d.values)||d.values.length!==6)return false;
@@ -927,7 +927,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v6.5.53<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v6.5.54<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -2006,9 +2006,9 @@ loadAutoPredictions();
     for(const x of raw){const key=String(x?.combination||''),parts=key.split('-');if(!/^[1-6]-[1-6]-[1-6]$/.test(key)||new Set(parts).size!==3||seen.has(key)||!br6517Finite(x?.probability)||Number(x.probability)<0||Number(x.probability)>1)return null;seen.add(key);rows.push({key,parts:parts.map(Number),p:Number(x.probability)});}
     return Math.abs(rows.reduce((n,x)=>n+x.p,0)-1)<.001?rows:null;
   }
-  // v6.5.53: illustrative, client-only maneuver animation. No scoring, result or odds input.
+  // v6.5.54: illustrative, client-only maneuver animation. No scoring, result or odds input.
   const motion41Types={inside_hold:{label:'イン逃げ・内残り',description:'内側の艇が小さい旋回半径で回る形。外側の艇は広い弧を描きます。'},inside_sashi:{label:'内差し',description:'内側の艇が先に旋回し、その後ろから2コースの艇が内寄りの軌道へ入る形。'},center_attack:{label:'センターまくり',description:'センターの艇が外側から先行して旋回する形。内側の艇との軌道の違いを示します。'},outside_break:{label:'まくり差し・外伸び',description:'外寄りの艇が旋回中に内側へ寄る形。艇の間を通る動きは模式的な表現です。'}};
-  // v6.5.53: authored illustrative paths, not trajectory inference.
+  // v6.5.54: authored illustrative paths, not trajectory inference.
   function motion41Point(lane,kind,t){
     const r=44+(lane-1)*23,cx=525,cy=205;
     const actor={inside_hold:1,inside_sashi:2,center_attack:3,outside_break:4}[kind];
@@ -2130,7 +2130,7 @@ loadAutoPredictions();
       fold.addEventListener('toggle',async()=>{if(!fold.open||busy||done||!sameSelection())return;busy=true;out.textContent='展示前の保存済み予想を確認中…';try{const prior=await readSaved40(window.__br6515Odds.key(date,venue,race),'pre');if(!sameSelection()||!panel.isConnected)return;if(!prior){out.textContent='展示前の保存済み予想はありません。';done=true;return;}const pre=prior.fourth,preDist=br6517Distribution(pre);if(!preDist||!dist){out.textContent='比較に必要な120通りの保存データが揃いません。';done=true;return;}out.replaceChildren();const t=el('table',undefined,'br6517-positions'),h=el('tr');['艇','展示前1着','展示後1着'].forEach(x=>h.append(el('th',x)));const th=el('thead');th.append(h);t.append(th);const tb=el('tbody');for(let n=1;n<=6;n++){const tr=el('tr');tr.append(el('td',n+'号艇'),el('td',br6517Pct(preDist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))),el('td',br6517Pct(dist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))));tb.append(tr);}t.append(tb);out.append(t,el('p','保存時点の推定値の比較です。変化の原因を展示だけに限定できません。','muted'));done=true;}catch(e){if(sameSelection()&&panel.isConnected)out.textContent='取得失敗：'+String(e.message||e)+'（閉じて開くと再試行）';}finally{busy=false;}});panel.append(fold);
     }
   }
-  // v6.5.53: bounded in-memory saved prediction reads, stable render identity.
+  // v6.5.54: bounded in-memory saved prediction reads, stable render identity.
   const saved40=new Map(),flight40=new Map(),readFlight40=new Map(),checked40=new Map();
   let lastSelection40=null,renderEpoch40=0,renderSignature40=null;
   const selectionKey40=()=>window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);
@@ -2823,7 +2823,7 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
    });
  }
  // Ensure top-level header does not misrepresent an older release.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.53';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.54';
  const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
  // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
@@ -2915,7 +2915,7 @@ if(watch){
 // Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
 // Replace old footer version text without changing legacy model labels.
 document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.53';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.54';
 })();
 </script>
 
@@ -2968,7 +2968,7 @@ window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
 setTimeout(()=>refresh(true),900);
 // Diagnose pending vs absent snapshot; neither is automatically a losing bet.
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.53';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.54';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -3070,10 +3070,12 @@ let mode='venues',rows=[],loaded=false,fetchTime=0,fetchDay='',inflight=null,dea
 const now=()=>Date.now();
 const parse=s=>{if(!s)return NaN;const t=String(s).trim().replace(' ','T');return Date.parse(t+(/(?:Z|[+-]\d{2}:?\d{2})$/.test(t)?'':'+09:00'));};
 const hhmm=s=>String(s||'').slice(11,16);
+const gradeLabel654=x=>['SG','PG1','G1','G2','G3','一般'].includes(x)?x:'';
+function gradeTag654(target,grade){const label=gradeLabel654(grade);if(label)target.dataset.meetingGrade=label;else delete target.dataset.meetingGrade;}
 const pad=n=>String(n).padStart(2,'0');
 function current(){return fetchDay===date.value?rows.find(x=>x.v===Number(venue.value)&&x.r===Number(race.value)):undefined;}
 function drawClock(){
- status.classList.add('v446-clock');const item=current();deadline=item?item.time:NaN;
+ status.classList.add('v446-clock');const item=current();deadline=item?item.time:NaN;const title=document.getElementById('heroRaceTitle');if(title)gradeTag654(title,item?.grade);
  status.dataset.closingKey=[date.value,venue.value,race.value].join('/');
  status.dataset.closingAt=Number.isFinite(deadline)?new Date(deadline).toISOString():'';
  const ms=deadline-now();status.classList.toggle('past',Number.isFinite(ms)&&ms<=0);
@@ -3092,12 +3094,12 @@ function render(){
   const grid=document.createElement('div');grid.className='v446-grid';
   names.forEach((name,i)=>{const v=i+1,up=rows.filter(x=>x.v===v&&x.time>now()).sort((a,b)=>a.time-b.time)[0],has=rows.some(x=>x.v===v),selected=Number(venue.value)===v;
    const b=document.createElement('button');b.type='button';b.className='v446-venue'+(!has?' off':'')+(selected?' selected':'');b.disabled=!has;
-   const title=document.createElement('b');title.textContent=name;const sub=document.createElement('small');sub.textContent=up?up.r+'R '+hhmm(up.raw):has?'予定時刻経過':'開催情報なし';b.append(title,sub);
+   const title=document.createElement('b');title.textContent=name;const grades=[...new Set(rows.filter(x=>x.v===v).map(x=>x.grade).filter(Boolean))];if(grades.length===1)gradeTag654(title,grades[0]);const sub=document.createElement('small');sub.textContent=up?up.r+'R '+hhmm(up.raw):has?'予定時刻経過':'開催情報なし';b.append(title,sub);
    b.onclick=()=>{const first=up||rows.find(x=>x.v===v);if(first){choose(v,first.r);render();}};grid.append(b);
   });box.append(grid);
  }else{
   const list=document.createElement('div');list.className='v446-upcoming';const next=rows.filter(x=>x.time>now()).sort((a,b)=>a.time-b.time).slice(0,16);
-  if(!next.length){box.textContent='今後の締切予定が見つかりません。';}else next.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='v446-next';const title=document.createElement('b');title.textContent=names[x.v-1]+' '+x.r+'R';const t=document.createElement('span');t.textContent=hhmm(x.raw);b.append(title,t);b.onclick=()=>{choose(x.v,x.r);hero.scrollIntoView({behavior:'smooth',block:'start'});};list.append(b);});box.append(list);
+  if(!next.length){box.textContent='今後の締切予定が見つかりません。';}else next.forEach(x=>{const b=document.createElement('button');b.type='button';b.className='v446-next';const title=document.createElement('b');title.textContent=names[x.v-1]+' '+x.r+'R';gradeTag654(title,x.grade);const t=document.createElement('span');t.textContent=hhmm(x.raw);b.append(title,t);b.onclick=()=>{choose(x.v,x.r);hero.scrollIntoView({behavior:'smooth',block:'start'});};list.append(b);});box.append(list);
  }
  drawClock();
 }
@@ -3109,7 +3111,7 @@ async function refresh(force=false){
  const response=await fetch(API+'/schedule-fast?date='+encodeURIComponent(day),{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);
  const json=await response.json();if(!Array.isArray(json.venues))throw Error('invalid schedule');
  const cancelledVenues=json.venues.filter(v=>v.cancellation_status==='cancelled'&&v.cancellation_verified===true).map(v=>v.name);
- const next=[];for(const v of json.venues){if(v.cancellation_status==='cancelled'&&v.cancellation_verified===true)continue;for(const x of v.race_closing_times||[]){const n=Number(v.number),r=Number(x.race??x.race_number??x.rno),time=parse(x.closing_at);if(n>=1&&n<=24&&r>=1&&r<=12&&Number.isFinite(time))next.push({v:n,r,time,raw:x.closing_at});}}
+ const next=[];for(const v of json.venues){if(v.cancellation_status==='cancelled'&&v.cancellation_verified===true)continue;for(const x of v.race_closing_times||[]){const n=Number(v.number),r=Number(x.race??x.race_number??x.rno),time=parse(x.closing_at);if(n>=1&&n<=24&&r>=1&&r<=12&&Number.isFinite(time))next.push({v:n,r,time,raw:x.closing_at,grade:gradeLabel654(x.meeting_grade)});}}
  rows=next;loaded=true;fetchDay=day;fetchTime=now();document.getElementById('v446Note').textContent='日程データ '+new Set(rows.map(x=>x.v)).size+'場／取得 '+new Date().toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit'})+'。'+(cancelledVenues.length?'公式中止：'+cancelledVenues.join('、')+'（締切順から除外）。':'中止未確認の場は表示される場合があります。')+' 非公式日程のため締切変更は公式で確認してください。';render();
  }catch(e){loaded=false;rows=[];render();document.getElementById('v446Note').textContent='日程取得失敗：'+e.message+'。締切時刻を推測表示しません。';}finally{inflight=null;}})();return inflight;
 }
@@ -3454,7 +3456,7 @@ function init(){
   if(!src.length){const x=document.createElement('span');x.className='v560-status';x.textContent=(nav.querySelector('#v446Content')?.textContent||'').includes('取得できません')?'締切データを取得できません。更新してください。':'締切予定のあるレースはありません。';list.append(x);return}
   [...src].slice(0,8).forEach(b=>{
    const c=document.createElement('button');c.type='button';const title=b.querySelector('b')?.textContent||'レース';const time=b.querySelector('span')?.textContent||'時刻不明';
-   const t=document.createElement('b');t.textContent=title;const x=document.createElement('span');x.textContent='締切予定 '+time;c.append(t,x);
+   const t=document.createElement('b');t.textContent=title;const grade=b.querySelector('b')?.dataset.meetingGrade;if(['SG','PG1','G1','G2','G3','一般'].includes(grade))t.dataset.meetingGrade=grade;const x=document.createElement('span');x.textContent='締切予定 '+time;c.append(t,x);
    const active=title.includes(venue?.selectedOptions?.[0]?.textContent?.replace(/^\d+\s*/,''))&&title.endsWith(' '+race?.value+'R');c.classList.toggle('v560-active',!!active);
    c.addEventListener('click',()=>{b.click();document.querySelector('[data-cockpit-tab="prediction"]')?.click();sync();hero.scrollIntoView({behavior:'smooth',block:'start'})});list.append(c);
   });
@@ -4534,7 +4536,7 @@ function boot(){
  const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
  body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
  // Version label describes dashboard UI, not Worker deployment.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.53';}
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.54';}
  document.title='BOAT RACE AI | Dashboard';
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -4715,7 +4717,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    const normalizeStatus=()=>{const current=status.textContent||'';if(current!==message&&/HTTP 404/.test(current))status.textContent=message;};
    const obs=new MutationObserver(normalizeStatus);obs.observe(status,{childList:true,characterData:true,subtree:true});normalizeStatus();}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.53';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.54';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -4957,9 +4959,9 @@ function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)re
  const globalMetrics=document.querySelector('main > .grid');if(globalMetrics){const stats=$('stats');if(stats)stats.prepend(globalMetrics);}
  const legacyHome=$('v620HomeHeader');if(legacyHome)legacyHome.hidden=true;
  const topQuick=$('v590QuickNav');if(topQuick)topQuick.hidden=true;
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.53';document.title='BOAT RACE AI Dashboard v6.5.53';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.54';document.title='BOAT RACE AI Dashboard v6.5.54';
  const oldHomeLink=[...manage.querySelectorAll('button')].find(b=>b.textContent==='全国24場を開く');if(oldHomeLink){oldHomeLink.textContent='全国24場・レース詳細を開く';oldHomeLink.onclick=e=>{e.stopImmediatePropagation();nav('detail');};oldHomeLink.addEventListener('click',e=>{e.stopImmediatePropagation();nav('detail');},true);}
- const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.53');
+ const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.54');
  }catch(e){console.warn('Home optional layout:',e);}return true;
 }
 function bootHome(){try{if(init())return true;}catch(e){console.warn('Home boot:',e);homeStarted=false;}return false;}
@@ -5231,5 +5233,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+<style id="v6554-meeting-grade-style">
+#heroRaceTitle[data-meeting-grade]::after,#v446Nav b[data-meeting-grade]::after,#v560Dock b[data-meeting-grade]::after{content:attr(data-meeting-grade);display:inline-block;margin-inline-start:.45em;padding:.1em .38em;border:1px solid currentColor;border-radius:5px;color:#d4c5e6;font-size:.65em;font-weight:600;line-height:1.25;vertical-align:middle;white-space:nowrap}
+#v446Nav .v446-venue b[data-meeting-grade]::after{display:block;width:max-content;margin:.25em auto 0}
+</style>
 </body>
 </html>
