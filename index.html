@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171032">
-  <title>BOAT RACE AI Dashboard v6.5.56 | Home overview</title>
+  <title>BOAT RACE AI Dashboard v6.5.58 | Home overview</title>
 
 <script id="br6537-home-watchdog">
 (function(){
@@ -515,7 +515,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  window.dispatchEvent(new CustomEvent('br6515-odds',{detail:{key:k}}));return true;}
  const stamp=d=>d?new Date(d.fetched_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'未取得';
  window.__br6515Odds={key,get,put,stamp,validate};
- // v6.5.56: display-only official exhibition store shared by gateway, preview and warmup.
+ // v6.5.58: display-only official exhibition store shared by gateway, preview and warmup.
  const exPrefix='br6524:official-exhibition:',exMem=new Map(),exMaxAge=48*3600000;
  function exValid(k,d){
   if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.status!=='verified_table'||d.exhibition_count!==6||!Array.isArray(d.values)||d.values.length!==6)return false;
@@ -529,7 +529,25 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
   window.dispatchEvent(new CustomEvent('br6524-exhibition',{detail:{key:k}}));return true;
  }
  const exStamp=d=>new Date(d.checked_at_utc).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
- window.__br6524Exhibition={get:exGet,put:exPut,validate:exValid,stamp:exStamp};
+ // v6.5.58: independent display-only official ST evidence. Never feed prediction inputs.
+ const stPrefix='br6557:official-start-display:',stMem=new Map(),stMaxAge=48*3600000;
+ function stDisplayValid(k,d){
+  if(!k||!d||key(d.date,d.venue,d.race)!==k||d.source!=='BOAT RACE official beforeinfo'||d.upstream_http!==200||d.display_only!==true||d.official_start_audit?.status!=='candidate_six_boats'||!startValid69(d.official_start_audit.values))return false;
+  const checked=Date.parse(d.checked_at_utc),received=Date.parse(d.received_at_utc),now=Date.now();
+  return Number.isFinite(checked)&&Number.isFinite(received)&&checked<=received&&received<=now+5000&&now-received<=stMaxAge&&received-checked<=60000&&d.source_url==='https://www.boatrace.jp/owpc/pc/race/beforeinfo?hd='+d.date.replace(/-/g,'')+'&jcd='+String(Number(d.venue)).padStart(2,'0')+'&rno='+Number(d.race);
+ }
+ function stGet(k){if(!k)return null;let d=stMem.get(k);if(!d){try{d=JSON.parse(localStorage.getItem(stPrefix+k)||'null');}catch{}}if(!stDisplayValid(k,d)){stMem.delete(k);try{localStorage.removeItem(stPrefix+k);}catch{}return null;}return d;}
+ function stPut(k,d){
+  if(d?.display_gateway?.suppressed||d?.official_start_audit?.research_only!==true)return false;
+  const candidate={date:d.date,venue:d.venue,race:d.race,source:d.source,source_url:d.source_url,upstream_http:d.upstream_http,checked_at_utc:d.checked_at_utc,received_at_utc:d.received_at_utc,display_only:true,official_start_audit:{status:d.official_start_audit.status,values:d.official_start_audit.values}};
+  if(!stDisplayValid(k,candidate))return false;
+  candidate.official_start_audit.values=candidate.official_start_audit.values.map(({boat,course,course_source,st,st_status})=>({boat,course,course_source,st,st_status}));
+  const old=stGet(k);if(old&&Date.parse(old.received_at_utc)>=Date.parse(candidate.received_at_utc))return false;
+  stMem.set(k,candidate);while(stMem.size>200)stMem.delete(stMem.keys().next().value);
+  try{localStorage.setItem(stPrefix+k,JSON.stringify(candidate));const records=[];for(let i=0;i<localStorage.length;i++){const n=localStorage.key(i);if(n?.startsWith(stPrefix)){let t=0;try{t=Date.parse(JSON.parse(localStorage.getItem(n)).received_at_utc)||0;}catch{}records.push([n,t]);}}records.sort((a,b)=>b[1]-a[1]);records.forEach(([n,t],i)=>{if(i>=200||Date.now()-t>stMaxAge)localStorage.removeItem(n);});}catch{}
+  window.dispatchEvent(new CustomEvent('br6524-exhibition',{detail:{key:k}}));return true;
+ }
+ window.__br6524Exhibition={get:exGet,put:exPut,validate:exValid,stamp:exStamp,startGet:stGet};
  const native=window.fetch.bind(window);
  const archiveMemo69=new Map(),archivePending69=new Map();
  function startValid69(v){return Array.isArray(v)&&v.length===6&&new Set(v.map(x=>x.boat)).size===6&&new Set(v.map(x=>x.course)).size===6&&v.every(x=>Number.isInteger(x.boat)&&x.boat>=1&&x.boat<=6&&Number.isInteger(x.course)&&x.course>=1&&x.course<=6&&['dedicated_table_row_order','explicit_cell'].includes(x.course_source)&&Number.isFinite(x.st)&&Math.abs(x.st)<=.99&&(x.st_status==='numeric'&&x.st>0||x.st_status==='zero'&&x.st===0||x.st_status==='flying'&&x.st<=0));}
@@ -538,7 +556,19 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  function displayOdds69(k){const live=get(k),arch=archiveOdds69(k);return !live?arch:!arch||Date.parse(live.fetched_at_utc)>=Date.parse(arch.fetched_at_utc)?live:arch;}
  function isArchive69(k,d){return !!d&&d===archiveOdds69(k);}
  async function archiveLoad69(k){if(!k)return null;if(archivePending69.has(k))return archivePending69.get(k);const old=archiveMemo69.get(k);if(old&&Date.now()-old.at<60000)return old.data;const [date,venue,race]=k.split('/');const job=(async()=>{let data=old?.data||null;const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),10000);try{const r=await native(origin+'/race-display-archive?'+new URLSearchParams({date,venue,race}),{cache:'no-store',signal:ctl.signal});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();if(key(d.date,d.venue,d.race)!==k||d.display_only!==true)throw Error('identity');if(d.status==='reported'){data=d;}}catch{}finally{clearTimeout(timer);}archiveMemo69.set(k,{at:Date.now()-(data===old?.data||!data?40000:0),data});while(archiveMemo69.size>100)archiveMemo69.delete(archiveMemo69.keys().next().value);if(data&&data!==old?.data)window.dispatchEvent(new CustomEvent('br69-archive',{detail:{key:k}}));return data;})();archivePending69.set(k,job);try{return await job;}finally{archivePending69.delete(k);}}
- window.__br69Display={archiveLoad:archiveLoad69,archiveGet:archiveGet69,startValid:startValid69,odds:displayOdds69,isArchive:isArchive69};
+ function officialExhibitionView58(k){
+  const official=exGet(k), raw=archiveGet69(k)?.start;
+  const a=raw?.status==='reported'?raw.observation:null;
+  const archived=a&&key(a.date,a.venue,a.race)===k&&startValid69(a.values)&&Number.isFinite(Date.parse(a.received_at_utc))&&Date.parse(a.received_at_utc)<=Date.now()&&a.values.every(x=>typeof x.exhibition_time==='number'&&Number.isFinite(x.exhibition_time)&&x.exhibition_time>=5&&x.exhibition_time<10)?a:null;
+  const independent=stGet(k),legacy=official?.official_start_audit?.status==='candidate_six_boats'&&startValid69(official.official_start_audit.values)?official:null;
+  const startRecord=independent||legacy, startAt=startRecord?.received_at_utc||startRecord?.checked_at_utc||null;
+  const useArchive=!!archived&&(!startRecord||Date.parse(archived.received_at_utc)>Date.parse(startAt));
+  const stValues=useArchive?archived.values:startRecord?.official_start_audit?.values||[];
+  const times=official?.values||archived?.values||[];
+  return {official,archived,startRecord,startAt,useArchive,stValues,officialTimes:new Map(times.map(x=>[x.boat,x.exhibition_time])),stMap:new Map(stValues.map(x=>[x.boat,x]))};
+ }
+ function officialExhibitionCells58(k,boat){const v=officialExhibitionView58(k),t=v.officialTimes.get(Number(boat)),st=v.stMap.get(Number(boat));return [typeof t==='number'&&Number.isFinite(t)&&t>=5&&t<10?t.toFixed(2):'—',st?String(st.course):'—',st?(st.st_status==='flying'?'F'+Math.abs(st.st).toFixed(2):st.st.toFixed(2)):'—'];}
+ window.__br69Display={archiveLoad:archiveLoad69,archiveGet:archiveGet69,startValid:startValid69,odds:displayOdds69,isArchive:isArchive69,officialExhibitionView:officialExhibitionView58,officialExhibitionCells:officialExhibitionCells58};
  // v6.5.16: one flight per part/date/race; caller cancellation does not cancel other subscribers.
  const inflight=new Map(),recent=new Map();
  const parts={'/schedule-fast':'schedule','/race':'race','/official-exhibition':'exhibition','/odds':'odds'};
@@ -565,7 +595,7 @@ function put(k,d){if(!validate(k,d))return false;const old=get(k);if(old&&Date.p
  const good=part==='odds'?validate(k,data):part==='schedule'?Array.isArray(data.venues)&&data.venues.length===24:part==='race'?Array.isArray(data.racers)&&data.racers.length===6&&data.racers.every(x=>x?.name):data.status==='verified_table'&&data.exhibition_count===6;
  if(part==='schedule'&&good)rememberSchedule(data);
  if(part==='odds'&&good)put(k,data);
- if(part==='exhibition'&&good)exPut(k,data);
+ if(part==='exhibition'){if(good)exPut(k,data);stPut(k,data);}
  const response=new Response(body,{status:res.status,headers:res.headers});if(good){const acquired=Date.parse(data.display_gateway?.acquired_at_utc||'');const until=Math.min(Date.now()+ttl[part],Number.isFinite(acquired)?acquired+ttl[part]:Infinity);recent.set(id,{response:response.clone(),until});}else if(part==='odds'||part==='exhibition'){recent.set(id,{response:response.clone(),until:Date.now()+10000});}if(recent.size>150)recent.delete(recent.keys().next().value);return response;}
  return new Response(body,{status:res.status,headers:res.headers});})().finally(()=>{clearTimeout(timer);inflight.delete(id);});
  inflight.set(id,job);return subscribe(job,signal);};
@@ -927,7 +957,7 @@ main > #enterpriseBar,main > #enterpriseDecision,main > #enterpriseQuickNav,main
       <button class="secondary danger" id="clear" style="margin-top:10px">全記録を削除</button>
     </div>
   </section>
-  <div class="footer">個人用ダッシュボード v6.5.56<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
+  <div class="footer">個人用ダッシュボード v6.5.58<br>非公式データ・未検証のルール型試作予想 / 公式BOAT RACE・1MARKとは未連携</div>
 </main>
 <script>
 const VENUES=['桐生','戸田','江戸川','平和島','多摩川','浜名湖','蒲郡','常滑','津','三国','びわこ','住之江','尼崎','鳴門','丸亀','児島','宮島','徳山','下関','若松','芦屋','福岡','唐津','大村'];
@@ -1376,7 +1406,7 @@ async function loadRaceDetail(){
     const table=el('table',undefined,'race-table');
     const head=document.createElement('thead');
     const hr=document.createElement('tr');
-    ['艇','選手名','級別コード','F/L','全国勝率','全国2連対率','平均ST','モーター','モーター2連対率','展示タイム','展示進入','展示ST'].forEach(k=>hr.append(el('th',k)));
+    ['艇','選手名','級別コード','F/L','全国勝率','全国2連対率','平均ST','モーター','モーター2連対率','展示タイム（公式）','展示進入（公式候補）','展示ST（公式候補）'].forEach(k=>hr.append(el('th',k)));
     head.append(hr);table.append(head);
     const body=document.createElement('tbody');
     for(const r of payload.racers){
@@ -1387,13 +1417,13 @@ async function loadRaceDetail(){
         r.national_win_rate,r.national_top_2_percent==null?null:r.national_top_2_percent+'%',
         r.average_start_timing,r.motor_number,
         r.motor_top_2_percent==null?null:r.motor_top_2_percent+'%',
-        r.exhibition_time,r.exhibition_course,r.exhibition_start_timing
+        ...window.__br69Display.officialExhibitionCells(window.__br6515Odds.key(date,venue,race),r.entry_number)
       ];
       values.forEach(v=>tr.append(raceCell(v)));
       body.append(tr);
     }
     table.append(body);wrap.append(table);content.append(wrap);
-    const note=el('p','取得元：'+(payload.display_fallback?'BoatraceCSV（非公式・補完表示のみ）':'Boatrace Open API（非公式）')+'。公式の出走表・直前情報を最終確認してください。','muted');
+    const note=el('p','取得元：'+(payload.display_fallback?'BoatraceCSV（非公式・補完表示のみ）':'Boatrace Open API（非公式）')+'。展示3項目は公式の取得済み値のみ（取得時点は直前情報欄を参照）。公式の出走表・直前情報を最終確認してください。','muted');
     note.style.fontSize='11px';note.style.marginTop='12px';
     content.append(note);
   }catch(error){
@@ -1881,23 +1911,22 @@ loadAutoPredictions();
   }
   function renderPreview(payload){
     const box=document.getElementById('cockpitPreviewBody');box.replaceChildren();
-    const k=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value),g=window.__br69Display,official=linkedKey===k?window.__br6524Exhibition.get(k):null,archive=linkedKey===k?g.archiveGet(k)?.start?.observation:null;
-    const archived=archive&&window.__br6515Odds.key(archive.date,archive.venue,archive.race)===k&&g.startValid(archive.values)&&Number.isFinite(Date.parse(archive.received_at_utc))&&Date.parse(archive.received_at_utc)<=Date.now()?archive:null;
-    const liveStart=official?.official_start_audit?.status==='candidate_six_boats'&&g.startValid(official.official_start_audit.values)?official.official_start_audit.values:null;
-    const useArchive=!!archived&&(!liveStart||Date.parse(archived.received_at_utc)>Date.parse(official.checked_at_utc));
-    const stValues=useArchive?archived.values:liveStart||[],stMap=new Map(stValues.map(x=>[x.boat,x]));
-    const timeValues=official?.values||archived?.values||[],officialTimes=new Map(timeValues.map(x=>[x.boat,x.exhibition_time]));
+    const k=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value),g=window.__br69Display;
+    const {official,archived,startRecord,startAt,useArchive,stValues,officialTimes,stMap}=g.officialExhibitionView(linkedKey===k?k:null);
+    const liveStart=startRecord?.official_start_audit?.values||null;
     const p=payload.preview||{},w=official?.official_weather_audit?.values||{},weather=el('div',undefined,'cockpit-metrics');
     [['風速','wind_speed','m/s',0,50],['波高','wave_height','cm',0,200],['気温','air_temperature','℃',-20,50],['水温','water_temperature','℃',-5,45]].forEach(([label,field,unit,min,max])=>{const v=w[field],ok=typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;const m=el('div',undefined,'cockpit-metric');m.append(el('small',label+(ok?'（公式候補）':'')),el('strong',ok?show(v,unit):show(p[field],unit)));weather.append(m);});box.append(weather);
-    const rows=el('div',undefined,'cockpit-preview-rows');payload.racers.forEach(r=>{const row=el('div',undefined,'cockpit-preview-row'),n=Number(r.entry_number),t=officialTimes.get(n),s=stMap.get(n),validTime=typeof t==='number'&&Number.isFinite(t)&&t>=5&&t<10;row.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number),el('strong',show(r.name)),el('span',validTime?'展示 '+t.toFixed(2)+'（公式）':'展示 '+show(r.exhibition_time)),el('span','進入 '+(s?s.course+'（展示）':show(r.exhibition_course))),el('span','展示ST '+(s?(s.st_status==='flying'?'F'+Math.abs(s.st).toFixed(2):s.st.toFixed(2)):show(r.exhibition_start_timing))));rows.append(row);});box.append(rows);
+    const rows=el('div',undefined,'cockpit-preview-rows');payload.racers.forEach(r=>{const row=el('div',undefined,'cockpit-preview-row'),n=Number(r.entry_number),t=officialTimes.get(n),s=stMap.get(n),validTime=typeof t==='number'&&Number.isFinite(t)&&t>=5&&t<10;row.append(el('span',String(r.entry_number),'linked-boat-chip linked-boat-'+r.entry_number),el('strong',show(r.name)),el('span',validTime?'展示 '+t.toFixed(2)+'（公式）':'展示 未確認（公式）'),el('span','進入 '+(s?s.course+'（展示）':'未確認（公式）')),el('span','展示ST '+(s?(s.st_status==='flying'?'F'+Math.abs(s.st).toFixed(2):s.st.toFixed(2)):'未確認（公式）')));rows.append(row);});box.append(rows);
     const stamp=x=>new Date(x).toLocaleString('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    if(official||archived)box.append(el('p','展示タイム：公式取得 '+stamp(official?.checked_at_utc||archived.received_at_utc)+' JST。'+(stValues.length?'進入・展示ST：公式解析候補 '+(useArchive?'保存値 ':'取得値 ')+stamp(useArchive?archived.received_at_utc:official.checked_at_utc)+' JST。':'公式進入・展示STは未確認。')+' 表示補完のみ（AI入力・保存予想は変更しません）。','muted'));
+    if(official||archived||startRecord)box.append(el('p',(official||archived?'展示タイム：公式の保存値 '+stamp(official?.checked_at_utc||archived.received_at_utc)+' JST。':'展示タイム：公式6艇分未確認。')+(stValues.length?'進入・展示ST：公式解析候補（保存値） '+stamp(useArchive?archived.received_at_utc:startAt)+' JST。最新値の保証なし。':'公式進入・展示STは未確認。')+' 表示補完のみ（AI入力・保存予想は変更しません）。','muted'));
+    if(!official&&!archived&&!startRecord)box.append(el('p','公式展示情報は未確認です。非公式値で代用しません。','muted'));
     if(Object.keys(w).length)box.append(el('p','気象の公式候補は直前情報ページの表示値。観測時刻・対象レースとの対応は未確認。','muted'));
     box.append(el('p','展示の公表時刻・実際の締切は未確認。展示進入は本番進入ではありません。結果判明後の取得値を事前予想には使用しないでください。','muted'));
     if(linkedKey===k&&(!liveStart||!official)&&!document.hidden&&!document.getElementById('cockpitPreview')?.hidden&&!document.getElementById('raceView')?.classList.contains('hidden'))g.archiveLoad(k);
   }
-  window.addEventListener('br6524-exhibition',e=>{const k=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);if(e.detail?.key===k&&linkedKey===k&&linkedPayload)renderPreview(linkedPayload);});
-  window.addEventListener('br69-archive',e=>{const k=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);if(e.detail?.key===k&&linkedKey===k&&linkedPayload)renderPreview(linkedPayload);});
+  function refreshOfficialExhibition58(e){const k=window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);if(e.detail?.key!==k||linkedKey!==k||!linkedPayload)return;renderPreview(linkedPayload);const body=document.getElementById('linkedEntryBody');for(let boat=1;boat<=6;boat++){const values=window.__br69Display.officialExhibitionCells(k,boat);body?.querySelectorAll('[data-official-exhibition-boat="'+boat+'"]').forEach((td,i)=>{if(i<3)td.textContent=values[i];});}}
+  window.addEventListener('br6524-exhibition',refreshOfficialExhibition58);
+  window.addEventListener('br69-archive',refreshOfficialExhibition58);
   function renderResult(payload){
     const box=document.getElementById('cockpitResultBody');box.replaceChildren();
     if(!payload.result_available){box.textContent='結果待ち・または結果データ未取得';return;}
@@ -2006,9 +2035,9 @@ loadAutoPredictions();
     for(const x of raw){const key=String(x?.combination||''),parts=key.split('-');if(!/^[1-6]-[1-6]-[1-6]$/.test(key)||new Set(parts).size!==3||seen.has(key)||!br6517Finite(x?.probability)||Number(x.probability)<0||Number(x.probability)>1)return null;seen.add(key);rows.push({key,parts:parts.map(Number),p:Number(x.probability)});}
     return Math.abs(rows.reduce((n,x)=>n+x.p,0)-1)<.001?rows:null;
   }
-  // v6.5.56: illustrative, client-only maneuver animation. No scoring, result or odds input.
+  // v6.5.58: illustrative, client-only maneuver animation. No scoring, result or odds input.
   const motion41Types={inside_hold:{label:'イン逃げ・内残り',description:'内側の艇が小さい旋回半径で回る形。外側の艇は広い弧を描きます。'},inside_sashi:{label:'内差し',description:'内側の艇が先に旋回し、その後ろから2コースの艇が内寄りの軌道へ入る形。'},center_attack:{label:'センターまくり',description:'センターの艇が外側から先行して旋回する形。内側の艇との軌道の違いを示します。'},outside_break:{label:'まくり差し・外伸び',description:'外寄りの艇が旋回中に内側へ寄る形。艇の間を通る動きは模式的な表現です。'}};
-  // v6.5.56: authored illustrative paths, not trajectory inference.
+  // v6.5.58: authored illustrative paths, not trajectory inference.
   function motion41Point(lane,kind,t){
     const r=44+(lane-1)*23,cx=525,cy=205;
     const actor={inside_hold:1,inside_sashi:2,center_attack:3,outside_break:4}[kind];
@@ -2130,7 +2159,7 @@ loadAutoPredictions();
       fold.addEventListener('toggle',async()=>{if(!fold.open||busy||done||!sameSelection())return;busy=true;out.textContent='展示前の保存済み予想を確認中…';try{const prior=await readSaved40(window.__br6515Odds.key(date,venue,race),'pre');if(!sameSelection()||!panel.isConnected)return;if(!prior){out.textContent='展示前の保存済み予想はありません。';done=true;return;}const pre=prior.fourth,preDist=br6517Distribution(pre);if(!preDist||!dist){out.textContent='比較に必要な120通りの保存データが揃いません。';done=true;return;}out.replaceChildren();const t=el('table',undefined,'br6517-positions'),h=el('tr');['艇','展示前1着','展示後1着'].forEach(x=>h.append(el('th',x)));const th=el('thead');th.append(h);t.append(th);const tb=el('tbody');for(let n=1;n<=6;n++){const tr=el('tr');tr.append(el('td',n+'号艇'),el('td',br6517Pct(preDist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))),el('td',br6517Pct(dist.reduce((a,x)=>a+(x.parts[0]===n?x.p:0),0))));tb.append(tr);}t.append(tb);out.append(t,el('p','保存時点の推定値の比較です。変化の原因を展示だけに限定できません。','muted'));done=true;}catch(e){if(sameSelection()&&panel.isConnected)out.textContent='取得失敗：'+String(e.message||e)+'（閉じて開くと再試行）';}finally{busy=false;}});panel.append(fold);
     }
   }
-  // v6.5.56: bounded in-memory saved prediction reads, stable render identity.
+  // v6.5.58: bounded in-memory saved prediction reads, stable render identity.
   const saved40=new Map(),flight40=new Map(),readFlight40=new Map(),checked40=new Map();
   let lastSelection40=null,renderEpoch40=0,renderSignature40=null;
   const selectionKey40=()=>window.__br6515Odds.key(scheduleDate.value,hv.value,hr.value);
@@ -2221,7 +2250,7 @@ loadAutoPredictions();
       const hint=el('p','一覧表と選手別カードを切り替えられます。詳細12項目は下の表から確認できます。','muted');hint.style.fontSize='11px';body.append(hint);
       const wrap=el('div',undefined,'race-table-wrap'),table=el('table',undefined,'race-table');
       const thead=document.createElement('thead'),tr=document.createElement('tr');
-      ['艇','選手名 / 登録番号','級別','全国勝率','全国2連対率','当地勝率','平均ST','モーター / 2連対率','ボート / 2連対率','展示タイム','展示進入','展示ST'].forEach(x=>tr.append(el('th',x)));
+      ['艇','選手名 / 登録番号','級別','全国勝率','全国2連対率','当地勝率','平均ST','モーター / 2連対率','ボート / 2連対率','展示タイム（公式）','展示進入（公式候補）','展示ST（公式候補）'].forEach(x=>tr.append(el('th',x)));
       thead.append(tr);table.append(thead);
       const tbody=document.createElement('tbody');
       const fmt=(v,suffix='')=>v==null||v===''?'—':String(v)+suffix;
@@ -2234,11 +2263,11 @@ loadAutoPredictions();
         cell(fmt(r.local_win_rate));cell(fmt(r.average_start_timing));
         cell(fmt(r.motor_number)+' / '+fmt(r.motor_top_2_percent,'%'));
         cell(fmt(r.boat_number)+' / '+fmt(r.boat_top_2_percent,'%'));
-        cell(fmt(r.exhibition_time));cell(fmt(r.exhibition_course));cell(fmt(r.exhibition_start_timing));
+        for(const v of window.__br69Display.officialExhibitionCells(key,r.entry_number)){const td=el('td',v);td.dataset.officialExhibitionBoat=String(r.entry_number);line.append(td);}
         tbody.append(line);
       }
       table.append(tbody);wrap.append(table);renderEntryViews(body,payload.racers,wrap);
-      const note=el('p',payload.result_available?'このレースは終了後の情報です。事前予想の検証には保存済みスナップショットを使ってください。':(payload.display_fallback?'取得元：BoatraceCSV（非公式の補完表示）。予想・保存には使用しません。締切・展示・中止は公式で確認してください。':'取得元は非公式です。展示情報の公表時刻は検証できません。'),'muted');note.style.fontSize='11px';body.append(note);
+      const note=el('p',payload.result_available?'このレースは終了後の情報です。事前予想の検証には保存済みスナップショットを使ってください。':(payload.display_fallback?'取得元：BoatraceCSV（非公式の補完表示）。予想・保存には使用しません。締切・展示・中止は公式で確認してください。':'出走表の取得元は非公式です。展示3項目は公式の取得済み情報のみ表示し、公表時刻は未検証です。'),'muted');note.style.fontSize='11px';body.append(note);
     }catch(e){if(id===entryRequestId&&selectionKey40()===key)status.textContent='取得できませんでした：'+e.message+(linkedKey===key?'（前回取得した同じレースの情報を表示中）':'');}
   }
   hv.onchange=syncToDetail;hr.onchange=syncToDetail;
@@ -2823,7 +2852,7 @@ main,main>*,.v431-panel,.v431-panel>*,.v431-controls,.v431-controls>*{min-width:
    });
  }
  // Ensure top-level header does not misrepresent an older release.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.56';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.58';
  const title=document.querySelector('title');if(title)title.textContent='BOAT RACE AI Dashboard v4.4.0';
  // The venue selector already exists in race view; start on race rather than the duplicate 24-venue home.
  const initial=nav.querySelector('[data-tab="raceView"]');if(initial)initial.click();
@@ -2915,7 +2944,7 @@ if(watch){
 // Result finance: use ONLY settled pre-race snapshots; exclude pending and missing.
 // Replace old footer version text without changing legacy model labels.
 document.querySelectorAll('.footer').forEach(f=>{f.innerHTML=f.innerHTML.replace(/v4\.3\.5/g,'v4.4.1');});
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.56';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.58';
 })();
 </script>
 
@@ -2968,7 +2997,7 @@ window.addEventListener('focus',()=>refresh(false));
 nav?.addEventListener('click',e=>{if(e.target.closest('[data-tab]'))setTimeout(()=>refresh(true),250);});
 setTimeout(()=>refresh(true),900);
 // Diagnose pending vs absent snapshot; neither is automatically a losing bet.
-const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.56';
+const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.58';
 document.querySelectorAll('footer,.footer').forEach(x=>{x.innerHTML=x.innerHTML.replace(/v4\.4\.1|v4\.3\.5/g,'v4.4.3');});
 })();
 </script>
@@ -4536,7 +4565,7 @@ function boot(){
  const official=document.createElement('a');official.href='https://www.boatrace.jp/';official.target='_blank';official.rel='noopener noreferrer';official.textContent='公式BOAT RACEで確認';
  body.append(document.createElement('br'),official);details.append(summary,body);notice.insertAdjacentElement('afterend',details);
  // Version label describes dashboard UI, not Worker deployment.
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.56';}
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow){eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.58';}
  document.title='BOAT RACE AI | Dashboard';
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
@@ -4717,7 +4746,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
    const normalizeStatus=()=>{const current=status.textContent||'';if(current!==message&&/HTTP 404/.test(current))status.textContent=message;};
    const obs=new MutationObserver(normalizeStatus);obs.observe(status,{childList:true,characterData:true,subtree:true});normalizeStatus();}
   // Mark the consolidated UI revision without claiming the Worker was updated.
-  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.56';
+  const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.58';
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
@@ -4959,9 +4988,9 @@ function init(){const home=$('home'),manage=$('manageView');if(!home||!manage)re
  const globalMetrics=document.querySelector('main > .grid');if(globalMetrics){const stats=$('stats');if(stats)stats.prepend(globalMetrics);}
  const legacyHome=$('v620HomeHeader');if(legacyHome)legacyHome.hidden=true;
  const topQuick=$('v590QuickNav');if(topQuick)topQuick.hidden=true;
- const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.56';document.title='BOAT RACE AI Dashboard v6.5.56';
+ const eyebrow=document.querySelector('header .eyebrow');if(eyebrow)eyebrow.textContent='BOAT RACE / 24 VENUES · v6.5.58';document.title='BOAT RACE AI Dashboard v6.5.58';
  const oldHomeLink=[...manage.querySelectorAll('button')].find(b=>b.textContent==='全国24場を開く');if(oldHomeLink){oldHomeLink.textContent='全国24場・レース詳細を開く';oldHomeLink.onclick=e=>{e.stopImmediatePropagation();nav('detail');};oldHomeLink.addEventListener('click',e=>{e.stopImmediatePropagation();nav('detail');},true);}
- const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.56');
+ const footer=document.querySelector('.footer');if(footer)footer.innerHTML=footer.innerHTML.replace(/v\d+\.\d+\.\d+/,'v6.5.58');
  }catch(e){console.warn('Home optional layout:',e);}return true;
 }
 function bootHome(){try{if(init())return true;}catch(e){console.warn('Home boot:',e);homeStarted=false;}return false;}
